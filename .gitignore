@@ -1,0 +1,10 @@
+*test*
+*.exe
+*.bat
+*t.txt
+images/thumbnails
+novel
+images/dt
+.venv
+__pycache__
+.idea
