@@ -26,7 +26,6 @@ LANG = tsl(LANGUAGE)
 # noinspection PyAttributeOutsideInit
 class BookWidget(QWidget):
     upd_oth = Signal()
-    download_thumb = Signal(int)
 
     def __init__(self, parent=None, bankinfo=None):
         """
@@ -53,8 +52,7 @@ class BookWidget(QWidget):
 
         self.thumb = f'images/thumbnails/{self.numname}.jpg'
         if not ext(f'images/thumbnails/{self.numname}.jpg'):
-            self.thumb = int(self.numname)
-
+            self.thumb = None
         self.bkname = bankinfo[1]
 
         self.set_to_exported = False
@@ -161,7 +159,7 @@ class BookWidget(QWidget):
 
         self.thumbr = ClickableLabel(parent=self, pic=(219, 112, 147, 154))
         self.thumbr.setGeometry(0, 0, 113, 170)
-        if not isinstance(self.thumb, int):
+        if self.thumb is not None:
             self.thumbr.setPixmap(QPixmap(self.thumb).scaled(113, 170))
         else:
             self.thumbr.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -239,12 +237,9 @@ class BookWidget(QWidget):
 
     def setConnection(self):
         if ext(pth := f'{BANK_PATH}/{confirm_name(self.bkname)}'):
-            self.bookname.lclicked.connect(lambda: startfile(pth))
-        if not isinstance(self.thumb, int):
+            self.bookname.lclicked.connect(lambda: startfile(f'{getcwd()}/{pth}' if ':' not in pth else pth))
+        if self.thumb is not None:
             self.thumbr.lclicked.connect(lambda: startfile(f'{getcwd()}/{self.thumb}'))
-        else:
-            print(f'Thumbnail for {self.thumb} is not found!')
-            self.thumbr.lclicked.connect(lambda: self.download_thumb.emit(self.thumb))
         self.open_rts.lclicked.connect(self.handle_open_ratings)
         self.open_prg.lclicked.connect(self.handle_open_progress)
         self.favrt.clicked.connect(self.handle_fav_clicked)

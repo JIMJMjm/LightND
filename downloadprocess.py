@@ -28,6 +28,18 @@ def makedir(fname):
     return None
 
 
+def get_img(numname, iis=False):
+    if ext(f'images/thumbnails/{numname}.jpg'):
+        return f'images/thumbnails/{numname}.jpg'
+    url = f'https://img.wenku8.com/image/{int(numname) // 1000}/{numname}/{numname}s.jpg'
+    m = GetRq(url).run('m')
+    with open(f'images/thumbnails/{numname}.jpg', 'wb') as f:
+        f.write(m)
+    if iis:
+        return f'images/thumbnails/{numname}.jpg'
+    return m
+
+
 def succeeded(info='Successful!'):
     print(info)
     PlaySound('dlcp.wav', 1)
@@ -65,24 +77,24 @@ def ordered_ldr(path):
 class DownloadTask(object):
     def __init__(self, numname: str, state=2, mode=0, merging=False, g_dir=BANK_PATH,
                  update: bool | list[str] = False):
-        if update:
-            self.rname = g_dir + '/' + update[1]
-            self.numname = update[0]
-            self.thisurl = f'https://www.wenku8.cc/novel/{int(update[0]) // 1000}/{update[0]}/'
-            self.state = 0
-            return
-
         if not numname:
             print('Not A Numname!')
             return
 
-        if numname == '-1':
+        if numname == '-2':
             print('Testing Task Object!')
             return
 
         self.state = state
         self.mode = mode
         self.merging = merging
+
+        if update:
+            self.rname = g_dir + '/' + update[1]
+            self.numname = update[0]
+            self.thisurl = f'https://www.wenku8.cc/novel/{int(update[0]) // 1000}/{update[0]}/'
+            self.state = 0
+            return
 
         self.numname = numname
         self.g_dir = g_dir
@@ -366,13 +378,6 @@ class DownloadTask(object):
 
     def getWarning(self):
         return self.__warning
-
-
-def get_thumb(numbername: int):
-    print(f'Getting Thumbnail for {numbername}...')
-    tmr = GetRq(f'https://img.wenku8.com/image/{numbername // 1000}{f'/{numbername}' * 2}s.jpg').run('m')
-    save_img(tmr, f'images/thumbnails/{numbername}.jpg')
-
 
 
 def activate():
@@ -884,7 +889,7 @@ def activate2():
       "插图"
     ]
   ]
-    a = DownloadTask(numname='-1')
+    a = DownloadTask(numname='-2')
     a.rname = 'D:/HuaweiMoveData/Users/he660/Desktop/test'
     a.name = '刀剑神域(SAO／ALO／GGO／UW)'
     a.allname = allname

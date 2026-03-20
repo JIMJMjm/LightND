@@ -13,6 +13,7 @@
   "BANK_PATH": "D:/ACGN/Novel",
   "RMZ_EXPORT_PATH": "rmz",
   "RMZ_FILENAME_FORMAT": "%NUMNAME%_%BOOKNAME%_%TIMESTAMP%",
-  "DEFAULT_COVER": "images/uncovered.jpg",
-  "LANGUAGE": "zh-CN"
+  "LANGUAGE": "zh-CN",
+  "SHOW_FORMATED_FILE": true,
+  "AUTO_UNLOCK_TEXTER": true
 }

@@ -7,6 +7,7 @@ from config import CONFIG, translate_to as tsl
 ENABLE_BANK = CONFIG['ENABLE_BANK']
 ENABLE_ISF = CONFIG['ENABLE_ISF']
 LANGUAGE = CONFIG['LANGUAGE']
+AUTO_UNLOCK_TEXTER = CONFIG['AUTO_UNLOCK_TEXTER']
 
 
 # noinspection PyAttributeOutsideInit
@@ -132,10 +133,10 @@ class Ui_MainWindow(object):
         # self.CheckUPD.setFont(Dfont)
         # self.CheckUPD.setObjectName("CheckUPD")
 
-        # self.TaskUPD = QtWidgets.QPushButton(parent=self.Downloader)
-        # self.TaskUPD.setGeometry(RCT(505, 178, 110, 28))
-        # self.TaskUPD.setFont(Dfont)
-        # self.TaskUPD.setObjectName("TaskUPD")
+        self.TaskUPD = QtWidgets.QPushButton(parent=self.Downloader)
+        self.TaskUPD.setGeometry(RCT(505, 178, 110, 28))
+        self.TaskUPD.setFont(Dfont)
+        self.TaskUPD.setText(self.lang['MIS_button'])
 
         self.detailBT = QtWidgets.QPushButton(parent=self.Downloader)
         self.detailBT.setGeometry(RCT(505, 78, 110, 28))
@@ -202,11 +203,14 @@ class Ui_MainWindow(object):
         self.HFolderInput.setPlaceholderText('D:/fakepath/HFolder')
 
         self.detailBT_t = QtWidgets.QPushButton(parent=self.Texter)
-        self.detailBT_t.setGeometry(RCT(505, 78, 110, 28))
-
+        self.detailBT_t.setGeometry(505, 78, 110, 28)
         self.detailBT_t.setFont(Dfont)
         self.detailBT_t.setText(self.lang['TX_DetailMode'])
-        self.detailBT_t.setObjectName("DetailBT_t")
+
+        self.unlock_button = ClickableLabel(parent=self.Texter)
+        self.unlock_button.setText(self.lang['TX_Unlock'])
+        self.unlock_button.move(30, 102)
+        self.unlock_button.setEnabled(not AUTO_UNLOCK_TEXTER)
 
         self.Converter = QtWidgets.QWidget()
         self.Converter.setObjectName('converter')
@@ -296,14 +300,14 @@ class Ui_MainWindow(object):
         self.b_menu = QtWidgets.QMenu(parent=self.MainWindow)
 
         self.flt_genre = ClickableLabel(parent=self.BookBank)
-        self.flt_genre.setGeometry(RCT(216, 3, 80, 24))
+        self.flt_genre.setGeometry(RCT(228, 3, 80, 24))
         self.flt_genre.setFont(Sfont)
         self.flt_genre.setObjectName("flt_genre")
 
         self.g_menu = QtWidgets.QMenu(parent=self.MainWindow)
 
         self.flt_search = QtWidgets.QLineEdit(parent=self.BookBank)
-        self.flt_search.setGeometry(RCT(320, 0, 180, 28))
+        self.flt_search.setGeometry(RCT(324, 0, 190, 28))
         self.flt_search.setFont(Sfont)
         self.flt_search.setObjectName("flt_search")
         self.flt_search.setPlaceholderText(self.lang['BB_TextPlaceholder'])

@@ -12,7 +12,7 @@ from docx.shared import RGBColor, Cm, Pt
 from docx import Document
 import yaml
 
-from netwk import get_full_hmz
+from netwk import get_full_hmz, decode_add
 from config import CONFIG, save_json, read_json, LANG
 
 ldr = os.listdir
@@ -187,7 +187,7 @@ class NotAHFolderError(Exception):
 
 
 class HFolder(object):
-    def __init__(self, folder_adr, ignore_config: bool = False):
+    def __init__(self, folder_adr):
         self.folder = folder_adr
 
         adr_slice = folder_adr.split('/')
@@ -196,8 +196,7 @@ class HFolder(object):
 
         self.hmz = find_hmz(folder_adr)
         self.numname = self.hmz.split('.')[0] if self.hmz else ''
-
-        if ignore_config or ENABLE_PANDOC:
+        if ENABLE_PANDOC:
             hmzfile = read_hmz(self.folder + '/' + self.hmz, complicated=True)
             self.name, self.writer, self.allnet, self.allname, self.bunko, self.discription = hmzfile
         else:
@@ -207,30 +206,8 @@ class HFolder(object):
             self.discription = ''
 
         self.volumes = [i[0] for i in self.allnet]
-        dfc = f'{self.globa}{self.name}/{self.volumes[0]}/插图/1.jpg'
-        dfc1 = f'images/thumbnails/{self.numname}.jpg'
-        self.cover = dfc if ext(dfc) else dfc1
-
-    def __str__(self):
-        return self.folder
-
-    def __repr__(self):
-        return self.folder
-
-    def __getitem__(self, item: int | slice | str):
-        if isinstance(item, int):
-            return f'{self.folder}/{self.volumes[item]}'
-
-        if isinstance(item, slice):
-            return [f'{self.folder}/{self.volumes[i]}' for i in range(*item.indices(len(self.volumes)))]
-
-        if isinstance(item, str):
-            if item in self.volumes:
-                return f'{self.folder}/{item}'
-            print('Wrong Volume Name!')
-            return ''
-
-        raise TypeError
+        dfc = get_cover_from(f'{self.globa}{self.name}/{self.volumes[0]}')
+        self.cover = dfc if ext(dfc) else None
 
     @staticmethod
     def format_pic_fdr(path):
@@ -301,8 +278,8 @@ class HFolder(object):
 
     def formepub(self, mode=1):
         if mode == 1:
-            inpu = self.folder + '/' + self.name + '.docx'
-            oupu = self.folder + '/' + self.name + '.epub'
+            inpu = f'{self.folder}/{self.name}.docx'
+            oupu = f'{self.folder}/{self.name}.epub'
             if ENABLE_PANDOC:
                 convert_to_epub_pandoc(inpu, oupu, self.name, self.writer, self.numname, self.bunko,
                                        cover=self.cover, discription=self.discription)
@@ -406,14 +383,14 @@ def generate_yaml(name, writer, bunko, cover=None, discription=None):
         return y.name
 
 
-def convert_to_epub_pandoc(input_, output_, name, writer, numname, *args, cover=None, **kwargs):
+def convert_to_epub_pandoc(input_, output_, name, writer, numname, *args, cover: str = None, **kwargs):
     bunko = args[0] if args else None
     discription = kwargs.get('discription', None)
     if cover is None:
         cover = f'images/thumbnails/{numname}.jpg'
     if cover == '':
         cover = 'images/thumbnails/uncovered.jpg'
-    print(name, writer, bunko, cover, discription)
+    print(name, writer, bunko, cover, discription, sep='\n-')
     y = generate_yaml(name, writer, bunko, cover, discription)
     command = ['pandoc', input_, '-o', output_, '--epub-title-page=false',
                f'--metadata-file={y}', f'--css={'appending.css'}']
@@ -451,5 +428,10 @@ def activate2():
 def activate3():
     convert_to_azw3("D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.epub", 'D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.azw3', 'mr')
 
+
+def activate4():
+    print(decode_add('D:/ACGN/Novel/无职转生～到了异世界就拿出真本事～(无职转生~在异世界认真地活下去~)/第一卷 幼年期/插图/66110.jpg'))
+
+
 if __name__ == '__main__':
-    activate3()
+    activate4()

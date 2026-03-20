@@ -19,7 +19,9 @@ DEFAULT_SETTING = {
     "RMZ_EXPORT_PATH": "rmz",
     "RMZ_FILENAME_FORMAT": "%NUMNAME%_%TIMESTAMP%",
     "DEFAULT_COVER": "images/uncovered.jpg",
-    "LANGUAGE": "en-US"
+    "LANGUAGE": "en-US",
+    "SHOW_FORMATED_FILE": True,
+    "AUTO_UNLOCK_TEXTER": False
 }
 
 
@@ -78,7 +80,7 @@ def confirm_name(name_c):
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v7.3"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v7.5"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
@@ -95,7 +97,7 @@ def translate_to(code: str) -> dict[str, str]:
                 "DL_DC_2": {"en-US": "Illst only", "zh-CN": "仅插画"},
                 "DL_DC_3": {"en-US": "Both", "zh-CN": "全部"},
                 "DL_StartB": {"en-US": "Start Download", "zh-CN": "开始下载"},
-                "DL_TDList": {"en-US": "To-do List", "zh-CN": "任务列表"},
+                "DL_TDList": {"en-US": "To-do List", "zh-CN": "多任务"},
                 "DL_Numname": {"en-US": "Numname：", "zh-CN": "数字编码："},
                 "DL_TABNAME": {"en-US": "Downloader", "zh-CN": "下载器"},
                 "TX_DirectoryChoose": {"en-US": "Browse Directory", "zh-CN": "选择文件夹"},
@@ -118,7 +120,7 @@ def translate_to(code: str) -> dict[str, str]:
                 "CV_Title_optional": {"en-US": "Title(optional)：", "zh-CN": "标题(可选)"},
                 "CV_Writer_optional": {"en-US": "Writer(optional)：", "zh-CN": "作者(可选)"},
                 "BB_TABNAME": {"en-US": "Bank", "zh-CN": "书库"},
-                "BB_od_bank_init": {"en-US": "Ordered by name", "zh-CN": "按书名排序"},
+                "BB_od_bank_init": {"en-US": "Name", "zh-CN": "书名"},
                 "BB_flt_bunko": {"en-US": "Select bunko", "zh-CN": "选择文库"},
                 "BB_flt_genre": {"en-US": "Select genre", "zh-CN": "选择标签"},
                 "TX_DetailMode": {'en-US': "DetailMode", 'zh-CN': "细节模式"},
@@ -133,9 +135,9 @@ def translate_to(code: str) -> dict[str, str]:
                 "BB_selectgenre": {'en-US': "Select genre", 'zh-CN': "选择标签"},
                 "BB_selectbunko": {'en-US': "Select bunko", 'zh-CN': "选择文库"},
                 "BB_od_template": {'en-US': "Ordered by %%", 'zh-CN': "按%%排序"},
-                "BB_od_name": {'en-US': "name", 'zh-CN': "书名"},
-                "BB_od_numname": {'en-US': "numname", 'zh-CN': "数字编码"},
-                "BB_od_rating": {'en-US': "rating", 'zh-CN': "评分"},
+                "BB_od_name": {'en-US': "Name", 'zh-CN': "书名"},
+                "BB_od_numname": {'en-US': "Numname", 'zh-CN': "数字编码"},
+                "BB_od_rating": {'en-US': "Rating", 'zh-CN': "评分"},
                 "BW_rating": {'en-US': "Ratings:", 'zh-CN': "评分:"},
                 "BW_progress": {'en-US': "Progress:", 'zh-CN': "进度:"},
                 "BW_texter": {'en-US': "Texter", 'zh-CN': "格式化"},
@@ -221,6 +223,15 @@ def translate_to(code: str) -> dict[str, str]:
                     'en-US': "Language of the app.\nDefault: 'en-US'.",
                     'zh-CN': "此程序使用的语言。\n默认值: 'en-US'。"
                 },
+                "CFG_SHOW_FORMATED_FILE": {
+                    'en-US': "Mark options in Texter as finished if corresponding formated files exists."
+                             "\nDefault: True.",
+                    'zh-CN': "为已存在对应文件的格式器选项打钩。\n默认值: True。"
+                },
+                "CFG_AUTO_UNLOCK_TEXTER": {
+                    'en-US': "Auto unlock the option restriction in Texter.\nDefault: False.",
+                    'zh-CN': "自动解锁格式器选项限制。\n默认值: False。"
+                },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
                 "CFG_apply": {'en-US': "Apply", 'zh-CN': "应用"},
@@ -243,6 +254,13 @@ def translate_to(code: str) -> dict[str, str]:
                 "DL_Finished": {'en-US': "\nDownload Finished.", 'zh-CN': "\n下载已完成"},
                 "CTASK_reset": {'en-US': "Reset", 'zh-CN': "重置"},
                 "CTASK_save": {'en-US': "Save", 'zh-CN': "保存"},
+                "TASK_type_TEXTER": {'en-US': "DOCX Generation", 'zh-CN': "DOCX生成"},
+                "TASK_type_EPUB": {'en-US': "EPUB Conversion", 'zh-CN': "EPUB转换"},
+                "TASK_type_DOWNLOADER": {'en-US': "Novel Download", 'zh-CN': "小说下载"},
+                "MIS_Window": {'en-US': "Missions Window", 'zh-CN': "任务视窗"},
+                "MIS_button": {'en-US': "Tasks", 'zh-CN': "任务视窗"},
+                "TX_Unlock": {'en-US': "Unlock", 'zh-CN': "解锁"},
+                "TODOLIST_window": {'en-US': "To-do List", 'zh-CN': "任务清单"},
                 "": {'en-US': "", 'zh-CN': ""},
                 }
 
@@ -279,5 +297,7 @@ CONFIG_NOTATION = {
     "RMZ_EXPORT_PATH": LANG['CFG_RMZ_EXPORT_PATH'],
     "RMZ_FILENAME_FORMAT": LANG['CFG_RMZ_FILENAME_FORMAT'],
     "DEFAULT_COVER": LANG['CFG_DEFAULT_COVER'],
-    "LANGUAGE": LANG['CFG_LANGUAGE']
+    "LANGUAGE": LANG['CFG_LANGUAGE'],
+    "SHOW_FORMATED_FILE": LANG['CFG_SHOW_FORMATED_FILE'],
+    "AUTO_UNLOCK_TEXTER": LANG['CFG_AUTO_UNLOCK_TEXTER'],
 }

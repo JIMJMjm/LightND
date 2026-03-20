@@ -496,4 +496,4 @@ def activate4():
 
 
 if __name__ == "__main__":
-    activate3()
+    activate2()

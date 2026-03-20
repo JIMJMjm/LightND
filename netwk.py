@@ -2,6 +2,7 @@ from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 from typing import Literal, overload
 
+from urllib.parse import quote
 import requests as rq
 from bs4 import BeautifulSoup as bs
 import urllib3
@@ -16,6 +17,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 MAX_WAORKERS = CONFIG["MAX_THREAD_WORKER"]
 IRST = CONFIG["ILLUSTRATION_REQUEST_SLEEP_TIME"]
 TRST = CONFIG["TEXT_REQUEST_SLEEP_TIME"]
+
+
+def decode_add(address: str):
+    encoded = quote(address, safe='/:')
+    return encoded
 
 
 class GetRq:

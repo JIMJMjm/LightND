@@ -1,16 +1,16 @@
 from os import listdir as ldr
 from os.path import exists as ext
 import sys
+from sys import exit
 from time import perf_counter as pfc
 from concurrent.futures import ThreadPoolExecutor
 
-from PySide6 import QtGui
 from PySide6.QtGui import QPixmap
 from typing_extensions import Literal
-from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal
+from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget, QMessageBox
 
-from downloadprocess import DownloadTask, confirm_name, get_thumb
+from downloadprocess import DownloadTask, confirm_name, get_img
 from netwk import get_alllist
 from prg_export import save_as_rmz, read_from_rmz
 from prg_import import RmzImportWindow
@@ -23,8 +23,9 @@ from ui_LightNV import Ui_MainWindow
 from ui_bookwidget import BookWidget as BkWt
 from ui_config import Ui_Config
 from ui_ctask import DetailedWindow, get_default_name, restore_from_default_name
-from ui_missions import CheckWindow, get_img
 from config import CONFIG, succeeded
+from ui_missions import MissionWindow
+from ui_tdl import EditableTableWindow
 from ui_update import UpdateWindow
 
 ALLDOCX, SEPDOCX, ALLEPUB, SEPEPUB, ALLAZW3, SEPAZW3 = 0, 1, 2, 3, 4, 5
@@ -39,7 +40,8 @@ BANK_PATH = CONFIG['BANK_PATH']
 RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 RMZ_FILENAME_FORMAT = CONFIG['RMZ_FILENAME_FORMAT']
 LANGUAGE = CONFIG['LANGUAGE']
-
+AUTO_UNLOCK_TEXTER = CONFIG['AUTO_UNLOCK_TEXTER']
+SHOW_FORMATED_FILE = CONFIG['SHOW_FORMATED_FILE']
 
 if ENABLE_ISF:
     from image_search import search_for as searchimg
@@ -95,7 +97,9 @@ class Downloader:
 class Texter:
     def __init__(self):
         self.target: HFd | None = None
+        self.formets = [0, 0, 0, 0, 0, 0]
         self.indicator = [0, 0, 0, 0, 0, 0]
+        self.child_detail = None
 
     def set_target(self, target: HFd):
         self.target = target
@@ -115,9 +119,38 @@ class Texter:
             self.target.formazw3(0)
         succeeded()
 
+    def formslice(self):
+        slice_ind = self.child_detail.get_novel_state()
+        goalname = confirm_name(self.child_detail.get_goal_filename())
+        if goalname == '112':
+            goalname = f'[{get_default_name([index + 1 for index, value in enumerate(slice_ind) if value == 1])}]'
+
+        goalname = confirm_name(goalname)
+        self.target.formslice(slice_ind, goalname)
+        succeeded()
+
 
 class Converter:
     pass
+
+
+class Todolist(QObject):
+    changed = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self.window = None
+        self.todolist_str = []
+
+    def start(self):
+        self.window = EditableTableWindow()
+        self.window.show()
+        self.window.dataConfirmed.connect(self.receive_todolist)
+
+    def receive_todolist(self, data):
+        print(f'Todolist: {' '.join(data)}')
+        self.todolist_str = data
+        self.changed.emit()
 
 
 class MainWindow(QMainWindow):
@@ -126,35 +159,24 @@ class MainWindow(QMainWindow):
 
     def __init__(self, test=0):
         super().__init__()
-
         if test:
             return
+
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
-        self.lang = self.ui.lang
-
         self.thread_pool = QThreadPool()
 
+        self.lang = self.ui.lang
         self.format = 0
         self.formats = [0, 0, 0]
-        self.todolist_PATH = ''
-        self.todolist = []
-        self.name = ''
+        self.converter_goal = ''
 
-        self.child_check = CheckWindow()
-        # self.child_check.render_checklist()
-        # self.child_task = TaskWindow()
         self.child_detail = None
-        self.child_detail_t = None
-
         self.downloader = Downloader()
         self.texter = Texter()
-
-        self.formats_t = [0, 0, 0, 0, 0, 0]
+        self.todolist = Todolist()
+        self.todolist.changed.connect(lambda: self.ui.NumnameInput.setText('#Todo-List#'))
         self.buttonGroup = (self.ui.DOCX1, self.ui.DOCX2, self.ui.EPUB1, self.ui.EPUB2, self.ui.AZW1, self.ui.AZW2)
-
-        self.converter_goal = ''
 
         self.hidden_veil = QWidget(parent=self.ui.BBScroll)
         self.hidden_veil.setHidden(True)
@@ -184,13 +206,13 @@ class MainWindow(QMainWindow):
         self.warningWindow = QMessageBox()
         self.uiConfig = Ui_Config()
 
+        self.task_list = []
+        self.task_window = MissionWindow()
+
         self.import_window = RmzImportWindow()
 
     def start_task(self, task, *args, **kwargs):
-        self.thread_pool.start(WorkerRunnable(task, self.end_task, *args, **kwargs))
-
-    def end_task(self):
-        pass
+        self.thread_pool.start(WorkerRunnable(task, lambda: None, *args, **kwargs))
 
     def DownloadContentControl(self):
         self.downloader.set_param(4 + self.ui.DC.id(self.ui.DC.checkedButton()), 1)
@@ -232,6 +254,7 @@ class MainWindow(QMainWindow):
             self.ui.flt_genre.setText(self.lang["BB_selectgenre"])
         else:
             self.ui.flt_genre.setText(idx)
+        # noinspection PyTypeChecker
         self.bb_param[0] = idx
         self.render_book_bank(self.process_bw_list())
 
@@ -240,6 +263,7 @@ class MainWindow(QMainWindow):
             self.ui.flt_bunko.setText(self.lang["BB_selectbunko"])
         else:
             self.ui.flt_bunko.setText(idx)
+        # noinspection PyTypeChecker
         self.bb_param[1] = idx
         self.render_book_bank(self.process_bw_list())
 
@@ -253,28 +277,6 @@ class MainWindow(QMainWindow):
         if directory:
             self.downloader.global_directory = directory
 
-    def select_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            self.lang['SELECT_FILE'],
-            "./",
-            "Text Files (*.txt)"
-        )
-
-        if file_path:
-            self.todolist_PATH = file_path
-            self.getTodolist()
-            print(self.todolist)
-
-    def getTodolist(self):
-        if not self.todolist_PATH:
-            return 0
-        todolist = open(self.todolist_PATH, 'r').readlines()
-        self.todolist = [ii.strip() for ii in todolist]
-        return 0
-        # self.child_task.todolist = self.todolist
-        # self.child_task.render_tasklist(self.todolist)
-
     def convert_start(self):
         UI = self.ui
         converter_paras = [UI.COutput.text(), UI.CTitle.text(), UI.CWriter.text(), UI.CCover.text()]
@@ -286,12 +288,12 @@ class MainWindow(QMainWindow):
                                    numname=-1,
                                    cover=UI.CCover.text())
             succeeded()
-            return 
+            return
         convert_to_epub(self.converter_goal, *converter_paras)
         succeeded()
 
-    def textformer(self):
-        target = HFd(self.downloader.global_directory + '/' + self.name)
+    def textformer(self, taskname):
+        target = HFd(self.downloader.global_directory + '/' + taskname)
         if not self.downloader.docx_control:
             return 0
 
@@ -320,7 +322,8 @@ class MainWindow(QMainWindow):
             BANK_PATH,
         ) if ask else directory
         if directory:
-            self.formats_t = [0, 0, 0, 0, 0, 0]
+            self.ui.unlock_button.setEnabled(not AUTO_UNLOCK_TEXTER)
+            self.texter.formats = [0, 0, 0, 0, 0, 0]
             self.texter.set_target(HFd(directory))
             self.ui.HFolderInput.setText(directory)
             self.check_format(directory)
@@ -397,31 +400,37 @@ class MainWindow(QMainWindow):
         hmz = find_hmz(directory)
         if not hmz:
             raise NotAHFolderError
-        name_t, writer_t, allnet, _ = read_hmz(f'{directory}/{hmz}')
+
+        if not SHOW_FORMATED_FILE:
+            return
+
+        name_t, _, allnet, _ = read_hmz(f'{directory}/{hmz}')
 
         if ext(f'{directory}/{name_t}.docx'):
-            self.formats_t[ALLDOCX] = 1
+            self.texter.formets[ALLDOCX] = 1
         if ext(f'{directory}/{name_t}.epub'):
-            self.formats_t[ALLEPUB] = 1
+            self.texter.formets[ALLEPUB] = 1
         if ext(f'{directory}/{name_t}.azw3'):
-            self.formats_t[ALLAZW3] = 1
+            self.texter.formets[ALLAZW3] = 1
         if ext((vd := f'{directory}/Volume_docx')) and len(ldr(vd)) >= len(allnet):
-            self.formats_t[SEPDOCX] = 1
+            self.texter.formets[SEPDOCX] = 1
         if ext((ve := f'{directory}/Volume_epub')) and len(ldr(ve)) >= len(allnet):
-            self.formats_t[SEPEPUB] = 1
+            self.texter.formets[SEPEPUB] = 1
         if ext((va := f'{directory}/Volume_azw3')) and len(ldr(va)) >= len(allnet):
-            self.formats_t[SEPAZW3] = 1
+            self.texter.formets[SEPAZW3] = 1
 
         self.upd_button()
 
     def upd_button(self):
         for y, i in enumerate(self.buttonGroup):
-            if self.formats_t[y]:
-                i.setEnabled(False)
+            if self.texter.formets[y]:
+                i.setEnabled(AUTO_UNLOCK_TEXTER or False)
                 i.setChecked(True)
                 continue
             i.setEnabled(True)
             i.setChecked(False)
+        if AUTO_UNLOCK_TEXTER:
+            self.ref_button()
 
     def ref_button(self):
         indicator = [i.isEnabled() and i.isChecked() for i in self.buttonGroup]
@@ -436,6 +445,12 @@ class MainWindow(QMainWindow):
         indicator = [i.isEnabled() and i.isChecked() for i in self.buttonGroup]
         self.texter.indicator = indicator
         print(indicator)
+
+    def unlock_Texter_options(self):
+        for i in self.buttonGroup:
+            i.setEnabled(True)
+        self.ref_button()
+        self.ui.unlock_button.setEnabled(False)
 
     def tab_change_event(self, index):
         if self.ui.tabList[index] == 'BookBank' or self.ui.tabList[index] == 'NovelSearcher':
@@ -477,32 +492,32 @@ class MainWindow(QMainWindow):
         self.render_book_bank(self.process_bw_list())
 
     def downloadSingle(self, num=None):
-        if not (num or self.todolist):
-            print('请输入数字编码或选择任务清单')
-            return 0
         task = DownloadTask(num, *self.downloader.export_param()[1:-1])
-        self.name = task.name
+        self.task_list.append((task.numname, task.name, 'DNLDER'))
         task.download()
         self.handleWarning(task.getWarning())
-        self.textformer()
+        self.textformer(task.name)
         succeeded()
         return 0
 
     def downloadMuti(self):
         with ThreadPoolExecutor(max_workers=1) as executor:
             futures = []
-            for numnam in self.todolist:
-                futures.append(executor.submit(self.downloadSingle, numnam))
+            for numnam in self.todolist.todolist_str:
+                futures.append(executor.submit(self.start_task, self.downloadSingle, numnam))
             for i in futures:
                 i.result()
-        print(self.lang['ALL_SUCCEED'])
+        # print(self.lang['ALL_SUCCEED'])
 
     def downloadStart(self):
         numname = self.downloader.set_param(self.ui.NumnameInput.text(), 0)
+        if not (numname or self.todolist.todolist_str):
+            print('请输入数字编码或选择任务清单')
+            return
         self.AllButtonControl()
-        if numname:
+        if numname and numname != '#Todo-List#':
             self.start_task(self.downloadSingle, numname)
-        elif self.todolist:
+        elif self.todolist.todolist_str:
             self.downloadMuti()
 
     def Enabling(self):
@@ -532,10 +547,11 @@ class MainWindow(QMainWindow):
         ui.OU_R.buttonClicked.connect(self.OutputRDControl)
         ui.OU_CK.buttonClicked.connect(self.OutputCKControl)
         ui.DirectoryCh.clicked.connect(self.select_global_directory)
-        ui.TDList.clicked.connect(self.select_file)
+        ui.TDList.clicked.connect(self.todolist.start)
         ui.StartB.clicked.connect(self.downloadStart)
+
         # ui.CheckUPD.clicked.connect(self.child_check.show)
-        # self.ui.TaskUPD.clicked.connect(self.child_task.show)
+        ui.TaskUPD.clicked.connect(self.render_task_list)
 
         ui.Exit.clicked.connect(exit)
 
@@ -543,10 +559,6 @@ class MainWindow(QMainWindow):
         for i in self.buttonGroup:
             i.clicked.connect(self.ref_button)
         ui.DirectoryChoose.clicked.connect(lambda: self.select_directory_t())
-
-        for i in self.child_check.tasks:
-            i.AddCheck.clicked.connect(lambda idx=i: print(idx.numname))
-        self.child_check.add_button.clicked.connect(self.child_check.askwindow.show)
 
         ui.detailBT.clicked.connect(self.generate_detail_window)
         ui.detailBT_t.clicked.connect(self.generate_detail_window_t)
@@ -588,6 +600,8 @@ class MainWindow(QMainWindow):
         self.resetBank.connect(generate_book_bank)
         ui.import_btn.clicked.connect(self.handleImport)
 
+        ui.unlock_button.clicked.connect(self.unlock_Texter_options)
+
     def set_bw_connection(self):
         for i in self.g_opt[1:]:
             i.triggered.connect(lambda checked, action=i: self.GoptionControl(action.text()))
@@ -603,8 +617,6 @@ class MainWindow(QMainWindow):
             i.upd_oth.connect(self.upd_bank_in_bw)
             i.detailmd.lclicked.connect(lambda bookwidget=i: self.jump_to_texter(bookwidget))
             i.updatebt.lclicked.connect(lambda bk=i: self.check_update_as(bk))
-
-            i.download_thumb.connect(lambda numbername: get_thumb(numbername))
 
     @staticmethod
     def check_update(num_name: tuple[str, str]):
@@ -663,20 +675,10 @@ class MainWindow(QMainWindow):
         cpnames = [i[0] for i in allnet]
 
         chapter = [name, get_img(numname)] + cpnames
-        self.child_detail_t = DetailedWindow(chapter)
-        self.child_detail_t.startFBT.clicked.connect(lambda: self.start_task(self.formslice_t))
-        self.child_detail_t.show()
+        self.texter.child_detail = DetailedWindow(chapter)
+        self.texter.child_detail.startFBT.clicked.connect(lambda: self.start_task(self.texter.formslice))
+        self.texter.child_detail.show()
         return 0
-
-    def formslice_t(self):
-        slice_ind = self.child_detail_t.get_novel_state()
-        goalname = confirm_name(self.child_detail_t.get_goal_filename())
-        if goalname == '112':
-            goalname = f'[{get_default_name([index + 1 for index, value in enumerate(slice_ind) if value == 1])}]'
-
-        goalname = confirm_name(goalname)
-        self.texter.target.formslice(slice_ind, goalname)
-        succeeded()
 
     def dlslice_d(self, num):
         slice_ind = self.child_detail.get_novel_state()
@@ -728,8 +730,8 @@ class MainWindow(QMainWindow):
     def init_bbgrid(self):
         self.bb_param = ['', '', [1, '+'], '']
         self.bb_liked = 0
-        self.ui.flt_liked.setPixmap(QtGui.QPixmap("images/heart_h.png").scaled(28, 28))
-        self.ui.order_arrow.setPixmap(self.UAR)
+        self.ui.flt_liked.setPixmap(QPixmap("images/heart_h.png").scaled(28, 28))
+        self.ui.order_arrow.setPixmap(self.DAR)
         self.ui.flt_search.setText('')
         self.ui.od_bank.setFocus()
         self.ui.od_bank.setText(self.lang['BB_od_bank_init'])
@@ -883,11 +885,11 @@ class MainWindow(QMainWindow):
             self.bb_liked = 2
 
         if self.bb_liked == 0:
-            flt_l.setPixmap(QtGui.QPixmap("images/heart_h.png").scaled(28, 28))
+            flt_l.setPixmap(QPixmap("images/heart_h.png").scaled(28, 28))
         if self.bb_liked == 1:
-            flt_l.setPixmap(QtGui.QPixmap("images/heart_f.png").scaled(28, 28))
+            flt_l.setPixmap(QPixmap("images/heart_f.png").scaled(28, 28))
         if self.bb_liked == 2:
-            flt_l.setPixmap(QtGui.QPixmap("images/heart_e.png").scaled(28, 28))
+            flt_l.setPixmap(QPixmap("images/heart_e.png").scaled(28, 28))
 
         self.render_book_bank(self.process_bw_list())
 
@@ -969,6 +971,11 @@ class MainWindow(QMainWindow):
         self.bb_param[2] = cons
 
         self.render_book_bank(self.process_bw_list())
+
+    def render_task_list(self):
+        self.task_window.form_task_widget(self.task_list)
+        self.task_window.refresh_list()
+        self.task_window.show()
 
 
 def activate():

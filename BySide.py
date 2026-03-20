@@ -1,3 +1,5 @@
+from sys import exit
+
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QMouseEvent, QFont
 from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox
@@ -24,6 +26,7 @@ class ClickableLabel(QLabel):
 
     def __init__(self, parent=None, text="", pic: tuple | bool = False):
         super().__init__(text, parent)
+        self.isEnabled = True
         self.setText(text)
         effect = """
         QLabel {
@@ -42,11 +45,17 @@ class ClickableLabel(QLabel):
             self.setStyleSheet(effect)
 
     def mousePressEvent(self, event: QMouseEvent):
+        if not self.isEnabled:
+            return
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.lclicked.emit()
         if event.button() == Qt.MouseButton.RightButton:
             self.rclicked.emit()
         super().mousePressEvent(event)
+
+    def setEnabled(self, arg__1: bool, /):
+        self.isEnabled = arg__1
 
 
 class DPushButton(QPushButton):
@@ -88,23 +97,23 @@ class AdvButtonGroup(QButtonGroup):
 
 
 class ScrollField(QScrollArea):
-    def __init__(self, parent=None, widgets=None, Geometry=None):
+    def __init__(self, parent=None, widgets=None, Geometry: tuple[int, int, int, int] = ()):
         super().__init__(parent)
 
         if widgets is None:
             widgets = []
-        if Geometry is None:
-            Geometry = [0, 0, 0, 0]
+        if not Geometry:
+            Geometry = (0, 0, 0, 0)
 
         self.widgets = widgets
         self.mainwidget = QWidget()
-        self.setGeometry(*Geometry)  # NOQA
+        self.setGeometry(*Geometry) # NOQA
         self.Geometry = Geometry
         self.setWidget(self.mainwidget)
 
         self.widget_size = [0, 0]
         for y, i in enumerate(self.widgets):
-            i.setParent(self)
+            i.setParent(self.mainwidget)
             size = i.size().toTuple()
             i.move(0, self.widget_size[1])
             self.widget_size[0] = size[0]
@@ -147,6 +156,14 @@ class ScrollField(QScrollArea):
         dw, dh = dlt
         self.mainwidget.resize(w + dw, h + dh)
 
+    def removeWidget(self, index: int = 0):
+        r_widget = self.widgets.pop(index)
+        _, h = r_widget.size().toTuple()
+        r_widget.setParent(None)
+        for i in self.widgets[index:]:
+            i.move(i.x(), i.y() - h)
+        self.mainwidget.resize(self.mainwidget.width(), self.mainwidget.height() -h)
+
     def __repr__(self):
         return f"<{self.__class__.__name__} widgets={self.widgets}>"
 
@@ -184,7 +201,7 @@ class GroupedWidgets(QWidget):
         self.unit_size = None
         self.widgets = []
 
-    def addWidget(self, widget: QWidget, grid_pos: (int, int)):
+    def addWidget(self, widget: QWidget, grid_pos: tuple[int, int]):
         widget.setParent(self)
         if not self.unit_size:
             self.unit_size = widget.size().toTuple()
