@@ -1,0 +1,12 @@
+*test*
+*temp*
+ebc/
+*.txt
+*.bat
+
+.venv/
+.idea/
+__pycache__/
+pandoc.exe
+images/thumbnails/
+images/dt/
