@@ -8,3 +8,4 @@ images/dt
 .venv
 __pycache__
 .idea
+bank.json

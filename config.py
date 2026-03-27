@@ -1,5 +1,6 @@
 import json
 from os.path import exists as ext
+from os import listdir as ldr
 
 from winsound import PlaySound
 
@@ -30,6 +31,22 @@ def LUXINFO_TEMPLATE():
             'rtg': {},
             'fav': 0,
             'lck': ''}
+
+
+def ordered_ldr(path, typ='.txt'):
+    pre_ldrlist = ldr(path)
+    b_ill = '插图' in pre_ldrlist
+    if b_ill:
+        pre_ldrlist.remove('插图')
+    ldrlist = []
+    for i in pre_ldrlist:
+        try:
+            ldrlist.append(int(i.split('.')[0]))
+        except ValueError:
+            continue
+    ldrlist.sort()
+    ldrlist = [str(i) + typ for i in ldrlist]
+    return ldrlist, b_ill
 
 
 # noinspection PyTypeChecker

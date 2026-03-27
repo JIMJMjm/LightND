@@ -3,6 +3,7 @@ from os.path import exists as ext
 from os import listdir as ldr
 from pypinyin import slug
 
+from book_struct import BankedBook
 from netwk import get_full_hmz
 from config import save_json, CONFIG
 from prg_export import save_as_rmz as savermz
@@ -44,10 +45,11 @@ def generate_book_bank():
     save_as_bank(pre_books)
 
 
-def save_as_bank(bank):
+def save_as_bank(bank: list[BankedBook]):
+    bank_dict = [i.toDict for i in bank]
     with open('bank.json', 'w', encoding='utf-8') as f:
         # noinspection PyTypeChecker
-        json.dump(bank, f, indent=2, ensure_ascii=False)
+        json.dump(bank_dict, f, indent=2, ensure_ascii=False)
     return 0
 
 
@@ -56,34 +58,27 @@ def read_bank_file():
         generate_book_bank()
     with open('bank.json', 'r', encoding='utf-8') as f:
         bookbank = json.load(f)
-    return bookbank
+    newbookbank = [BankedBook(**i) for i in bookbank]
+    return newbookbank
 
 
-def add_to_bank(new_book: list | tuple):
+def add_to_bank(new_book: BankedBook):
     """
     Add a new book to bank.
     If a book has changed its name, all luxury info will be deleted.
-    :param new_book:
+    :param new_book: 'BankedBook'
     :return:
     """
     bank = read_bank_file()
-    numname = new_book[0]
-    bkname = new_book[1]
-    for i in range(len(bank)):
-        if bank[i][1] == bkname:
+    for i in bank:
+        if i.name == new_book.name:
             return 0
-        if bank[i][0] == numname:
-            if luxury_info := bank[i][5:]:
-                luxury_info = luxury_info[0]
-                new_book = list(new_book)
-                new_book.append({"prg": [],
-                                 "rtg": {},
-                                 "fav": luxury_info['fav'],
-                                 "lck": luxury_info['lck']})
-            savermz(1, bank[i], RMZ_EXPORT_PATH)
-            bank[i] = tuple(new_book)
-            save_as_bank(bank)
-            return 1
+        if i == new_book:
+            print(f'Bookname of {i.numname} changed from {i.name} to {new_book.name}, Luxury info will be auto saved '
+                  f'as rmz and deleted from bank.')
+            savermz(1, i.toDict(), RMZ_EXPORT_PATH)
+            bank.remove(i)
+            break
     bank.append(new_book)
     save_as_bank(bank)
     return 0

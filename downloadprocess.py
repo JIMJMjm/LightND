@@ -1,12 +1,14 @@
+from datetime import datetime
 from os.path import exists as ext
 from os import listdir as ldr, mkdir, remove
 from concurrent.futures import ThreadPoolExecutor
 
 from winsound import PlaySound
 
+from book_struct import HmzedBook, BankedBook, BookLuxury
 from netwk import GetRq, get_full_hmz
 import bookbank
-from config import save_json, CONFIG, confirm_name, LANG
+from config import save_json, CONFIG, confirm_name, LANG, ordered_ldr
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                         'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -57,23 +59,6 @@ def save_img(img: bytes, path):
     return 0
 
 
-def ordered_ldr(path):
-    pre_ldrlist = ldr(path)
-    b_ill = False
-    if '插图' in pre_ldrlist:
-        pre_ldrlist.remove('插图')
-        b_ill = True
-    ldrlist = []
-    for i in pre_ldrlist:
-        try:
-            ldrlist.append(int(i.split('.')[0]))
-        except ValueError:
-            continue
-    ldrlist.sort()
-    ldrlist = [str(i) + '.txt' for i in ldrlist]
-    return ldrlist, b_ill
-
-
 class DownloadTask(object):
     def __init__(self, numname: str, state=2, mode=0, merging=False, g_dir=BANK_PATH,
                  update: bool | list[str] = False):
@@ -102,12 +87,20 @@ class DownloadTask(object):
         modl = numname[0] if len(numname) > 3 else '0'
         self.thisurl = f'https://www.wenku8.cc/novel/{modl}/{numname}/'
 
-        (self.name, self.writer, self.discrp, self.genre, self.bunko,
-         self.allnet, self.allname, self.copyright) = get_full_hmz(numname, save=False)
-        self.name = confirm_name(self.name)
-        self.rname = self.name
+        name, writer, descrp, genre, bunko, allnet, allname, cprt = get_full_hmz(numname, save=False)
+        name = confirm_name(name)
+
+        self.hmzbook = HmzedBook(numname=numname, name=name, writer=writer,
+                                 allnet=allnet, allname=allname, description=descrp)
+
+        self.bankbook = BankedBook(numname=numname, name=name, writer=writer,
+                                   bunko=bunko, genre=genre, directory=g_dir,
+                                   lux=BookLuxury(), addtime=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+        
+        self.cprt = cprt
+        self.rname = self.hmzbook.name
         if self.g_dir != '':
-            self.rname = f'{g_dir}/{self.name}'
+            self.rname = f'{g_dir}/{self.hmzbook.name}'
 
         self.__warning = None
 
@@ -130,8 +123,8 @@ class DownloadTask(object):
 
     def process_page(self, i: int, j: int, alllists=None):
         if alllists is None:
-            allnet = self.allnet
-            allname = self.allname
+            allnet = self.hmzbook.allnet
+            allname = self.hmzbook.name
         else:
             allnet = alllists[0]
             allname = alllists[1]
@@ -149,7 +142,7 @@ class DownloadTask(object):
 
     def check_current_folder(self, adr, _type=-1):
         if _type == -1:
-            volumes = [i[0] for i in self.allnet]
+            volumes = [i[0] for i in self.hmzbook.allnet]
             for i in volumes:
                 if i not in ldr(adr):
                     return max(volumes.index(i), 1)
@@ -157,12 +150,12 @@ class DownloadTask(object):
         return len(ord_[0]) + ord_[1]
 
     def download_volume(self, volume: int):
-        dirname = f'{self.rname}/{self.allnet[volume][0]}'
+        dirname = f'{self.rname}/{self.hmzbook.allnet[volume][0]}'
         makedir(dirname)
 
         with ThreadPoolExecutor(max_workers=MAX_WAORKERS) as executor:
             futures = []
-            for j in range(1, len(self.allnet[volume])):
+            for j in range(1, len(self.hmzbook.allnet[volume])):
                 future = executor.submit(self.process_page, volume, j)
                 futures.append(future)
 
@@ -173,23 +166,23 @@ class DownloadTask(object):
     def detailedDownload(self):
         makedir(self.rname)
         save_json(f'{self.rname}/{self.numname}.hmz',
-                  {'name': self.name, 'writer': self.writer, 'allnet': self.allnet,
-                   'allname': self.allname, 'directory': self.g_dir, 'discription': self.discrp,
-                   'genre': self.genre, 'bunko': self.bunko, 'numname': self.numname})
+                  {'name': self.hmzbook.name, 'writer': self.hmzbook.writer, 'allnet': self.hmzbook.allnet,
+                   'allname': self.hmzbook.name, 'directory': self.g_dir, 'discription': self.hmzbook.description,
+                   'genre': self.bankbook.genre, 'bunko': self.bankbook.bunko, 'numname': self.numname})
 
         start = self.check_current_folder(self.rname) - 1 if self.mode == 0 else 0
-        for i in range(start, len(self.allnet)):
+        for i in range(start, len(self.hmzbook.allnet)):
             dirname = self.download_volume(i)
 
             current_progress = i + 1 - start
-            total_tasks = len(self.allnet) - start
+            total_tasks = len(self.hmzbook.allnet) - start
             filled_length = int(30 * current_progress // total_tasks)
             bar = '=' * filled_length + ' ' * (30 - filled_length)
             print(f"DL: [{bar}] {(current_progress / total_tasks) * 100:.2f}% ({current_progress}/{total_tasks})",
                   end='\r')
 
             if self.merging:
-                self.mergeToVol(dirname, self.allnet[i][0])
+                self.mergeToVol(dirname, self.hmzbook.allnet[i][0])
         if self.merging == 2:
             self.mergeToSeries()
         print(LANG['DL_Finished'])
@@ -201,11 +194,11 @@ class DownloadTask(object):
         newurl = f'https://dl.wenku8.com/down.php?type=txt&node=2&id={self.numname}'
         tx = GetRq(newurl).run('w')
 
-        save_file(tx, f'{self.rname}/{self.name}.txt')
+        save_file(tx, f'{self.rname}/{self.hmzbook.name}.txt')
         save_json(f'{self.rname}/{self.numname}.hmz',
-                  {'name': self.name, 'writer': self.writer, 'allnet': self.allnet,
-                   'allname': self.allname, 'directory': self.g_dir, 'discription': self.discrp,
-                   'genre': self.genre, 'bunko': self.bunko, 'numname': self.numname})
+                  {'name': self.hmzbook.name, 'writer': self.hmzbook.writer, 'allnet': self.hmzbook.allnet,
+                   'allname': self.hmzbook.name, 'directory': self.g_dir, 'discription': self.hmzbook.description,
+                   'genre': self.bankbook.genre, 'bunko': self.bankbook.bunko, 'numname': self.numname})
 
         print('Download Finished.')
 
@@ -228,25 +221,25 @@ class DownloadTask(object):
         f.close()
 
     def mergeToSeries(self):
-        out = f'{self.rname}/{self.name}.txt'
+        out = f'{self.rname}/{self.hmzbook.name}.txt'
         if ext(out):
             remove(out)
         f = open(out, 'a', encoding='utf-8')
-        for i in range(len(self.allnet)):
-            if ext(fn := f'{self.rname}/{self.allnet[i][0]}/{self.allnet[i][0]}.txt'):
+        for i in range(len(self.hmzbook.allnet)):
+            if ext(fn := f'{self.rname}/{self.hmzbook.allnet[i][0]}/{self.hmzbook.allnet[i][0]}.txt'):
                 adding = open(fn, encoding='utf-8')
                 f.write(adding.read())
                 f.write('\n')
         f.close()
 
     def txt_split(self):
-        fileplace = f'{self.rname}/{self.name}.txt'
+        fileplace = f'{self.rname}/{self.hmzbook.name}.txt'
         with open(fileplace, 'r', encoding='utf-8') as f:
             content = f.readlines()[2:-2]
         true_content = [i.strip(' ') for i in content]
 
         intervals = []
-        for i in self.allname:
+        for i in self.hmzbook.name:
             for j in i[1:]:
                 chapname = f'{i[0]} {j}'
                 curind = content.index(chapname + '\n')
@@ -260,7 +253,7 @@ class DownloadTask(object):
         intervals.append(len(content))
 
         chapcnt = 0
-        for i in self.allname:
+        for i in self.hmzbook.name:
             filecount = 1
             setname = f'{self.rname}/{i[0]}'
             makedir(setname)
@@ -276,11 +269,11 @@ class DownloadTask(object):
             tmr = GetRq(f'https://img.wenku8.com/image/{int(self.numname) // 1000}{f'/{self.numname}' * 2}s.jpg').run(
                 'm')
             save_img(tmr, fn)
-        addbankBool = bookbank.add_to_bank((self.numname, self.name, self.writer, self.genre, self.bunko))
+        addbankBool = bookbank.add_to_bank((self.numname, self.hmzbook.name, self.hmzbook.writer, self.bankbook.genre, self.bankbook.bunko))
         if addbankBool:
             self.__warning = 'ADDBANK'
 
-        if not self.copyright:
+        if not self.cprt:
             self.__warning = 'COPYRIGHT'
             self.default_download()
             self.txt_split()
@@ -301,17 +294,17 @@ class DownloadTask(object):
             tmr = GetRq(f'https://img.wenku8.com/image/{int(self.numname) // 1000}{f'/{self.numname}' * 2}s.jpg').run(
                 'm')
             save_img(tmr, fn)
-        addbankBool = bookbank.add_to_bank((self.numname, self.name, self.writer, self.genre, self.bunko))
+        addbankBool = bookbank.add_to_bank((self.numname, self.hmzbook.name, self.hmzbook.writer, self.bankbook.genre, self.bankbook.bunko))
         if addbankBool:
             self.__warning = 'ADDBANK'
 
         makedir(self.rname)
         save_json(f'{self.rname}/{self.numname}.hmz',
-                  {'name': self.name, 'writer': self.writer, 'allnet': self.allnet,
-                   'allname': self.allname, 'directory': self.g_dir, 'discription': self.discrp,
-                   'genre': self.genre, 'bunko': self.bunko, 'numname': self.numname})
+                  {'name': self.hmzbook.name, 'writer': self.hmzbook.writer, 'allnet': self.hmzbook.allnet,
+                   'allname': self.hmzbook.name, 'directory': self.g_dir, 'discription': self.hmzbook.description,
+                   'genre': self.bankbook.genre, 'bunko': self.bankbook.bunko, 'numname': self.numname})
 
-        if not self.copyright:
+        if not self.cprt:
             self.__warning = 'COPYRIGHT'
             self.default_download()
             self.txt_split()
@@ -366,11 +359,11 @@ class DownloadTask(object):
 
     def get_image_from_vol(self, slice_ind: None | list = None):
         if slice_ind is None:
-            post_allname = self.allname
-            post_allnet = self.allnet
+            post_allname = self.hmzbook.name
+            post_allnet = self.hmzbook.allnet
         else:
-            post_allname = [self.allname[i] for i in slice_ind if i]
-            post_allnet = [self.allnet[i] for i in slice_ind if i]
+            post_allname = [self.hmzbook.name[i] for i in slice_ind if i]
+            post_allnet = [self.hmzbook.allnet[i] for i in slice_ind if i]
         for vol in range(len(post_allname)):
             for a, b in zip(post_allnet[vol], post_allname[vol]):
                 if b == '插图':
@@ -388,507 +381,507 @@ def activate():
 
 def activate2():
     allname = [
-    [
-      "第一卷 艾恩葛朗特",
-      "一卷全",
-      "插图"
-    ],
-    [
-      "第二卷 艾恩葛朗特",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第三卷 妖精之舞",
-      "序章",
-      "第一章",
-      "第二章",
-      "第三章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第四卷 妖精之舞",
-      "序章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第五卷 幽灵子弹",
-      "序章",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第六卷 幽灵子弹",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "第十二章",
-      "第十三章",
-      "第十四章",
-      "第十五章",
-      "第十六章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第七卷 圣母圣咏",
-      "序",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "第十二章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第八卷 Early and Late",
-      "圈内事件",
-      "圣剑",
-      "起始之日",
-      "后记",
-      "插图"
-    ],
-    [
-      "第九卷 Alicization Beginning",
-      "序幕I 人界历三七二年七月",
-      "序幕II 公元二〇二六年六月",
-      "转章I",
-      "第一章 UnderWorld 人界历三七八年三月",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十卷 Alicization Running",
-      "第二章 Alicization计划 西元二〇二六年七月",
-      "第三章 萨卡和亚剑术大会 人界历三七八年八月",
-      "第四章 帝立修剑学院 人界历三八〇年三月",
-      "转章Ⅱ",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 1",
-      "无星夜的咏叹调",
-      "幕间 胡须的理由",
-      "幻胧剑之回旋曲",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十一卷 Alicization Turning",
-      "第五章 右眼的封印 人界历三八〇年五月",
-      "转章Ⅲ",
-      "第六章 囚犯与骑士 人界历三八〇年五月",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十二卷 Alicization Rising",
-      "第七章 两名管理者 人界历三八〇年五月",
-      "第八章 中央大教堂 人界历三八〇年五月",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十三卷 Alicization Dividing",
-      "转章Ⅳ 西历二〇二六年七月六日",
-      "第九章 整合骑士爱丽丝 人界历三八〇年五月",
-      "第十章 整合骑土长贝尔库利 人界历三八〇年五月",
-      "第十一章 元老院的秘密 人界历三八〇年五月",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 2",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十四卷 Alicization Uniting",
-      "序章",
-      "第十二章 最高祭司Administrator 人界历三八〇年五月",
-      "第十三章 决战 人界历三八〇年五月",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十五卷 Alicization Invading",
-      "第十四章 盗魂者（Subtilizer）西历二〇二六年六月～七月",
-      "第十五章 于北方之地 人界历三八〇年十月",
-      "第十六章 袭击Ocean Turtle 西元二〇二六年七月",
-      "第十七章 黑暗领域 人界历三八〇年十一月",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 3",
-      "序",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "后记",
-      "插图"
-    ],
-    [
-      "官方同人志 Material Edition",
-      "ME04 冰冷的手，温暖的心",
-      "ME05 鼠尾草",
-      "ME06 阿尔格特的决斗",
-      "番外 唯一的究极手段",
-      "ME10 16.6",
-      "ME11 16.7",
-      "ME12 16.8",
-      "ME13 16.9",
-      "ME14 Sugary Days 5",
-      "ME14 Sugary Days 6"
-    ],
-    [
-      "第十六卷 Alicization Exploding",
-      "第十八章 地底世界大战 人界历三八〇年十一月七日 午后六点",
-      "第十九章 光之巫女 人界历三八〇年十一月七日 午后八点",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 4",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "第十二章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十七卷 Alicization Awakening",
-      "第二十章 各自的战斗 西历二〇二六年七月七日/人界历三八〇年十一月七日",
-      "第二十一章 觉醒 西历二〇二六年七月七日/人界历三八〇年十一月七日",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十八卷 Alicization Lasting",
-      "第二十一章 觉醒（承前）",
-      "第二十二章 决战",
-      "第二十三章 回归",
-      "终幕 西元二〇二六年八月",
-      "序幕Ⅲ",
-      "后记",
-      "插图"
-    ],
-    [
-      "第十九卷 Moon Cradle",
-      "序",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十卷 Moon Cradle",
-      "序",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 5",
-      "黄金定律的卡农 序",
-      "黄金定律的卡农 1",
-      "黄金定律的卡农 2",
-      "黄金定律的卡农 3",
-      "黄金定律的卡农 4",
-      "黄金定律的卡农 5",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十一卷 Unital Ring I",
-      "序",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 6",
-      "黄金定律的卡农 6",
-      "黄金定律的卡农 7",
-      "黄金定律的卡农 8",
-      "黄金定律的卡农 9",
-      "黄金定律的卡农 10",
-      "黄金定律的卡农 11",
-      "黄金定律的卡农 12",
-      "黄金定律的卡农 13",
-      "黄金定律的卡农 14",
-      "黄金定律的卡农 15",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十二卷 Kiss And Fly",
-      "The day before",
-      "The day after",
-      "彩虹桥",
-      "Sisters’ Prayer",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十三卷 Unital Ring II",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十四卷 Unital Ring III",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十五卷 Unital Ring IV",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "后记",
-      "插图"
-    ],
-    [
-      "Progressive 7 赤色焦热的狂想曲 上",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "第十二章",
-      "第十三章",
-      "后记",
-      "插图"
-    ],
-    [
-      "BD特典小说 UW篇 IF线",
-      "If You Were Here",
-      "If You Wish It",
-      "If We Could Walk Together"
-    ],
-    [
-      "第二十六卷 Unital Ring V",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "第十二章",
-      "第十三章",
-      "第十四章",
-      "第十五章",
-      "第十六章",
-      "第十七章",
-      "第十八章",
-      "第十九章",
-      "第二十章",
-      "第二十一章",
-      "第二十二章",
-      "第二十三章",
-      "后记",
-      "插图"
-    ],
-    [
-      "短篇",
-      "温泉篇",
-      "天青色的妖精",
-      "LISBETH EDITION 水之音，锤之音",
-      "SILICA EDITION 冬日暖阳",
-      "PINA EDITION 第十四次的秋天",
-      "虹之桥",
-      "16.8.5",
-      "伤害的界限突破",
-      "Objectors! ~VRMMO开发秘话~",
-      "魔法科高校的劣等生×SAO联合企划 刀剑神域篇",
-      "画集短篇 Chromatic Colors",
-      "画集短篇 Prismatic Colors",
-      "电击文库25周年超感谢祭 夏天的结束与草帽",
-      "电击文库2015周年超感谢祭 防御力 攻击力",
-      "电击文库超感谢Fair2021 Blueish Memory",
-      "电击文库超感谢Fair2022 再访第七层"
-    ],
-    [
-      "剧场版特典小说",
-      "《序列之争》观影特典 希望之歌",
-      "《序列之争》BD特典 Cordial Chord",
-      "Progressive 来场特典 开服次日",
-      "Progressive BD特典 Memorable Song"
-    ],
-    [
-      "Progressive 8 赤色焦热的狂想曲 下",
-      "第十四章",
-      "第十五章",
-      "第十六章",
-      "第十七章",
-      "第十八章",
-      "第十九章",
-      "第二十章",
-      "第二十一章",
-      "第二十二章",
-      "第二十三章",
-      "第二十四章",
-      "第二十五章",
-      "第二十六章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十七卷 Unital Ring VI",
-      "第一章",
-      "第二章",
-      "第三章",
-      "第四章",
-      "第五章",
-      "第六章",
-      "第七章",
-      "第八章",
-      "第九章",
-      "第十章",
-      "第十一章",
-      "第十二章",
-      "第十三章",
-      "第十四章",
-      "第十五章",
-      "后记",
-      "插图"
-    ],
-    [
-      "第二十八卷 Unital Ring VII",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10",
-      "11",
-      "12",
-      "后记",
-      "插图"
+        [
+            "第一卷 艾恩葛朗特",
+            "一卷全",
+            "插图"
+        ],
+        [
+            "第二卷 艾恩葛朗特",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第三卷 妖精之舞",
+            "序章",
+            "第一章",
+            "第二章",
+            "第三章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第四卷 妖精之舞",
+            "序章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第五卷 幽灵子弹",
+            "序章",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第六卷 幽灵子弹",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "第十二章",
+            "第十三章",
+            "第十四章",
+            "第十五章",
+            "第十六章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第七卷 圣母圣咏",
+            "序",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "第十二章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第八卷 Early and Late",
+            "圈内事件",
+            "圣剑",
+            "起始之日",
+            "后记",
+            "插图"
+        ],
+        [
+            "第九卷 Alicization Beginning",
+            "序幕I 人界历三七二年七月",
+            "序幕II 公元二〇二六年六月",
+            "转章I",
+            "第一章 UnderWorld 人界历三七八年三月",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十卷 Alicization Running",
+            "第二章 Alicization计划 西元二〇二六年七月",
+            "第三章 萨卡和亚剑术大会 人界历三七八年八月",
+            "第四章 帝立修剑学院 人界历三八〇年三月",
+            "转章Ⅱ",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 1",
+            "无星夜的咏叹调",
+            "幕间 胡须的理由",
+            "幻胧剑之回旋曲",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十一卷 Alicization Turning",
+            "第五章 右眼的封印 人界历三八〇年五月",
+            "转章Ⅲ",
+            "第六章 囚犯与骑士 人界历三八〇年五月",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十二卷 Alicization Rising",
+            "第七章 两名管理者 人界历三八〇年五月",
+            "第八章 中央大教堂 人界历三八〇年五月",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十三卷 Alicization Dividing",
+            "转章Ⅳ 西历二〇二六年七月六日",
+            "第九章 整合骑士爱丽丝 人界历三八〇年五月",
+            "第十章 整合骑土长贝尔库利 人界历三八〇年五月",
+            "第十一章 元老院的秘密 人界历三八〇年五月",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 2",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十四卷 Alicization Uniting",
+            "序章",
+            "第十二章 最高祭司Administrator 人界历三八〇年五月",
+            "第十三章 决战 人界历三八〇年五月",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十五卷 Alicization Invading",
+            "第十四章 盗魂者（Subtilizer）西历二〇二六年六月～七月",
+            "第十五章 于北方之地 人界历三八〇年十月",
+            "第十六章 袭击Ocean Turtle 西元二〇二六年七月",
+            "第十七章 黑暗领域 人界历三八〇年十一月",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 3",
+            "序",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "后记",
+            "插图"
+        ],
+        [
+            "官方同人志 Material Edition",
+            "ME04 冰冷的手，温暖的心",
+            "ME05 鼠尾草",
+            "ME06 阿尔格特的决斗",
+            "番外 唯一的究极手段",
+            "ME10 16.6",
+            "ME11 16.7",
+            "ME12 16.8",
+            "ME13 16.9",
+            "ME14 Sugary Days 5",
+            "ME14 Sugary Days 6"
+        ],
+        [
+            "第十六卷 Alicization Exploding",
+            "第十八章 地底世界大战 人界历三八〇年十一月七日 午后六点",
+            "第十九章 光之巫女 人界历三八〇年十一月七日 午后八点",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 4",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "第十二章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十七卷 Alicization Awakening",
+            "第二十章 各自的战斗 西历二〇二六年七月七日/人界历三八〇年十一月七日",
+            "第二十一章 觉醒 西历二〇二六年七月七日/人界历三八〇年十一月七日",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十八卷 Alicization Lasting",
+            "第二十一章 觉醒（承前）",
+            "第二十二章 决战",
+            "第二十三章 回归",
+            "终幕 西元二〇二六年八月",
+            "序幕Ⅲ",
+            "后记",
+            "插图"
+        ],
+        [
+            "第十九卷 Moon Cradle",
+            "序",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十卷 Moon Cradle",
+            "序",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 5",
+            "黄金定律的卡农 序",
+            "黄金定律的卡农 1",
+            "黄金定律的卡农 2",
+            "黄金定律的卡农 3",
+            "黄金定律的卡农 4",
+            "黄金定律的卡农 5",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十一卷 Unital Ring I",
+            "序",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 6",
+            "黄金定律的卡农 6",
+            "黄金定律的卡农 7",
+            "黄金定律的卡农 8",
+            "黄金定律的卡农 9",
+            "黄金定律的卡农 10",
+            "黄金定律的卡农 11",
+            "黄金定律的卡农 12",
+            "黄金定律的卡农 13",
+            "黄金定律的卡农 14",
+            "黄金定律的卡农 15",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十二卷 Kiss And Fly",
+            "The day before",
+            "The day after",
+            "彩虹桥",
+            "Sisters’ Prayer",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十三卷 Unital Ring II",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十四卷 Unital Ring III",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十五卷 Unital Ring IV",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "后记",
+            "插图"
+        ],
+        [
+            "Progressive 7 赤色焦热的狂想曲 上",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "第十二章",
+            "第十三章",
+            "后记",
+            "插图"
+        ],
+        [
+            "BD特典小说 UW篇 IF线",
+            "If You Were Here",
+            "If You Wish It",
+            "If We Could Walk Together"
+        ],
+        [
+            "第二十六卷 Unital Ring V",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "第十二章",
+            "第十三章",
+            "第十四章",
+            "第十五章",
+            "第十六章",
+            "第十七章",
+            "第十八章",
+            "第十九章",
+            "第二十章",
+            "第二十一章",
+            "第二十二章",
+            "第二十三章",
+            "后记",
+            "插图"
+        ],
+        [
+            "短篇",
+            "温泉篇",
+            "天青色的妖精",
+            "LISBETH EDITION 水之音，锤之音",
+            "SILICA EDITION 冬日暖阳",
+            "PINA EDITION 第十四次的秋天",
+            "虹之桥",
+            "16.8.5",
+            "伤害的界限突破",
+            "Objectors! ~VRMMO开发秘话~",
+            "魔法科高校的劣等生×SAO联合企划 刀剑神域篇",
+            "画集短篇 Chromatic Colors",
+            "画集短篇 Prismatic Colors",
+            "电击文库25周年超感谢祭 夏天的结束与草帽",
+            "电击文库2015周年超感谢祭 防御力 攻击力",
+            "电击文库超感谢Fair2021 Blueish Memory",
+            "电击文库超感谢Fair2022 再访第七层"
+        ],
+        [
+            "剧场版特典小说",
+            "《序列之争》观影特典 希望之歌",
+            "《序列之争》BD特典 Cordial Chord",
+            "Progressive 来场特典 开服次日",
+            "Progressive BD特典 Memorable Song"
+        ],
+        [
+            "Progressive 8 赤色焦热的狂想曲 下",
+            "第十四章",
+            "第十五章",
+            "第十六章",
+            "第十七章",
+            "第十八章",
+            "第十九章",
+            "第二十章",
+            "第二十一章",
+            "第二十二章",
+            "第二十三章",
+            "第二十四章",
+            "第二十五章",
+            "第二十六章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十七卷 Unital Ring VI",
+            "第一章",
+            "第二章",
+            "第三章",
+            "第四章",
+            "第五章",
+            "第六章",
+            "第七章",
+            "第八章",
+            "第九章",
+            "第十章",
+            "第十一章",
+            "第十二章",
+            "第十三章",
+            "第十四章",
+            "第十五章",
+            "后记",
+            "插图"
+        ],
+        [
+            "第二十八卷 Unital Ring VII",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "后记",
+            "插图"
+        ]
     ]
-  ]
     a = DownloadTask(numname='-2')
     a.rname = 'D:/HuaweiMoveData/Users/he660/Desktop/test'
     a.name = '刀剑神域(SAO／ALO／GGO／UW)'

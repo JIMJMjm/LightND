@@ -13,7 +13,7 @@ from docx import Document
 import yaml
 
 from netwk import get_full_hmz, decode_add
-from config import CONFIG, save_json, read_json, LANG
+from config import CONFIG, save_json, read_json, LANG, ordered_ldr
 
 ldr = os.listdir
 ext = os.path.exists
@@ -127,23 +127,6 @@ def put_pict(doc, picture):
         doc.add_picture(picture, height=Cm(22.8))
         return
     doc.add_picture(picture, width=Cm(15.2))
-
-
-def ordered_ldr(path, typ='.txt'):
-    pre_ldrlist = ldr(path)
-    b_ill = False
-    if '插图' in pre_ldrlist:
-        pre_ldrlist.remove('插图')
-        b_ill = True
-    ldrlist = []
-    for i in pre_ldrlist:
-        try:
-            ldrlist.append(int(i.split('.')[0]))
-        except ValueError:
-            continue
-    ldrlist.sort()
-    ldrlist = [str(i) + typ for i in ldrlist]
-    return ldrlist, b_ill
 
 
 def ordered_volumes(path, all_):

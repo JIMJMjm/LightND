@@ -9,8 +9,9 @@ from config import LANG
 
 INDEX = 0
 
+
 class TaskWidget(QWidget):
-    def __init__(self, bankinfo: list,task_type: str, uid: int, parent=None):
+    def __init__(self, bankinfo: list, task_type: str, uid: int, parent=None):
         super().__init__(parent)
         self.setFixedSize(600, 150)
         self.numname, self.name = bankinfo[:2]
@@ -109,7 +110,7 @@ class MissionWindow(QDialog):
             if i[-1] in ind:
                 self.tasklist.remove(i)
 
-    def addTask(self, task:list):
+    def addTask(self, task: list):
         global INDEX
         self.tasklist.append(list(task) + [INDEX])
         self.scroll.addWidget(TaskWidget(bankinfo=task[:2], task_type=task[-1], uid=INDEX))
@@ -118,8 +119,9 @@ class MissionWindow(QDialog):
 
 def activate():
     app = QApplication([])
-    window = TaskWidget(bankinfo=['3057', '关于我在无意间被隔壁的天使变成废柴这件事(关于邻家的天使大人不知不觉把我惯成了废人这档子事)'],
-                        task_type='TEXTER', uid=1)
+    window = TaskWidget(
+        bankinfo=['3057', '关于我在无意间被隔壁的天使变成废柴这件事(关于邻家的天使大人不知不觉把我惯成了废人这档子事)'],
+        task_type='TEXTER', uid=1)
     window.show()
     sys.exit(app.exec())
 
@@ -127,7 +129,9 @@ def activate():
 def activate2():
     app = QApplication([])
     window = MissionWindow()
-    window.addTask(['3057', '关于我在无意间被隔壁的天使变成废柴这件事(关于邻家的天使大人不知不觉把我惯成了废人这档子事)', 'TEXTER'])
+    window.addTask(
+        ['3057', '关于我在无意间被隔壁的天使变成废柴这件事(关于邻家的天使大人不知不觉把我惯成了废人这档子事)',
+         'TEXTER'])
     window.show()
     sys.exit(app.exec())
 
