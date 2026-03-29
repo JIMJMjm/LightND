@@ -1,11 +1,15 @@
 import json
-from os.path import exists as ext
+from os.path import exists as ext, getctime as gct
 from os import listdir as ldr
+from datetime import datetime
+from time import mktime as mkt, sleep
+from typing import Literal
+
 from pypinyin import slug
 
-from book_struct import BankedBook
-from netwk import get_full_hmz
-from config import save_json, CONFIG
+from book_struct import BankedBook, BookLuxury, HmzedBook
+from netwk import get_fullinfo
+from config import save_json, CONFIG, confirm_name, read_json, find_hmz
 from prg_export import save_as_rmz as savermz
 
 NUMNAME, NAME, WRITER, GENRE, BUNKO = 0, 1, 2, 3, 4
@@ -13,51 +17,61 @@ BANK_PATH = CONFIG['BANK_PATH']
 RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 
 
-def read_hmz_par(hmz):
-    with open(hmz, 'r', encoding='utf-8') as f:
-        hmzfile = json.load(f)
-    try:
-        return hmzfile['numname'], hmzfile['name'], hmzfile['writer'], hmzfile['genre'], hmzfile['bunko']
-    except KeyError:
-        numname = hmz[:-4].split('/')[-1]
-        print(f"Update Required! Auto updating {numname}...")
-        hmzfile = get_full_hmz(numname, hmz)
-        save_json(hmz, hmzfile)
-        print("Updated!")
-        print('Sleeping...')
-        # time.sleep(0.8)
-        return hmzfile['numname'], hmzfile['name'], hmzfile['writer'], hmzfile['genre'], hmzfile['bunko']
+def getCreateTime(file: str, return_type: Literal[0, 1] = 1):
+    """
+
+    :param file:
+    :param return_type: 1 for int time stamp; 0 for time string.
+    :return:
+    """
+    if return_type == 1:
+        return int(gct(file))
+    return datetime.fromtimestamp(getCreateTime(file)).strftime("%Y/%m/%d %H:%M:%S")
+
+
+def getTimeStampFromString(timestr: str) -> int:
+    big = timestr.split(' ')
+    ymd = [int(i) for i in big[0].split('/')]
+    hms = [int(i) for i in big[1].split(':')]
+    time_tpl = (*ymd, *hms, 0, 0, 0)
+    return int(mkt(time_tpl))  # NOQA
+
+
+def read_hmz_par(hmzpath: str) -> HmzedBook:
+    numname = hmzpath[:-4].split('/')[-1]
+    print(f"Update Required! Auto updating {numname}...")
+    hmzedbook = get_fullinfo(numname, return_type=1)
+    hmzedbook.save_at(hmzpath)
+    print("Updated!")
+    sleep(0.2)
+    return hmzedbook
 
 
 def generate_book_bank():
-    base_path = BANK_PATH
-    all_items = ldr(base_path)
-    folders = [item for item in all_items if '.' not in item]
+    folders = [item for item in ldr(BANK_PATH) if '.' not in item]
     pre_books = []
     for item in folders:
-        folder_path = base_path + '/' + item
-        hmz_file = next(
-            (j for j in ldr(folder_path) if '.hmz' in j),
-            None
-        )
+        folder_path = f'{BANK_PATH}/{item}'
+        hmz_file = find_hmz(folder_path)
         if hmz_file is not None:
             pre_books.append(read_hmz_par(f'{folder_path}/{hmz_file}'))
     save_as_bank(pre_books)
 
 
-def save_as_bank(bank: list[BankedBook]):
-    bank_dict = [i.toDict for i in bank]
+def save_as_bank(bank: list[BankedBook], simple_mode=False):
+    bank_dict = [i.toDict() for i in bank]
     with open('bank.json', 'w', encoding='utf-8') as f:
-        # noinspection PyTypeChecker
-        json.dump(bank_dict, f, indent=2, ensure_ascii=False)
+        if simple_mode:
+            json.dump(bank_dict, f, ensure_ascii=False, separators=(',', ':'))
+        else:
+            json.dump(bank_dict, f, indent=2, ensure_ascii=False)
     return 0
 
 
 def read_bank_file():
     if not ext('bank.json'):
         generate_book_bank()
-    with open('bank.json', 'r', encoding='utf-8') as f:
-        bookbank = json.load(f)
+    bookbank = read_json('bank.json')
     newbookbank = [BankedBook(**i) for i in bookbank]
     return newbookbank
 
@@ -79,6 +93,8 @@ def add_to_bank(new_book: BankedBook):
             savermz(1, i.toDict(), RMZ_EXPORT_PATH)
             bank.remove(i)
             break
+    if new_book.directory == BANK_PATH:
+        new_book.directory = ''
     bank.append(new_book)
     save_as_bank(bank)
     return 0
@@ -261,6 +277,32 @@ def activate():
     print(order_bank((NUMNAME, '+'), filter_bank((BUNKO, "MF文库J"))))
 
 
+def update_to_date():
+    bank = read_json('bank.json')
+    new_bank = []
+    for i in bank:
+        if len(i) < 6:
+            new_lux = BookLuxury()
+        else:
+            new_lux = i[5]
+            new_lux['lck'] = getTimeStampFromString(new_lux['lck']) if new_lux['lck'] else None
+            new_lux = BookLuxury(**new_lux)
+
+        new_book = BankedBook(numname=i[0], name=i[1], writer=i[2], genre=i[3], bunko=i[4], lux=new_lux,
+                              addtime=getCreateTime(f'D:/ACGN/Novel/{confirm_name(i[1])}/{i[0]}.hmz'),
+                              directory="D:/ACGN/Novel")
+        new_bank.append(new_book)
+    save_as_bank(new_bank)
+
+
+def post_process():
+    bank = read_bank_file()
+    for i in bank:
+        if i.directory == BANK_PATH:
+            i.directory = ''
+    save_as_bank(bank)
+
+
 if __name__ == '__main__':
-    pass
+    post_process()
     # generate_book_bank()

@@ -12,8 +12,8 @@ from docx.shared import RGBColor, Cm, Pt
 from docx import Document
 import yaml
 
-from netwk import get_full_hmz, decode_add
-from config import CONFIG, save_json, read_json, LANG, ordered_ldr
+from netwk import get_fullinfo, decode_add
+from config import CONFIG, save_json, read_json, LANG, ordered_ldr, makedir, find_hmz
 
 ldr = os.listdir
 ext = os.path.exists
@@ -23,29 +23,12 @@ ENABLE_PANDOC: bool = CONFIG['ENABLE_PANDOC']
 COMPLICATE_SLICE_NAME: bool = CONFIG["COMPLICATE_SLICE_NAME"]
 
 
-def makedir(fname):
-    if not os.path.exists(fname):
-        os.mkdir(fname)
-
-
-def find_hmz(path):
-    """
-
-    :param path:
-    :return: Only the filename without global path.
-    """
-    for i in ldr(path):
-        if '.hmz' in i:
-            return i
-    return 0
-
-
 def read_hmz(filepath, complicated=False, source=False):
     try:
         hmz = read_json(filepath)
     except (json.JSONDecodeError, UnicodeDecodeError):
         numnm = filepath.split('/')[-1][:-4]
-        hmz = get_full_hmz(numnm, filepath)
+        hmz = get_fullinfo(numnm, filepath)
         save_json(filepath, hmz)
     if source:
         return hmz
@@ -264,8 +247,8 @@ class HFolder(object):
             inpu = f'{self.folder}/{self.name}.docx'
             oupu = f'{self.folder}/{self.name}.epub'
             if ENABLE_PANDOC:
-                convert_to_epub_pandoc(inpu, oupu, self.name, self.writer, self.numname, self.bunko,
-                                       cover=self.cover, discription=self.discription)
+                convert2epub_pandoc(inpu, oupu, self.name, self.writer, self.numname, self.bunko,
+                                    cover=self.cover, discription=self.discription)
                 return 0
             convert_to_epub(inpu, oupu, self.name, writer=self.writer, cover=self.cover)
             return 0
@@ -275,7 +258,7 @@ class HFolder(object):
             fname = i.split('/')[-1][:-5]
             oupu = f'{self.folder}/Volume_epub/{fname}.epub'
             if ENABLE_PANDOC:
-                convert_to_epub_pandoc(i, oupu, fname, writer=self.writer, cover=cov, numname=self.numname)
+                convert2epub_pandoc(i, oupu, fname, writer=self.writer, cover=cov, numname=self.numname)
                 continue
             convert_to_epub(i, oupu, fname, writer=self.writer, cover=cov)
         return None
@@ -353,12 +336,12 @@ def convert_to_azw3(pt, final_pt, author='', cover=''):
     runcommand(command)
 
 
-def generate_yaml(name, writer, bunko, cover=None, discription=None):
+def generate_yaml(name, writer, bunko, cover=None, description=None):
     metadata = {'title': [{'type': 'main', 'text': name}],
                 'creator': [{'role': 'writer', 'text': writer}],
                 'publisher': bunko,
                 'cover-image': cover,
-                'description': discription}
+                'description': description}
     with nft("w", encoding="utf-8", delete=False) as y:
         y.write('---\n')
         yaml.dump(metadata, y, allow_unicode=True, indent=2, sort_keys=False, default_flow_style=False)
@@ -366,7 +349,7 @@ def generate_yaml(name, writer, bunko, cover=None, discription=None):
         return y.name
 
 
-def convert_to_epub_pandoc(input_, output_, name, writer, numname, *args, cover: str = None, **kwargs):
+def convert2epub_pandoc(input_, output_, name, writer, numname, *args, cover: str = None, **kwargs):
     bunko = args[0] if args else None
     discription = kwargs.get('discription', None)
     if cover is None:
@@ -396,11 +379,11 @@ def activate():
 
 
 def activate2():
-    convert_to_epub_pandoc('D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.docx',
+    convert2epub_pandoc('D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.docx',
                            'D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.epub',
                            'Re: 从零开始的异世界生活', '长月达平', 'MF文库J',
-                           cover='D:/Program Files/LightND/images/thumbnails/1861.jpg',
-                           discription='走出便利商店要回家的高中生‧菜月昴突然被召唤到异世界。\n'
+                        cover='D:/Program Files/LightND/images/thumbnails/1861.jpg',
+                        discription='走出便利商店要回家的高中生‧菜月昴突然被召唤到异世界。\n'
                                        '这莫非就是很流行的异世界召唤!?可是眼前没有召唤者就算了，还遭遇强盗迅速面临性命危机。'
                                        '\n这时，一名神秘银发美少女和猫精灵拯救了一筹莫展的他。'
                                        '\n以报恩为名义，昴自告奋勇要帮助少女找东西。'

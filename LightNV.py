@@ -14,8 +14,7 @@ from downloadprocess import DownloadTask, confirm_name, get_img
 from netwk import get_alllist
 from prg_export import save_as_rmz, read_from_rmz
 from prg_import import RmzImportWindow
-from txtprocess import HFolder as HFd, convert_to_epub, find_hmz, NotAHFolderError, read_hmz, get_cover_from, \
-    convert_to_epub_pandoc
+from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, read_hmz, get_cover_from, convert2epub_pandoc
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
                       filter_liked_bw as flb, order_bank_ranked as odr, generate_book_bank)
@@ -23,7 +22,7 @@ from ui_LightNV import Ui_MainWindow
 from ui_bookwidget import BookWidget as BkWt
 from ui_config import Ui_Config
 from ui_ctask import DetailedWindow, get_default_name, restore_from_default_name
-from config import CONFIG, succeeded
+from config import CONFIG, succeeded, find_hmz
 from ui_missions import MissionWindow
 from ui_tdl import EditableTableWindow
 from ui_update import UpdateWindow
@@ -281,12 +280,12 @@ class MainWindow(QMainWindow):
         UI = self.ui
         converter_paras = [UI.COutput.text(), UI.CTitle.text(), UI.CWriter.text(), UI.CCover.text()]
         if ENABLE_PANDOC:
-            convert_to_epub_pandoc(self.converter_goal,
-                                   UI.COutput.text(),
-                                   UI.CTitle.text(),
-                                   UI.CWriter.text(),
-                                   numname=-1,
-                                   cover=UI.CCover.text())
+            convert2epub_pandoc(self.converter_goal,
+                                UI.COutput.text(),
+                                UI.CTitle.text(),
+                                UI.CWriter.text(),
+                                numname=-1,
+                                cover=UI.CCover.text())
             succeeded()
             return
         convert_to_epub(self.converter_goal, *converter_paras)

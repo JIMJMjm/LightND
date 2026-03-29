@@ -1,6 +1,6 @@
 import json
 from os.path import exists as ext
-from os import listdir as ldr
+from os import listdir as ldr, makedirs as mkd
 
 from winsound import PlaySound
 
@@ -22,7 +22,8 @@ DEFAULT_SETTING = {
     "DEFAULT_COVER": "images/uncovered.jpg",
     "LANGUAGE": "en-US",
     "SHOW_FORMATED_FILE": True,
-    "AUTO_UNLOCK_TEXTER": False
+    "AUTO_UNLOCK_TEXTER": False,
+    "SIMPLE_BANK_FILE": False
 }
 
 
@@ -64,6 +65,24 @@ def read_json(path):
         return json.load(f)
 
 
+def makedir(fname):
+    if not ext(fname):
+        mkd(fname)
+
+
+def find_hmz(path, default=None):
+    """
+
+    :param default: Default return value
+    :param path:
+    :return: Only the filename without global path.
+    """
+    for i in ldr(path):
+        if i.endswith('.hmz'):
+            return i
+    return default
+
+
 def get_global_settings(reset: bool = False) -> dict:
     if (not ext('config.json')) or reset:
         save_json('config.json', DEFAULT_SETTING)
@@ -82,7 +101,7 @@ def confirm_name(name_c):
     if '?' in name_c:
         name_c = name_c.replace('?', '？')
     if '\\' in name_c:
-        name_c = name_c.replace('\\', '／')
+        name_c = name_c.replace('\\', '＼')
     if '|' in name_c:
         name_c = name_c.replace('|', '、')
     if '<' in name_c:
@@ -90,7 +109,7 @@ def confirm_name(name_c):
     if '>' in name_c:
         name_c = name_c.replace('>', '》')
     if '*' in name_c:
-        name_c = name_c.replace('*', '∆')
+        name_c = name_c.replace('*', '✱')
     if '\"' in name_c:
         name_c = name_c.replace('\"', '\'')
     return name_c
@@ -249,6 +268,11 @@ def translate_to(code: str) -> dict[str, str]:
                     'en-US': "Auto unlock the option restriction in Texter.\nDefault: False.",
                     'zh-CN': "自动解锁格式器选项限制。\n默认值: False。"
                 },
+                "CFG_SIMPLE_BANK_FILE": {
+                    'en-US': "Toggle if the bank.json is more readable(False) or space-efficient(True)."
+                             "\nDefault: False.",
+                    'zh-CN': "切换bank.json是否更易读（False）或更省空间（True）。\n默认值: False。"
+                },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
                 "CFG_apply": {'en-US': "Apply", 'zh-CN': "应用"},
@@ -317,4 +341,5 @@ CONFIG_NOTATION = {
     "LANGUAGE": LANG['CFG_LANGUAGE'],
     "SHOW_FORMATED_FILE": LANG['CFG_SHOW_FORMATED_FILE'],
     "AUTO_UNLOCK_TEXTER": LANG['CFG_AUTO_UNLOCK_TEXTER'],
+    "SIMPLE_BANK_FILE": LANG['CFG_SIMPLE_BANK_FILE'],
 }

@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 
-from config import save_json, CONFIG
+from typing_extensions import overload
+
+from config import save_json, CONFIG, confirm_name
 
 
 class Book:
     def __init__(self, *, numname: str, name: str, writer: str):
-        self.name = name
+        self.name = confirm_name(name)
         self.numname = numname
         self.writer = writer
 
@@ -33,25 +35,45 @@ class BookLuxury:
     prg: list = field(default_factory=list)
     rtg: dict = field(default_factory=dict)
     fav: int = 0
-    lck: str = ''
+    lck: int = 0
+
+    def toDict(self):
+        return {
+            'prg': self.prg,
+            'rtg': self.rtg,
+            'fav': self.fav,
+            'lck': self.lck
+        }
 
 
 class BankedBook(Book):
+    @overload
     def __init__(self, *, numname, name, writer,
-                 bunko: str, genre: list[str], addtime: str, lux: BookLuxury, directory=''):
+                 bunko: str, genre: list[str], addtime: str, lux: dict, directory=''):...
+
+    @overload
+    def __init__(self, *, numname, name, writer,
+                 bunko: str, genre: list[str], addtime: str, lux: BookLuxury, directory=''): ...
+
+    def __init__(self, *, numname, name, writer,
+                 bunko: str, genre: list[str], addtime: str, lux: BookLuxury | dict,
+                 directory=''):
         """
         The book data to be stored in ``book.json``
         :param bunko:
         :param genre:
         :param addtime: The addtime of the book
-        :param lux: Luxury data.
+        :param lux: Luxury data. Input as dict or BookLuxury.
         :param directory: The directory ``{{numname}}.hmz`` is at.
         """
         super().__init__(numname=numname, name=name, writer=writer)
         self.bunko = bunko
         self.genre = genre
         self.addtime = addtime
-        self.lux = lux
+        if isinstance(lux, BookLuxury):
+            self.lux = lux
+        else:
+            self.lux = BookLuxury(**lux)
         self.directory = directory
 
     def toDict(self):
@@ -62,7 +84,7 @@ class BankedBook(Book):
             'bunko': self.bunko,
             'genre': self.genre,
             'addtime': self.addtime,
-            'lux': self.lux,
+            'lux': self.lux.toDict(),
             'directory': self.directory
         }
 
@@ -91,7 +113,6 @@ class HmzedBook(Book):
     def save_at(self, directory: str | None = None) -> None:
         if directory is None:
             directory = CONFIG['BANK_PATH']
-
         save_json(directory, self.toDict())
 
 

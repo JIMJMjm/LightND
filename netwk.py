@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup as bs
 import urllib3
 
 from config import CONFIG
+from book_struct import HmzedBook, BankedBook
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                         'Chrome/138.0.0.0 Safari/537.36'}
@@ -218,14 +219,29 @@ def get_alllist(numname: str, typ: str = 'allnet'):
         return alllist
 
 
-def get_full_hmz(numname, filepath=None, save=True):
+@overload
+def get_fullinfo(numname: str, return_type: Literal[0]) -> dict: ...
+
+
+@overload
+def get_fullinfo(numname: str, return_type: Literal[1]) -> HmzedBook: ...
+
+
+def get_fullinfo(numname: str, return_type: Literal[0, 1]):
+    """
+
+    :param numname:
+    :param return_type: 1 for hmzBook, 0 for dict.
+    :return:
+    """
     modl = numname[0] if len(numname) > 3 else '0'
     allnet, allname = GetRq(f'https://www.wenku8.cc/novel/{modl}/{numname}/index.htm').run('i')
-    name, writer, discrp, genre, bunko, cy = GetRq(f'https://www.wenku8.cc/book/{numname}.htm').run('b')
-    if not save:
-        return name, writer, discrp, genre, bunko, allnet, allname, cy
+    name, writer, descrp, genre, bunko, cy = GetRq(f'https://www.wenku8.cc/book/{numname}.htm').run('b')
 
-    g_dir = '/'.join(filepath.split('/')[:-2])
-    return {'name': name, 'writer': writer, 'allnet': allnet,
-            'allname': allname, 'directory': g_dir, 'discription': discrp,
-            'genre': genre, 'bunko': bunko, 'numname': numname}
+    if not return_type:
+        return {'numname': numname, 'name': name, 'writer': writer,
+                'allnet': allnet, 'allname': allname, 'description': descrp,
+                'genre': genre, 'bunko': bunko, 'copyright': cy, }
+
+    return HmzedBook(numname=numname, name=name, writer=writer,
+                     allnet=allnet, allname=allname, description=descrp)

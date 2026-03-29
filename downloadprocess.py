@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from winsound import PlaySound
 
 from book_struct import HmzedBook, BankedBook, BookLuxury
-from netwk import GetRq, get_full_hmz
+from netwk import GetRq, get_fullinfo
 import bookbank
 from config import save_json, CONFIG, confirm_name, LANG, ordered_ldr
 
@@ -87,7 +87,7 @@ class DownloadTask(object):
         modl = numname[0] if len(numname) > 3 else '0'
         self.thisurl = f'https://www.wenku8.cc/novel/{modl}/{numname}/'
 
-        name, writer, descrp, genre, bunko, allnet, allname, cprt = get_full_hmz(numname, save=False)
+        name, writer, descrp, genre, bunko, allnet, allname, cprt = get_fullinfo(numname, save=False)
         name = confirm_name(name)
 
         self.hmzbook = HmzedBook(numname=numname, name=name, writer=writer,
@@ -352,7 +352,7 @@ class DownloadTask(object):
 
                 for future in futures:
                     future.result()
-        hmz = get_full_hmz(self.numname, f'{self.rname}/{self.numname}.hmz')
+        hmz = get_fullinfo(self.numname, f'{self.rname}/{self.numname}.hmz')
         save_json(f'{self.rname}/{self.numname}.hmz', hmz)
 
         succeeded()
