@@ -1,5 +1,5 @@
-import json
-import os
+from os.path import exists as ext
+from os import listdir as ldr, unlink
 from tempfile import NamedTemporaryFile as nft
 from subprocess import run as runcommand
 
@@ -12,29 +12,13 @@ from docx.shared import RGBColor, Cm, Pt
 from docx import Document
 import yaml
 
-from netwk import get_fullinfo, decode_add
-from config import CONFIG, save_json, read_json, LANG, ordered_ldr, makedir, find_hmz
+from bookbank import read_hmz_par as read_hmz, getBookFromNumname
+from config import CONFIG, LANG, ordered_ldr, makedir, find_hmz
 
-ldr = os.listdir
-ext = os.path.exists
 FONT_SIZE = [18, 16, 15, 14]
 
 ENABLE_PANDOC: bool = CONFIG['ENABLE_PANDOC']
 COMPLICATE_SLICE_NAME: bool = CONFIG["COMPLICATE_SLICE_NAME"]
-
-
-def read_hmz(filepath, complicated=False, source=False):
-    try:
-        hmz = read_json(filepath)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        numnm = filepath.split('/')[-1][:-4]
-        hmz = get_fullinfo(numnm, filepath)
-        save_json(filepath, hmz)
-    if source:
-        return hmz
-    if not complicated:
-        return hmz['name'], hmz['writer'], hmz['allnet'], hmz['allname']
-    return hmz['name'], hmz['writer'], hmz['allnet'], hmz['allname'], hmz['bunko'], hmz['discription']
 
 
 # noinspection PyProtectedMember
@@ -142,9 +126,9 @@ def Novel_docx():
 
 
 def get_cover_from(volume):
-    if '插图' not in ldr(volume):
+    if '插图' not in ldr(volume) or not ldr(f'{volume}/插图'):
         return ''
-    return volume + '/插图/' + ordered_ldr(f'{volume}/插图', '.jpg')[0][0]
+    return f'{volume}/插图/' + ordered_ldr(f'{volume}/插图', '.jpg')[0][0]
 
 
 class NotAHFolderError(Exception):
@@ -162,15 +146,12 @@ class HFolder(object):
 
         self.hmz = find_hmz(folder_adr)
         self.numname = self.hmz.split('.')[0] if self.hmz else ''
-        if ENABLE_PANDOC:
-            hmzfile = read_hmz(self.folder + '/' + self.hmz, complicated=True)
-            self.name, self.writer, self.allnet, self.allname, self.bunko, self.discription = hmzfile
-        else:
-            hmzfile = read_hmz(self.folder + '/' + self.hmz)
-            self.name, self.writer, self.allnet, self.allname = hmzfile
-            self.bunko = ''
-            self.discription = ''
 
+        hmzfile = read_hmz(f'{self.folder}/{self.hmz}')
+        _, self.name, self.writer, self.allnet, self.allname, self.description = hmzfile.toDict().values()
+        self.bunko = ''
+        if ENABLE_PANDOC:
+            self.bunko = getBookFromNumname(self.numname).bunko
         self.volumes = [i[0] for i in self.allnet]
         dfc = get_cover_from(f'{self.globa}{self.name}/{self.volumes[0]}')
         self.cover = dfc if ext(dfc) else None
@@ -248,7 +229,7 @@ class HFolder(object):
             oupu = f'{self.folder}/{self.name}.epub'
             if ENABLE_PANDOC:
                 convert2epub_pandoc(inpu, oupu, self.name, self.writer, self.numname, self.bunko,
-                                    cover=self.cover, discription=self.discription)
+                                    cover=self.cover, discription=self.description)
                 return 0
             convert_to_epub(inpu, oupu, self.name, writer=self.writer, cover=self.cover)
             return 0
@@ -362,7 +343,7 @@ def convert2epub_pandoc(input_, output_, name, writer, numname, *args, cover: st
                f'--metadata-file={y}', f'--css={'appending.css'}']
     runcommand(command)
     try:
-        os.unlink(y)
+        unlink(y)
     finally:
         pass
 
@@ -380,24 +361,21 @@ def activate():
 
 def activate2():
     convert2epub_pandoc('D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.docx',
-                           'D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.epub',
-                           'Re: 从零开始的异世界生活', '长月达平', 'MF文库J',
+                        'D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.epub',
+                        'Re: 从零开始的异世界生活', '长月达平', 'MF文库J',
                         cover='D:/Program Files/LightND/images/thumbnails/1861.jpg',
                         discription='走出便利商店要回家的高中生‧菜月昴突然被召唤到异世界。\n'
-                                       '这莫非就是很流行的异世界召唤!?可是眼前没有召唤者就算了，还遭遇强盗迅速面临性命危机。'
-                                       '\n这时，一名神秘银发美少女和猫精灵拯救了一筹莫展的他。'
-                                       '\n以报恩为名义，昴自告奋勇要帮助少女找东西。'
-                                       '\n然而，好不容易才掌握到线索，昴和少女却被不明人士攻击而殒命──本来应该是这样，但回过神来，昴却发现自己置身在第一次被召唤到这个异世界时的所在位置。'
-                                       '\n「死亡回归」──无力的少年得到的唯一能力，是死后时间会倒转回到一开始。跨越无数绝望，从死亡的命运中拯救少女！')
+                                    '这莫非就是很流行的异世界召唤!?可是眼前没有召唤者就算了，还遭遇强盗迅速面临性命危机。'
+                                    '\n这时，一名神秘银发美少女和猫精灵拯救了一筹莫展的他。'
+                                    '\n以报恩为名义，昴自告奋勇要帮助少女找东西。'
+                                    '\n然而，好不容易才掌握到线索，昴和少女却被不明人士攻击而殒命──本来应该是这样，但回过神来，昴却发现自己置身在第一次被召唤到这个异世界时的所在位置。'
+                                    '\n「死亡回归」──无力的少年得到的唯一能力，是死后时间会倒转回到一开始。跨越无数绝望，从死亡的命运中拯救少女！')
 
 
 def activate3():
-    convert_to_azw3("D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.epub", 'D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.azw3', 'mr')
-
-
-def activate4():
-    print(decode_add('D:/ACGN/Novel/无职转生～到了异世界就拿出真本事～(无职转生~在异世界认真地活下去~)/第一卷 幼年期/插图/66110.jpg'))
+    convert_to_azw3("D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.epub",
+                    'D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.azw3', 'mr')
 
 
 if __name__ == '__main__':
-    activate4()
+    pass

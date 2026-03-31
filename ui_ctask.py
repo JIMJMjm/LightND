@@ -4,8 +4,9 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QDialog, QPushButton, QCheckBox, QLabel, QFrame
 
 from BySide import ScrollField, ClickableLabel, WidgetGrid
+from book_struct import BankedBook
 from rating import StarRatingWidget as Rtw
-from config import LUXINFO_TEMPLATE, LANG
+from config import LANG
 
 EMPTY = QtCore.Qt.CheckState(0)
 HALF = QtCore.Qt.CheckState(1)
@@ -308,7 +309,7 @@ class VolumeWidget_R(QWidget):
 class DetailedWindow(QDialog):
     Close_as_dia = Signal()
 
-    def __init__(self, volume_details, chapters: bool = False, ratings: bool = False, bankinfo=None):
+    def __init__(self, volume_details, bankinfo: BankedBook | None, chapters: bool = False, ratings: bool = False):
         """
 
         :param volume_details: [title, img_path, *volinfo]
@@ -359,8 +360,6 @@ class DetailedWindow(QDialog):
 
         self.startFBT.setText(LANG['CFG_save'])
         self.startFBT.clicked.connect(self.save_quit_bt)
-        if len(bankinfo) < 6:
-            bankinfo.append(LUXINFO_TEMPLATE())
         self.bankinfo = bankinfo
 
         if chapters:
@@ -387,7 +386,7 @@ class DetailedWindow(QDialog):
         self.Close_as_dia.emit()
 
     def generate_Rwidget(self):
-        rts = self.bankinfo[5]['rtg']
+        rts = self.bankinfo.lux.rtg
         for i in self.volumes:
             rti = 0 if rts == 0 else rts.get(i, 0)
             self.scroll_area.addWidget(VolumeWidget_R(i, parent=None, ratings=rti))
@@ -408,7 +407,7 @@ class DetailedWindow(QDialog):
         return None
 
     def generate_Cwidget(self):
-        prg = self.bankinfo[5]['prg']
+        prg = self.bankinfo.lux.prg
         for i in self.volumes:
             prgi = self._get_prgi(i, prg)
             self.scroll_area.addWidget(VolumeWidget(i, None, self.renderChapters, ext_chaps=prgi))
@@ -436,64 +435,5 @@ class DetailedWindow(QDialog):
         self.scroll_area.expandMainWidget((0, _exp_len))
 
 
-def activate1():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication([])
-    wd = DetailedWindow(['114514', 'images/thumbnails/1614.jpg', '1', '1', '3', '4', '5', '1', '1', '3', '4', '5', '1',
-                         '1', '3', '4', '5', '1', '1', '3', '4', '5', '7'])
-    wd.show()
-    app.exec()
-
-
-def activate2():
-    print(get_default_name([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 15, 16, 17, 19, 20, 21]))
-
-
-def activate3():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication([])
-    wd = DetailedWindow(['114514', 'images/thumbnails/1614.jpg',
-                         ['w', '1', '3', '4', '5', '1', '1', '3', '4'], ['f', '2', '3', '4', '5'],
-                         ['q', '1', 'w', '4', '5'], ['e', 'b', '3', '4', '5']], chapters=True,
-                        bankinfo=[
-                            "1861",
-                            "Re:从零开始的异世界生活",
-                            "长月达平",
-                            [
-                                "穿越",
-                                "战斗",
-                                "冒险",
-                                "后宫",
-                                "人外"
-                            ],
-                            "MF文库J",
-                            [['w', ['f', '3', '4'], 'q'], {}, 0]
-                        ])
-    wd.show()
-    app.exec()
-
-
-def activate4():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication([])
-    wd = DetailedWindow(['114514', 'images/thumbnails/1614.jpg', '1', '5', '3', '4', '6', '7'], ratings=True,
-                        bankinfo=[
-                            "1861",
-                            "Re:从零开始的异世界生活",
-                            "长月达平",
-                            [
-                                "穿越",
-                                "战斗",
-                                "冒险",
-                                "后宫",
-                                "人外"
-                            ],
-                            "MF文库J",
-                            {'prg': [], 'rtg': {'1': 4}, 'fav': 0, 'lck': ''}
-                        ])
-    wd.show()
-    app.exec()
-
-
 if __name__ == "__main__":
-    activate2()
+    pass

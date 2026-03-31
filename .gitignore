@@ -9,3 +9,5 @@ images/dt
 __pycache__
 .idea
 bank.json
+config.json
+rmz

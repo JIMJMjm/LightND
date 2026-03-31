@@ -27,13 +27,6 @@ DEFAULT_SETTING = {
 }
 
 
-def LUXINFO_TEMPLATE():
-    return {'prg': [],
-            'rtg': {},
-            'fav': 0,
-            'lck': ''}
-
-
 def ordered_ldr(path, typ='.txt'):
     pre_ldrlist = ldr(path)
     b_ill = '插图' in pre_ldrlist
@@ -50,7 +43,6 @@ def ordered_ldr(path, typ='.txt'):
     return ldrlist, b_ill
 
 
-# noinspection PyTypeChecker
 def save_json(path, content, format_=1):
     with open(path, 'w', encoding='utf-8') as f:
         if format_ == 1:
@@ -93,7 +85,7 @@ def modify_global_settings(global_settings):
     save_json('config.json', global_settings)
 
 
-def confirm_name(name_c):
+def confirm_name(name_c) -> str:
     if ':' in name_c:
         name_c = name_c.replace(':', '：')
     if '/' in name_c:
@@ -116,7 +108,7 @@ def confirm_name(name_c):
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v7.5"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.0"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
@@ -174,6 +166,7 @@ def translate_to(code: str) -> dict[str, str]:
                 "BB_od_name": {'en-US': "Name", 'zh-CN': "书名"},
                 "BB_od_numname": {'en-US': "Numname", 'zh-CN': "数字编码"},
                 "BB_od_rating": {'en-US': "Rating", 'zh-CN': "评分"},
+                "BB_od_addtime": {'en-US': "Addtime", 'zh-CN': "入库时间"},
                 "BW_rating": {'en-US': "Ratings:", 'zh-CN': "评分:"},
                 "BW_progress": {'en-US': "Progress:", 'zh-CN': "进度:"},
                 "BW_texter": {'en-US': "Texter", 'zh-CN': "格式化"},

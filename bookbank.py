@@ -1,20 +1,19 @@
-import json
-from os.path import exists as ext, getctime as gct
-from os import listdir as ldr
 from datetime import datetime
+from os import listdir as ldr
+from os.path import exists as ext, getctime as gct
 from time import mktime as mkt, sleep
 from typing import Literal
 
 from pypinyin import slug
 
 from book_struct import BankedBook, BookLuxury, HmzedBook
+from config import CONFIG, confirm_name, read_json, find_hmz, save_json
 from netwk import get_fullinfo
-from config import save_json, CONFIG, confirm_name, read_json, find_hmz
 from prg_export import save_as_rmz as savermz
 
-NUMNAME, NAME, WRITER, GENRE, BUNKO = 0, 1, 2, 3, 4
 BANK_PATH = CONFIG['BANK_PATH']
 RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
+SIMPLE_BANK_FILE = CONFIG['SIMPLE_BANK_FILE']
 
 
 def getCreateTime(file: str, return_type: Literal[0, 1] = 1):
@@ -37,13 +36,30 @@ def getTimeStampFromString(timestr: str) -> int:
     return int(mkt(time_tpl))  # NOQA
 
 
+def getTimeStringFromStamp(timestamp: int | float) -> str:
+    return datetime.fromtimestamp(timestamp).strftime("%Y/%m/%d %H:%M:%S")
+
+
 def read_hmz_par(hmzpath: str) -> HmzedBook:
-    numname = hmzpath[:-4].split('/')[-1]
-    print(f"Update Required! Auto updating {numname}...")
-    hmzedbook = get_fullinfo(numname, return_type=1)
-    hmzedbook.save_at(hmzpath)
-    print("Updated!")
-    sleep(0.2)
+    def update_hmz():
+        numname = hmzpath[:-4].split('/')[-1]
+        print(f"Update Required! Auto updating {numname}...")
+        hmzbook = get_fullinfo(numname, return_type=1)
+        hmzbook.save_at(hmzpath)
+        print("Updated!")
+        sleep(0.2)
+        return hmzbook
+
+    if not ext(hmzpath):
+        return update_hmz()
+
+    hmzedfile = read_json(hmzpath)
+    try:
+        hmzedbook = HmzedBook(**hmzedfile)
+    except Exception as e:
+        print(e)
+        return update_hmz()
+
     return hmzedbook
 
 
@@ -58,14 +74,9 @@ def generate_book_bank():
     save_as_bank(pre_books)
 
 
-def save_as_bank(bank: list[BankedBook], simple_mode=False):
+def save_as_bank(bank: list[BankedBook]):
     bank_dict = [i.toDict() for i in bank]
-    with open('bank.json', 'w', encoding='utf-8') as f:
-        if simple_mode:
-            json.dump(bank_dict, f, ensure_ascii=False, separators=(',', ':'))
-        else:
-            json.dump(bank_dict, f, indent=2, ensure_ascii=False)
-    return 0
+    return save_json('bank.json', bank_dict, format_=1 - SIMPLE_BANK_FILE)
 
 
 def read_bank_file():
@@ -76,31 +87,46 @@ def read_bank_file():
     return newbookbank
 
 
-def add_to_bank(new_book: BankedBook):
+def getBookFromNumname(numname: str) -> BankedBook | None:
+    bank = read_bank_file()
+    for i in bank:
+        if numname == i.numname:
+            return i
+    print('Book not found!')
+    return None
+
+
+def add_to_bank(new_book: BankedBook, force_cover: bool = False):
     """
     Add a new book to bank.
     If a book has changed its name, all luxury info will be deleted.
+    :param force_cover:
     :param new_book: 'BankedBook'
     :return:
     """
     bank = read_bank_file()
     for i in bank:
         if i.name == new_book.name:
-            return 0
+            if not force_cover:
+                return 0
+            bank.remove(i)
+            break
         if i == new_book:
             print(f'Bookname of {i.numname} changed from {i.name} to {new_book.name}, Luxury info will be auto saved '
                   f'as rmz and deleted from bank.')
             savermz(1, i.toDict(), RMZ_EXPORT_PATH)
             bank.remove(i)
             break
-    if new_book.directory == BANK_PATH:
+
+    if new_book.directory == BANK_PATH and SIMPLE_BANK_FILE:
         new_book.directory = ''
+
     bank.append(new_book)
     save_as_bank(bank)
     return 0
 
 
-def filter_bank(constraint: tuple):
+def filter_bank(constraint: tuple[str, str]):
     """
     To get specific book object from bw_list.
     :param constraint: tuple[order, item], as the {item} of the {order}.
@@ -108,7 +134,7 @@ def filter_bank(constraint: tuple):
     """
     order, item = constraint
     bank = read_bank_file()
-    return [i for i in bank if item in i[order]]
+    return [i for i in bank if item == i[order]]
 
 
 def filter_bw(constraint: tuple, bw_list: list) -> list:
@@ -118,6 +144,8 @@ def filter_bw(constraint: tuple, bw_list: list) -> list:
     :param constraint: tuple[order, item], as the {item} of the {order}.
     :return: list[bookwidget]
     """
+    if not constraint or not constraint[1]:
+        return bw_list
     order, item = constraint
     return [i for i in bw_list if item in i.bankinfo[order]]
 
@@ -128,30 +156,26 @@ def filter_liked_bw(liked: int, bw_list: list) -> list:
 
     rt = []
     for i in bw_list:
-        if len(i.bankinfo) < 6:
-            continue
-        if i.bankinfo[5]['fav'] and liked == 1:
+        if i.bankinfo.lux.fav and liked == 1:
             rt.append(i)
-        if not i.bankinfo[5]['fav'] and liked == 2:
+        if not i.bankinfo.lux.fav and liked == 2:
             rt.append(i)
     return rt
 
 
-def order_bank_ranked(reverse: bool, bw_list: list) -> list:
+def order_bw_ranked(reverse: bool, bw_list: list) -> list:
     pre = []
     for i in bw_list:
-        if len(i.bankinfo) < 6:
+        lux_i = i.bankinfo.lux
+        if not lux_i.rtg:
             pre.append((i, 0))
             continue
-        if not i.bankinfo[5]['rtg']:
-            pre.append((i, 0))
-            continue
-        pre.append((i, sum(i.bankinfo[5]['rtg'].values()) / len(i.bankinfo[5]['rtg'])))
+        pre.append((i, sum(lux_i.rtg.values()) / len(lux_i.rtg)))
     rt = sorted(pre, key=lambda bk: bk[1], reverse=reverse)
     return [i[0] for i in rt]
 
 
-def order_bank(constraint: tuple, bank=None):
+def order_bank(constraint: tuple, bank: list['BankedBook'] = None):
     """
     To order the bw_list as constraint ordered.
     :param bank: the bw_list-like object to order, whole bookbank by default.
@@ -160,21 +184,16 @@ def order_bank(constraint: tuple, bank=None):
     """
     if bank is None:
         bank = read_bank_file()
-    order, sgn = constraint
-    if sgn == '+':
-        sgn = 1
-    else:
-        sgn = -1
+
+    order = constraint[0]
+    sgn = True if constraint[1] == '-' else False
+
     if not order or order == 3:
-        def key(x):
-            return int(x[0]) * sgn, x[1]
+        return sorted(bank, key=lambda bk: (int(bk.numname), bk.name), reverse=sgn)
     elif order == 1:
-        def key(x):
-            return slug(x[1], separator=''), int(x[0]) * sgn
+        return sorted(bank, key=lambda bk: (slug(bk.name, separator=''), int(bk.numname)), reverse=sgn)
     else:
-        def key(x):
-            return x[order], int(x[0]) * sgn
-    return sorted(bank, key=key)
+        return sorted(bank, key=lambda bk: (bk[order], int(bk.numname)), reverse=sgn)
 
 
 def order_bw(constraint: tuple | None, bw_list: list) -> list:
@@ -188,26 +207,26 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
         return []
     if constraint is None:
         return bw_list
-    order, sgn = constraint
-    if sgn == '+':
-        sgn = 1
-    else:
-        sgn = -1
-    if not order or order == 3:
-        def key(x):
-            return int(x.bankinfo[0]), x.bankinfo[1]
+
+    order = constraint[0]
+    sgn = True if constraint[1] == '-' else False
+
+    if order == 0:
+        return sorted(bw_list, key=lambda bk: (int(bk.bankinfo.numname), bk.bankinfo.name), reverse=sgn)
     elif order == 1:
-        def key(x):
-            return slug(x.bankinfo[1], separator=''), int(x.bankinfo[0]) * sgn
+        return sorted(bw_list, key=lambda bk: (slug(bk.bankinfo.name, separator=''), int(bk.bankinfo.numname)),
+                      reverse=sgn)
+    elif order == 2:
+        return sorted(bw_list, key=lambda bk: (int(bk.bankinfo.addtime), bk.bankinfo.name), reverse=sgn)
     else:
-        def key(x):
-            return x.bankinfo[order], int(x.bankinfo[0]) * sgn
-    return sorted(bw_list, key=key, reverse=True if sgn == -1 else False)
+        return sorted(bw_list, key=lambda bk: (bk.bankinfo[order], int(bk.bankinfo.numname)), reverse=sgn)
 
 
 def search_bank(keyword: str = '', bank=None):
+    if not bank:
+        return []
     rett = []
-    lazy_info = [slug(i[0] + i[1] + i[2], separator='') for i in bank]
+    lazy_info = [i[0] + slug(i[1] + i[2], separator='') for i in bank]
     for y, i in enumerate(bank):
         if keyword in lazy_info[y]:
             rett.append(i)
@@ -218,7 +237,9 @@ def search_bw(keyword: str = '', bw_list=None):
     if not bw_list:
         return None
     rett = []
-    lazy_info = [i.bankinfo[0] + slug(i.bankinfo[1] + i.bankinfo[2], separator='') + i.bankinfo[1] + i.bankinfo[2] for i in bw_list]
+    lazy_info = [(f'{i.bankinfo[0]}'
+                  f'{slug(f'{i.bankinfo[1]}{i.bankinfo[2]}', separator='')}'
+                  f'{i.bankinfo[1]}{i.bankinfo[2]}') for i in bw_list]
     for y, i in enumerate(bw_list):
         if keyword in lazy_info[y]:
             rett.append(i)
@@ -230,51 +251,13 @@ def get_all_info():
     pre_g = []
     pre_b = []
     for i in bank:
-        pre_g += i[GENRE]
-        pre_b.append(i[BUNKO])
+        pre_g += i['genre']
+        pre_b.append(i['bunko'])
     return sorted(list(set(pre_g))), sorted(list(set(pre_b)))
 
 
-def luxury_bankinfo_manage(**kwargs):
-    """
-    Create the 'luxury' info list as [progress: list[str | list], ratings: dict, favorite: int[0|1]]
-    :param kwargs: Existed luxury info.
-    :return: LUX_LIST.
-    """
-    lux_bank = kwargs
-    prg = lux_bank.get('progress', 0)
-    rtg = lux_bank.get('ratings', 0)
-    fav = lux_bank.get('favorite', 0)
-    return [prg, rtg, fav]
-
-
-def get_bookinfo_from(numname, bookbank=None):
-    if bookbank is None:
-        bookbank = read_bank_file()
-    for i in range(len(bookbank)):
-        if bookbank[i][0] == numname:
-            return i, bookbank
-    return None
-
-
-def lux_transform():
-    new_bank = []
-    bank: list = read_bank_file()
-    for i in bank:
-        new_book = i[:5]
-        if len(i) > 5:
-            if not i[5][1] and not i[5][2] and not i[5][0]:
-                new_bank.append(new_book)
-                continue
-            prg, rtg, fav = i[5]
-            luxdict = {'prg': prg, 'rtg': rtg, 'fav': fav, 'lck': None}
-            new_book.append(luxdict)
-        new_bank.append(new_book)
-    save_as_bank(new_bank)
-
-
 def activate():
-    print(order_bank((NUMNAME, '+'), filter_bank((BUNKO, "MF文库J"))))
+    print(order_bank(('addtime', '+'), filter_bank(('bunko', "MF文库J"))))
 
 
 def update_to_date():
@@ -303,6 +286,25 @@ def post_process():
     save_as_bank(bank)
 
 
-if __name__ == '__main__':
+def refresh_hmz():
+    bank = read_bank_file()
+    for i in bank:
+        hmzpath = f'{i.directory}/{i.name}/{i.numname}.hmz'
+        old_hmz = read_json(hmzpath)
+        new_hmz = HmzedBook(numname=old_hmz['numname'], name=old_hmz['name'], writer=old_hmz['writer'],
+                            allname=old_hmz['allname'], allnet=old_hmz['allnet'], description=old_hmz['discription'])
+        new_hmz.save_at(hmzpath)
+
+
+def update():
+    update_to_date()
     post_process()
+    refresh_hmz()
+
+
+if __name__ == '__main__':
+    # refresh_hmz()
+    # update_to_date()
+    # post_process()
     # generate_book_bank()
+    update()

@@ -1,14 +1,14 @@
 from datetime import datetime
 from os.path import exists as ext
-from os import listdir as ldr, mkdir, remove
+from os import listdir as ldr, remove
 from concurrent.futures import ThreadPoolExecutor
 
 from winsound import PlaySound
 
 from book_struct import HmzedBook, BankedBook, BookLuxury
 from netwk import GetRq, get_fullinfo
-import bookbank
-from config import save_json, CONFIG, confirm_name, LANG, ordered_ldr
+from bookbank import add_to_bank
+from config import CONFIG, confirm_name, LANG, ordered_ldr, makedir
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                         'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -21,13 +21,6 @@ IRST = CONFIG["ILLUSTRATION_REQUEST_SLEEP_TIME"]
 TRST = CONFIG["TEXT_REQUEST_SLEEP_TIME"]
 MAX_VOL_WORKERS = CONFIG["MAX_VOLUME_THREAD_WORKER"]
 BANK_PATH = CONFIG["BANK_PATH"]
-
-
-def makedir(fname):
-    if ext(fname):
-        return None
-    mkdir(fname)
-    return None
 
 
 def get_img(numname, iis=False):
@@ -61,7 +54,7 @@ def save_img(img: bytes, path):
 
 class DownloadTask(object):
     def __init__(self, numname: str, state=2, mode=0, merging=False, g_dir=BANK_PATH,
-                 update: bool | list[str] = False):
+                 update: bool | list[str] | tuple[str, str] = False):
         if not numname:
             print('Not A Numname!')
             return
@@ -87,7 +80,7 @@ class DownloadTask(object):
         modl = numname[0] if len(numname) > 3 else '0'
         self.thisurl = f'https://www.wenku8.cc/novel/{modl}/{numname}/'
 
-        name, writer, descrp, genre, bunko, allnet, allname, cprt = get_fullinfo(numname, save=False)
+        _, name, writer, allnet, allname, descrp, genre, bunko, cprt = get_fullinfo(numname, return_type=0).values()
         name = confirm_name(name)
 
         self.hmzbook = HmzedBook(numname=numname, name=name, writer=writer,
@@ -95,15 +88,14 @@ class DownloadTask(object):
 
         self.bankbook = BankedBook(numname=numname, name=name, writer=writer,
                                    bunko=bunko, genre=genre, directory=g_dir,
-                                   lux=BookLuxury(), addtime=datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-        
+                                   lux=BookLuxury(), addtime=int(datetime.now().timestamp()))
+
         self.cprt = cprt
         self.rname = self.hmzbook.name
         if self.g_dir != '':
             self.rname = f'{g_dir}/{self.hmzbook.name}'
 
         self.__warning = None
-
         self.progress: int = 0
 
     def read_page(self, volumeName: str, url: str, fileIndex: int):
@@ -124,7 +116,7 @@ class DownloadTask(object):
     def process_page(self, i: int, j: int, alllists=None):
         if alllists is None:
             allnet = self.hmzbook.allnet
-            allname = self.hmzbook.name
+            allname = self.hmzbook.allname
         else:
             allnet = alllists[0]
             allname = alllists[1]
@@ -165,10 +157,7 @@ class DownloadTask(object):
 
     def detailedDownload(self):
         makedir(self.rname)
-        save_json(f'{self.rname}/{self.numname}.hmz',
-                  {'name': self.hmzbook.name, 'writer': self.hmzbook.writer, 'allnet': self.hmzbook.allnet,
-                   'allname': self.hmzbook.name, 'directory': self.g_dir, 'discription': self.hmzbook.description,
-                   'genre': self.bankbook.genre, 'bunko': self.bankbook.bunko, 'numname': self.numname})
+        self.hmzbook.save_at(f'{self.rname}/{self.numname}.hmz')
 
         start = self.check_current_folder(self.rname) - 1 if self.mode == 0 else 0
         for i in range(start, len(self.hmzbook.allnet)):
@@ -195,10 +184,7 @@ class DownloadTask(object):
         tx = GetRq(newurl).run('w')
 
         save_file(tx, f'{self.rname}/{self.hmzbook.name}.txt')
-        save_json(f'{self.rname}/{self.numname}.hmz',
-                  {'name': self.hmzbook.name, 'writer': self.hmzbook.writer, 'allnet': self.hmzbook.allnet,
-                   'allname': self.hmzbook.name, 'directory': self.g_dir, 'discription': self.hmzbook.description,
-                   'genre': self.bankbook.genre, 'bunko': self.bankbook.bunko, 'numname': self.numname})
+        self.hmzbook.save_at(f'{self.rname}/{self.numname}.hmz')
 
         print('Download Finished.')
 
@@ -239,7 +225,7 @@ class DownloadTask(object):
         true_content = [i.strip(' ') for i in content]
 
         intervals = []
-        for i in self.hmzbook.name:
+        for i in self.hmzbook.allname:
             for j in i[1:]:
                 chapname = f'{i[0]} {j}'
                 curind = content.index(chapname + '\n')
@@ -253,7 +239,7 @@ class DownloadTask(object):
         intervals.append(len(content))
 
         chapcnt = 0
-        for i in self.hmzbook.name:
+        for i in self.hmzbook.allname:
             filecount = 1
             setname = f'{self.rname}/{i[0]}'
             makedir(setname)
@@ -264,14 +250,19 @@ class DownloadTask(object):
                 filecount += 1
                 chapcnt += 1
 
-    def download(self):
+    def pre_download(self):
         if not ext(fn := f'images/thumbnails/{self.numname}.jpg'):
             tmr = GetRq(f'https://img.wenku8.com/image/{int(self.numname) // 1000}{f'/{self.numname}' * 2}s.jpg').run(
                 'm')
             save_img(tmr, fn)
-        addbankBool = bookbank.add_to_bank((self.numname, self.hmzbook.name, self.hmzbook.writer, self.bankbook.genre, self.bankbook.bunko))
+        addbankBool = add_to_bank(BankedBook(numname=self.numname, name=self.hmzbook.name, writer=self.hmzbook.writer,
+                                             genre=self.bankbook.genre, bunko=self.bankbook.bunko, lux=None,
+                                             addtime=int(datetime.now().timestamp())))
         if addbankBool:
             self.__warning = 'ADDBANK'
+
+    def download(self):
+        self.pre_download()
 
         if not self.cprt:
             self.__warning = 'COPYRIGHT'
@@ -290,19 +281,10 @@ class DownloadTask(object):
         return None
 
     def downloadslice(self, ind):
-        if not ext(fn := f'images/thumbnails/{self.numname}.jpg'):
-            tmr = GetRq(f'https://img.wenku8.com/image/{int(self.numname) // 1000}{f'/{self.numname}' * 2}s.jpg').run(
-                'm')
-            save_img(tmr, fn)
-        addbankBool = bookbank.add_to_bank((self.numname, self.hmzbook.name, self.hmzbook.writer, self.bankbook.genre, self.bankbook.bunko))
-        if addbankBool:
-            self.__warning = 'ADDBANK'
+        self.pre_download()
 
         makedir(self.rname)
-        save_json(f'{self.rname}/{self.numname}.hmz',
-                  {'name': self.hmzbook.name, 'writer': self.hmzbook.writer, 'allnet': self.hmzbook.allnet,
-                   'allname': self.hmzbook.name, 'directory': self.g_dir, 'discription': self.hmzbook.description,
-                   'genre': self.bankbook.genre, 'bunko': self.bankbook.bunko, 'numname': self.numname})
+        self.hmzbook.save_at(f'{self.rname}/{self.numname}.hmz')
 
         if not self.cprt:
             self.__warning = 'COPYRIGHT'
@@ -352,17 +334,17 @@ class DownloadTask(object):
 
                 for future in futures:
                     future.result()
-        hmz = get_fullinfo(self.numname, f'{self.rname}/{self.numname}.hmz')
-        save_json(f'{self.rname}/{self.numname}.hmz', hmz)
+        hmz = get_fullinfo(self.numname, 1)
+        hmz.save_at(f'{self.rname}/{self.numname}.hmz')
 
         succeeded()
 
     def get_image_from_vol(self, slice_ind: None | list = None):
         if slice_ind is None:
-            post_allname = self.hmzbook.name
+            post_allname = self.hmzbook.allname
             post_allnet = self.hmzbook.allnet
         else:
-            post_allname = [self.hmzbook.name[i] for i in slice_ind if i]
+            post_allname = [self.hmzbook.allname[i] for i in slice_ind if i]
             post_allnet = [self.hmzbook.allnet[i] for i in slice_ind if i]
         for vol in range(len(post_allname)):
             for a, b in zip(post_allnet[vol], post_allname[vol]):

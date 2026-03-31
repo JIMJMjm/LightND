@@ -18,6 +18,7 @@ def getTodolist(file_path):
     return todolist
 
 
+# noinspection PyAttributeOutsideInit
 class EditableTableWindow(QMainWindow):
     dataConfirmed = Signal(list)
 

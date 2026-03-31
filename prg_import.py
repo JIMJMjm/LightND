@@ -1,4 +1,5 @@
 from os.path import exists as ext
+from typing import Literal
 
 from PySide6 import QtCore
 from PySide6.QtCore import Signal
@@ -6,6 +7,7 @@ from PySide6.QtGui import QPixmap, Qt
 from PySide6.QtWidgets import QDialog, QFrame, QWidget, QLabel, QPushButton, QCheckBox
 
 from BySide import ScrollField, DefaultFont, ClickableLabel
+from book_struct import HmzedBook, BookLuxury
 from rating import StarRatingWidget
 
 DFont = DefaultFont(14)
@@ -98,6 +100,7 @@ class RtgWidget(QWidget):
         return self.ratings.rating
 
 
+# noinspection PyAttributeOutsideInit
 class PrgWidget(QWidget):
     stretch = Signal(tuple)
 
@@ -223,13 +226,13 @@ class PrgWidget(QWidget):
                    if self.checkBox.checkState() == QtCore.Qt.CheckState.PartiallyChecked else []))
 
 
+# noinspection PyAttributeOutsideInit
 class RmzImportWindow(QDialog):
     prg_save = Signal(list)
     rtg_save = Signal(dict)
 
     def __init__(self):
         super().__init__()
-
         self.setupBasicUi()
 
     def setupBasicUi(self):
@@ -305,22 +308,22 @@ class RmzImportWindow(QDialog):
         self.save_rtg.setText('Save')
 
     def setupLuxUi(self):
-        self.title_old = BookTitle(self.hmzinfo['numname'], self.hmzinfo['name'], parent=self)
+        self.title_old = BookTitle(self.hmzinfo.numname, self.hmzinfo.name, parent=self)
         self.title_old.move(0, 0)
 
         self.title_new = BookTitle(self.rmz[0], self.rmz[1], parent=self)
         self.title_new.move(550, 0)
 
-        prg_old = self.hmzinfo['allname']
+        prg_old = self.hmzinfo.allname
         self.generateScrollContent('prg_old', prg_old)
 
-        rtg_old = [i[0] for i in self.hmzinfo['allname']]
+        rtg_old = [i[0] for i in self.hmzinfo.allname]
         self.generateScrollContent('rtg_old', rtg_old)
 
-        prg_new = self.rmz[-1]['prg']
+        prg_new = self.rmz[-1].prg
         self.generateScrollContent('prg_new', prg_new)
 
-        rtg_new = self.rmz[-1]['rtg']
+        rtg_new = self.rmz[-1].rtg
         self.generateScrollContent('rtg_new', rtg_new)
 
         self.save_rtg.raise_()
@@ -328,11 +331,8 @@ class RmzImportWindow(QDialog):
 
         self.save_rtg.clicked.connect(self.handleRtgSave)
         self.save_prg.clicked.connect(self.handlePrgSave)
-        #
-        # self.rtg_save.connect(lambda con: print(con))
-        # self.prg_save.connect(lambda con: print(con))
 
-    def generateScrollContent(self, _type: str, data: list[str | list] | dict[str: str | int]):
+    def generateScrollContent(self, _type: str, data: list[str | list] | dict[str, str | int]):
         if _type == 'prg_old':
             for i in data:
                 self.prg_scr_old.addWidget(PrgWidget(i, clickable=True))
@@ -350,44 +350,34 @@ class RmzImportWindow(QDialog):
         if _type == 'rtg_old':
             for i in data:
                 self.rtg_scr_old.addWidget(RtgWidget(name=i, clickable=True))
+
         if _type == 'rtg_new':
             for i, j in zip(data.keys(), data.values()):
                 self.rtg_scr_new.addWidget(RtgWidget(name=i, clickable=False, rating=j))
 
-    def prg_widget_connection(self, y: int, _t: str, indicator: tuple):
+    def prg_widget_connection(self, y: int, _t: Literal['old', 'new'], indicator: tuple):
+        prg_widget = self.prg_scr_new
         if _t == 'old':
-            x_1, y_1 = self.prg_scr_old.mainwidget.size().toTuple()
-            for i in self.prg_scr_old[y + 1:]:
-                x_c, y_c = i.pos().toTuple()
-                if indicator[0]:
-                    i.move(x_c, y_c + indicator[1])
-                else:
-                    i.move(x_c, y_c - indicator[1])
+            prg_widget = self.prg_scr_old
+        x_1, y_1 = prg_widget.mainwidget.size().toTuple()
+        for i in prg_widget[y + 1:]:
+            x_c, y_c = i.pos().toTuple()
             if indicator[0]:
-                self.prg_scr_old.mainwidget.resize(x_1, y_1 + indicator[1])
+                i.move(x_c, y_c + indicator[1])
             else:
-                self.prg_scr_old.mainwidget.resize(x_1, y_1 - indicator[1])
+                i.move(x_c, y_c - indicator[1])
+        if indicator[0]:
+            prg_widget.mainwidget.resize(x_1, y_1 + indicator[1])
+        else:
+            prg_widget.mainwidget.resize(x_1, y_1 - indicator[1])
 
-        if _t == 'new':
-            x_1, y_1 = self.prg_scr_new.mainwidget.size().toTuple()
-            for i in self.prg_scr_new[y + 1:]:
-                x_c, y_c = i.pos().toTuple()
-                if indicator[0]:
-                    i.move(x_c, y_c + indicator[1])
-                else:
-                    i.move(x_c, y_c - indicator[1])
-            if indicator[0]:
-                self.prg_scr_new.mainwidget.resize(x_1, y_1 + indicator[1])
-            else:
-                self.prg_scr_new.mainwidget.resize(x_1, y_1 - indicator[1])
-
-    def initData(self, rmz: list[str | dict], hmzinfo: dict):
+    def initData(self, rmz: list[str | BookLuxury], hmzinfo: HmzedBook):
         """
-        :param rmz: Requires at least empty Luxury data.
-        :param hmzinfo:
+        :param rmz: Requires at least empty Luxury data. Input as [numname, name, BookLuxury]. New.
+        :param hmzinfo: Old Fileinfo.
         :return:
         """
-        self.hmzinfo = hmzinfo
+        self.hmzinfo: HmzedBook = hmzinfo
         self.rmz = rmz
 
         self.setupLuxUi()
@@ -408,103 +398,7 @@ class RmzImportWindow(QDialog):
 
 
 def activate():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication([])
-    rmz = RmzImportWindow()
-    rmz.initData(rmz=[
-        "183",
-        "CLANNAD官方外传小说",
-        "麻枝准",
-        [
-            "校园",
-            "青春",
-            "恋爱"
-        ],
-        "电击文库",
-        {
-            "prg": [
-                ["～被光守护的坂道上～", '1', '2'],
-                "Another Story"
-            ],
-            "rtg": {
-                "～被光守护的坂道上～": 8,
-                "Another Story": 8
-            },
-            "fav": False,
-            "lck": "2025/07/24 18:20:04"
-        }
-    ], hmzinfo={
-        "name": "CLANNAD官方外传小说",
-        "writer": "麻枝准",
-        "allnet": [
-            [
-                "～被光守护的坂道上～",
-                "8123.htm",
-                "8124.htm",
-                "8125.htm",
-                "8126.htm",
-                "8127.htm",
-                "8128.htm",
-                "8129.htm",
-                "8130.htm",
-                "8131.htm",
-                "8132.htm",
-                "8133.htm",
-                "8134.htm",
-                "8136.htm",
-                "8138.htm",
-                "8139.htm",
-                "8150.htm"
-            ],
-            [
-                "Another Story",
-                "8135.htm",
-                "8143.htm",
-                "8142.htm",
-                "19510.htm"
-            ]
-        ],
-        "allname": [
-            [
-                "～被光守护的坂道上～",
-                "第一话 拿出勇气吧",
-                "第二话 连衣裙",
-                "第三话 男性朋友们",
-                "第四话 那个时候的我",
-                "第五话 公子的日记",
-                "第六话 心跳加速的瞬间",
-                "第七话 特别的夜晚",
-                "第八话 我的哥哥",
-                "第九话 各式各样的味道",
-                "第十话 咒语的秘密",
-                "第十一话 二人的回忆",
-                "第十二话 老师的回忆",
-                "第十三话 四年前的因缘",
-                "特别篇 古河面包师再结成",
-                "第十五话 大家在澡堂",
-                "第十六话 城镇的思念"
-            ],
-            [
-                "Another Story",
-                "1 她的境界线",
-                "2 尾巴王国的琴美",
-                "3 风子小宇宙",
-                "后记"
-            ]
-        ],
-        "directory": "D:/ACGN/Novel",
-        "discription": "关于我们的渚的一次细微的，命中注定的某次事件的故事一年后。\n她与“后辈”冈崎朋也相遇，然后相恋这次讲的则是之前的一段小插曲。\n"
-                       "内容是，游戏的本篇中没有提及到的渚和朋也各自的过去两人之间发生过了什么。\n在洒满春光的校园中向我们敞开的，是CLANNAD的另一扇门。",
-        "genre": [
-            "校园",
-            "青春",
-            "恋爱"
-        ],
-        "bunko": "电击文库",
-        "numname": "183"
-    })
-    rmz.show()
-    app.exec()
+    pass
 
 
 if __name__ == '__main__':

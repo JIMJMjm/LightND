@@ -37,6 +37,9 @@ class BookLuxury:
     fav: int = 0
     lck: int = 0
 
+    def __bool__(self):
+        return bool(self.prg) or bool(self.rtg) or bool(self.fav) or bool(self.lck)
+
     def toDict(self):
         return {
             'prg': self.prg,
@@ -49,14 +52,14 @@ class BookLuxury:
 class BankedBook(Book):
     @overload
     def __init__(self, *, numname, name, writer,
-                 bunko: str, genre: list[str], addtime: str, lux: dict, directory=''):...
+                 bunko: str, genre: list[str], addtime: int, lux: dict | None, directory=''): ...
 
     @overload
     def __init__(self, *, numname, name, writer,
-                 bunko: str, genre: list[str], addtime: str, lux: BookLuxury, directory=''): ...
+                 bunko: str, genre: list[str], addtime: int, lux: BookLuxury, directory=''): ...
 
     def __init__(self, *, numname, name, writer,
-                 bunko: str, genre: list[str], addtime: str, lux: BookLuxury | dict,
+                 bunko: str, genre: list[str], addtime: int, lux: BookLuxury | dict,
                  directory=''):
         """
         The book data to be stored in ``book.json``
@@ -70,10 +73,15 @@ class BankedBook(Book):
         self.bunko = bunko
         self.genre = genre
         self.addtime = addtime
+        if lux is None:
+            lux = {}
         if isinstance(lux, BookLuxury):
             self.lux = lux
         else:
             self.lux = BookLuxury(**lux)
+
+        if not directory:
+            directory = CONFIG['BANK_PATH']
         self.directory = directory
 
     def toDict(self):
@@ -84,12 +92,25 @@ class BankedBook(Book):
             'bunko': self.bunko,
             'genre': self.genre,
             'addtime': self.addtime,
-            'lux': self.lux.toDict(),
-            'directory': self.directory
+            'lux': {} if not self.lux and CONFIG['SIMPLE_BANK_FILE'] else self.lux.toDict(),
+            'directory': '' if self.directory == CONFIG['BANK_PATH'] and CONFIG['SIMPLE_BANK_FILE'] else self.directory
         }
 
-    # def __getitem__(self, item):
-    #     pass
+    def __getitem__(self, item: str | int):
+        if item == 'numname' or item == 0:
+            return self.numname
+        elif item == 'name' or item == 1:
+            return self.name
+        elif item == 'writer' or item == 2:
+            return self.writer
+        elif item == 'bunko' or item == 3:
+            return self.bunko
+        elif item == 'genre' or item == 4:
+            return self.genre
+        elif item == 'addtime' or item == 5:
+            return self.addtime
+        print('Invalid book item:', item)
+        return None
 
 
 class HmzedBook(Book):
@@ -110,9 +131,7 @@ class HmzedBook(Book):
             'description': self.description,
         }
 
-    def save_at(self, directory: str | None = None) -> None:
-        if directory is None:
-            directory = CONFIG['BANK_PATH']
+    def save_at(self, directory: str) -> None:
         save_json(directory, self.toDict())
 
 

@@ -10,6 +10,7 @@ from typing_extensions import Literal
 from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget, QMessageBox
 
+from book_struct import BankedBook
 from downloadprocess import DownloadTask, confirm_name, get_img
 from netwk import get_alllist
 from prg_export import save_as_rmz, read_from_rmz
@@ -17,7 +18,7 @@ from prg_import import RmzImportWindow
 from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, read_hmz, get_cover_from, convert2epub_pandoc
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
-                      filter_liked_bw as flb, order_bank_ranked as odr, generate_book_bank)
+                      filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank)
 from ui_LightNV import Ui_MainWindow
 from ui_bookwidget import BookWidget as BkWt
 from ui_config import Ui_Config
@@ -403,13 +404,14 @@ class MainWindow(QMainWindow):
         if not SHOW_FORMATED_FILE:
             return
 
-        name_t, _, allnet, _ = read_hmz(f'{directory}/{hmz}')
+        hmzfile = read_hmz(f'{directory}/{hmz}')
+        name, allnet = hmzfile.name, hmzfile.allnet
 
-        if ext(f'{directory}/{name_t}.docx'):
+        if ext(f'{directory}/{name}.docx'):
             self.texter.formets[ALLDOCX] = 1
-        if ext(f'{directory}/{name_t}.epub'):
+        if ext(f'{directory}/{name}.epub'):
             self.texter.formets[ALLEPUB] = 1
-        if ext(f'{directory}/{name_t}.azw3'):
+        if ext(f'{directory}/{name}.azw3'):
             self.texter.formets[ALLAZW3] = 1
         if ext((vd := f'{directory}/Volume_docx')) and len(ldr(vd)) >= len(allnet):
             self.texter.formets[SEPDOCX] = 1
@@ -492,10 +494,10 @@ class MainWindow(QMainWindow):
 
     def downloadSingle(self, num=None):
         task = DownloadTask(num, *self.downloader.export_param()[1:-1])
-        self.task_list.append((task.numname, task.name, 'DNLDER'))
+        self.task_list.append((task.numname, task.hmzbook.name, 'DNLDER'))
         task.download()
         self.handleWarning(task.getWarning())
-        self.textformer(task.name)
+        self.textformer(task.hmzbook.name)
         succeeded()
         return 0
 
@@ -613,19 +615,18 @@ class MainWindow(QMainWindow):
         self.g_opt[0].triggered.connect(lambda: self.GoptionControl(0))
         self.b_opt[0].triggered.connect(lambda: self.BoptionControl(0))
         for i in self.bw_list:
-            i.upd_oth.connect(self.upd_bank_in_bw)
             i.detailmd.lclicked.connect(lambda bookwidget=i: self.jump_to_texter(bookwidget))
             i.updatebt.lclicked.connect(lambda bk=i: self.check_update_as(bk))
 
     @staticmethod
-    def check_update(num_name: tuple[str, str]):
+    def check_update(bankinfo: BankedBook):
         """
-        :param num_name: (numname: str, name: str)
+        :param bankinfo:
         :return:
         """
-        current_hmz = read_hmz(f'{BANK_PATH}/{confirm_name(num_name[1])}/{num_name[0]}.hmz', complicated=True)
-        current_allnet = current_hmz[2]
-        updated_alllist = get_alllist(num_name[0], 'all')
+        current_hmz = read_hmz(f'{bankinfo.directory}/{bankinfo.name}/{bankinfo.numname}.hmz')
+        current_allnet = current_hmz.allnet
+        updated_alllist = get_alllist(bankinfo.numname, 'all')
         updated_allnet = updated_alllist[0]
         current_dict = {i[0]: i[1:] for i in current_allnet}
         updated_dict = {i[0]: i[1:] for i in updated_allnet}
@@ -648,10 +649,10 @@ class MainWindow(QMainWindow):
             return
 
         task = DownloadTask(numname=numname)
-        cpnames = [i[0] for i in task.allname]
+        cpnames = [i[0] for i in task.hmzbook.allname]
 
-        chapter = [task.name, get_img(numname, iis=True)] + cpnames
-        self.child_detail = DetailedWindow(chapter)
+        chapter = [task.hmzbook.name, get_img(numname, iis=True)] + cpnames
+        self.child_detail = DetailedWindow(chapter, bankinfo=None)  # No Bankinfo needed.
         self.child_detail.startFBT.setText(self.lang['DL_deatiled_download'])
         self.child_detail.nameIP.setHidden(True)
         self.child_detail.text1.setHidden(True)
@@ -670,11 +671,12 @@ class MainWindow(QMainWindow):
             return 113
 
         numname = hmz.split('.')[0] if hmz else ''
-        name, writer, allnet = read_hmz(path + '/' + hmz)[:3]
+        hmzbook = read_hmz(f'{path}/{hmz}')
+        name, writer, allnet = hmzbook.name, hmzbook.writer, hmzbook.allnet
         cpnames = [i[0] for i in allnet]
 
         chapter = [name, get_img(numname)] + cpnames
-        self.texter.child_detail = DetailedWindow(chapter)
+        self.texter.child_detail = DetailedWindow(chapter, bankinfo=None)  # No Bankinfo needed.
         self.texter.child_detail.startFBT.clicked.connect(lambda: self.start_task(self.texter.formslice))
         self.texter.child_detail.show()
         return 0
@@ -712,19 +714,15 @@ class MainWindow(QMainWindow):
 
         if liked > 0:
             bw_list = flb(liked, bw_list)
-        if cons[0] == -1:
-            bw_list = odr(True if cons[1] == '-' else False, bw_list)
-            cons = None
-        else:
-            cons = tuple(cons)
+        bw_list = ftb((3, bunko), bw_list)
+        bw_list = ftb((4, genre), bw_list)
+
         bw_list = srb(srkey, bw_list)
-        if not genre and not bunko:
-            return odb(cons, bw_list)
-        if not genre:
-            return odb(cons, ftb((4, bunko), bw_list))
-        if not bunko:
-            return odb(cons, ftb((3, genre), bw_list))
-        return odb(cons, ftb((3, genre), ftb((4, bunko), bw_list)))
+
+        if cons[0] == -1:
+            return odr(True if cons[1] == '-' else False, bw_list)
+        cons = tuple(cons)
+        return odb(cons, bw_list)
 
     def init_bbgrid(self):
         self.bb_param = ['', '', [1, '+'], '']
@@ -737,10 +735,6 @@ class MainWindow(QMainWindow):
         self.ui.flt_genre.setText(self.lang["BB_selectgenre"])
         self.ui.flt_bunko.setText(self.lang["BB_selectbunko"])
         self.render_book_bank()
-
-    def upd_bank_in_bw(self):
-        for i in self.bw_list:
-            i.update_bankinfo_from_bank()
 
     def init_bwlist(self):
         for i in self.bw_list:
@@ -777,8 +771,8 @@ class MainWindow(QMainWindow):
         self.ui.tabWidget.setCurrentIndex(1)
 
     def check_update_as(self, bookWidget: BkWt):
-        num_name = bookWidget.bankinfo[:2]
-        result = self.check_update(num_name)
+        num_name = bookWidget.bankinfo.numname, bookWidget.bankinfo.name
+        result = self.check_update(bookWidget.bankinfo)
         output = bookWidget.update_result
         if not result:
             output.setText(self.lang['BW_no'])
@@ -906,24 +900,22 @@ class MainWindow(QMainWindow):
     def handleSingleImport(self, filename):
         rmzfile, _type = read_from_rmz(filename)
         if _type == 1:
-            if len(rmzfile) < 6:
-                return
-            rmz_lux = rmzfile[5]
-            rmz_prg = rmz_lux['prg']
-            rmz_rtg = rmz_lux['rtg']
+            rmzfile: dict
+            bankfile = BankedBook(**rmzfile)
             for i in self.bw_list:
-                if i.bankinfo[0] == rmzfile[0]:
+                if i.bankinfo == bankfile:
                     thisbw = i
                     break
             else:
                 print(f'Book(number: {rmzfile[0]}; name: {rmzfile[1]}) not found. Please download first.')
                 return
-            resultp = thisbw.checkPRG(rmz_prg)
-            resultr = thisbw.checkRTG(rmz_rtg)
+            resultp = thisbw.checkPRG(bankfile.lux.prg)
+            resultr = thisbw.checkRTG(bankfile.lux.rtg)
             if (resultp != 1 and resultp != 0) or (resultr != 1 and resultr != 0):
-                self.import_window.initData(rmz=rmzfile,
-                                            hmzinfo=read_hmz(f'{BANK_PATH}/{thisbw.bankinfo[1]}/{rmzfile[0]}.hmz',
-                                                             source=True))
+                old_info = thisbw.bankinfo
+                self.import_window.initData(rmz=[bankfile.numname, bankfile.name, bankfile.lux],
+                                            hmzinfo=read_hmz(f'{old_info.directory}/'
+                                                             f'{old_info.name}/{old_info.numname}.hmz'))
                 self.import_window.exec()
                 self.import_window.rtg_save.connect(thisbw.checkRTG)
                 self.import_window.prg_save.connect(thisbw.checkPRG)
@@ -966,6 +958,8 @@ class MainWindow(QMainWindow):
             cons[0] = 0
         if text == self.lang['BB_od_rating']:
             cons[0] = -1
+        if text == self.lang['BB_od_addtime']:
+            cons[0] = 2
 
         self.bb_param[2] = cons
 
