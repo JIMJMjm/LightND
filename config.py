@@ -18,7 +18,8 @@ DEFAULT_SETTING = {
     "ALLOW_WARNING_WINDOWS": True,
     "BANK_PATH": "novel",
     "RMZ_EXPORT_PATH": "rmz",
-    "RMZ_FILENAME_FORMAT": "%NUMNAME%_%TIMESTAMP%",
+    "RMZ_FILENAME_FORMAT": "%NUMNAME%_%TMSTAMP%",
+    "RMZ_FILENAME_SUFFIX": "(%NUM%)",
     "DEFAULT_COVER": "images/uncovered.jpg",
     "LANGUAGE": "en-US",
     "SHOW_FORMATED_FILE": True,
@@ -241,8 +242,12 @@ def translate_to(code: str) -> dict[str, str]:
                     'zh-CN': "RMZ文件导出的默认路径。\n默认值: 'rmz'。"
                 },
                 "CFG_RMZ_FILENAME_FORMAT": {
-                    'en-US': "The format of rmz filename.\nDefault: %NUMNAME%_%TIMESTAMP%",
-                    'zh-CN': "RMZ文件名的格式。\n默认值: %NUMNAME%_%TIMESTAMP%"
+                    'en-US': "The format of rmz filename.\nDefault: %NUMNAME%_%TMSTAMP%",
+                    'zh-CN': "RMZ文件名的格式。\n默认值: %NUMNAME%_%TMSTAMP%"
+                },
+                "CFG_RMZ_FILENAME_SUFFIX": {
+                    'en-US': "The format of rmz filename suffix.\nDefault: (%NUM%)",
+                    'zh-CN': "RMZ文件名后缀的格式。\n默认值: (%NUM%)"
                 },
                 "CFG_DEFAULT_COVER": {
                     'en-US': "The default cover path for pandoc conversion.\nDefault: 'images/uncovered.jpg'.",

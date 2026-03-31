@@ -1,4 +1,5 @@
 import json
+from re import match as rmatch
 from os.path import exists as ext
 from datetime import datetime
 from typing import Literal
@@ -8,20 +9,28 @@ from config import CONFIG
 
 RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 RMZ_FILENAME_FORMAT = CONFIG['RMZ_FILENAME_FORMAT']
+RMZ_FILENAME_SUFFIX = CONFIG['RMZ_FILENAME_SUFFIX']
 
 
 def tag_replace(tag: str, _data: BankedBook):
-    if tag == 'TIMESTAMP':
-        return str(int(datetime.now().timestamp()))
-    if tag == 'BOOKNAME':
-        return _data.name
-    if tag == 'DATETIME':
-        return datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    if tag == 'NUMNAME':
-        return _data.numname
-    if tag == '':
-        return '%'
-    return ''
+    pattern = r'^([A-Z]+)(?:\[(-?\d+)\])?$'
+    mrt = rmatch(pattern, tag)
+    if not mrt:
+        return ''
+    match_list = [mrt.group(1), None if mrt.group(2) is None else int(mrt.group(2))]
+    match match_list:
+        case ['TMSTAMP', num]:
+            string = str(int(datetime.now().timestamp()))
+        case ['NUMNAME', num]:
+            string = _data.numname
+        case ['BKNAME', num]:
+            string = _data.name
+        case ['DATETIME', num]:
+            string = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        case _:
+            return ''
+
+    return string if num is None else string[:num] if num > 0 else string[num:]
 
 
 def parse_rmz_format(_format: str, _data: BankedBook) -> str:
@@ -69,10 +78,19 @@ def save_as_rmz(_type: Literal[1, 2, 3], _data: BankedBook, path, filename: str 
     filename = parse_rmz_format(filename, _data)
 
     suffix = 0
+
+    perisuffix = RMZ_FILENAME_SUFFIX.split('%NUM%')
+    if not perisuffix[0]:
+        perisuffix = ['(', ')']
+    if len(perisuffix) < 2:
+        perisuffix = perisuffix * 2
+    if len(perisuffix) > 2:
+        perisuffix[1] = '%NUM%'.join(perisuffix[1:])
+
     pfilename = filename
     while ext(f'{path}/{pfilename}.rmz'):
         suffix += 1
-        pfilename = f'{filename}({suffix})'
+        pfilename = f'{filename}{perisuffix[0]}{suffix}{perisuffix[1]}'
 
     type_byte = None
     if _type == 1:
