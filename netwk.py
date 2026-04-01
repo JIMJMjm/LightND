@@ -18,6 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 MAX_WAORKERS = CONFIG["MAX_THREAD_WORKER"]
 IRST = CONFIG["ILLUSTRATION_REQUEST_SLEEP_TIME"]
 TRST = CONFIG["TEXT_REQUEST_SLEEP_TIME"]
+PROXY_PORT = CONFIG["PROXY_PORT"]
 
 
 def decode_add(address: str):
@@ -34,8 +35,14 @@ class GetRq:
         self.numname = ''
         self.copyright = False
 
-    def request(self, gbk=False) -> None:
-        self.response = rq.get(url=self.url, headers=HEADER)
+    def request(self, gbk=False, proxy_port=-1) -> None:
+        proxy = {'http': f'127.0.0.1:{proxy_port}', 'https': f'127.0.0.1:{proxy_port}'}
+        if proxy_port == -1:
+            proxy = None
+        elif proxy_port == 0:
+            proxy = {'http': '', 'https': ''}
+
+        self.response = rq.get(url=self.url, headers=HEADER, proxies=proxy)
         if gbk:
             self.response.encoding = 'GBK'
 
@@ -179,7 +186,18 @@ class GetRq:
         """
         Run the GetRq object, return the data as the type requests.
         """
-        self.request(True)
+        if PROXY_PORT == -1:
+            self.request(True)
+        if _type == 'p':
+            if PROXY_PORT == 0:
+                self.request(True)
+            elif PROXY_PORT > 0:
+                self.request(True, proxy_port=PROXY_PORT)
+            sleep(IRST)
+            return self.image_page_parser()
+        if PROXY_PORT >= 0:
+            self.request(gbk=True, proxy_port=PROXY_PORT)
+
         if _type == 'i':
             sleep(TRST)
             return self.index_page_parser()
@@ -192,9 +210,6 @@ class GetRq:
         if _type == 't':
             sleep(TRST)
             return self.text_page_parser()
-        if _type == 'p':
-            sleep(IRST)
-            return self.image_page_parser()
         if _type == 'm':
             sleep(TRST)
             return self.thumbrail_page_parser()

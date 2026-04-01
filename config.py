@@ -24,7 +24,8 @@ DEFAULT_SETTING = {
     "LANGUAGE": "en-US",
     "SHOW_FORMATED_FILE": True,
     "AUTO_UNLOCK_TEXTER": False,
-    "SIMPLE_BANK_FILE": False
+    "SIMPLE_BANK_FILE": False,
+    "PROXY_PORT": -1
 }
 
 
@@ -109,7 +110,7 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.0"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.2"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
@@ -271,6 +272,11 @@ def translate_to(code: str) -> dict[str, str]:
                              "\nDefault: False.",
                     'zh-CN': "切换bank.json是否更易读（False）或更省空间（True）。\n默认值: False。"
                 },
+                "CFG_PROXY_PORT": {
+                    'en-US': "The proxy port of GET requests. -1 for not enabled, 0 for partially enabled."
+                             "\nDefault: -1.",
+                    'zh-CN': "GET请求的代理端口。设置为-1时不起效，0时部分起效。\n默认值: -1。"
+                },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
                 "CFG_apply": {'en-US': "Apply", 'zh-CN': "应用"},
@@ -335,9 +341,11 @@ CONFIG_NOTATION = {
     "BANK_PATH": LANG['CFG_BANK_PATH'],
     "RMZ_EXPORT_PATH": LANG['CFG_RMZ_EXPORT_PATH'],
     "RMZ_FILENAME_FORMAT": LANG['CFG_RMZ_FILENAME_FORMAT'],
+    "RMZ_FILENAME_SUFFIX": LANG['CFG_RMZ_FILENAME_SUFFIX'],
     "DEFAULT_COVER": LANG['CFG_DEFAULT_COVER'],
     "LANGUAGE": LANG['CFG_LANGUAGE'],
     "SHOW_FORMATED_FILE": LANG['CFG_SHOW_FORMATED_FILE'],
     "AUTO_UNLOCK_TEXTER": LANG['CFG_AUTO_UNLOCK_TEXTER'],
     "SIMPLE_BANK_FILE": LANG['CFG_SIMPLE_BANK_FILE'],
+    "PROXY_PORT": LANG['CFG_PROXY_PORT'],
 }

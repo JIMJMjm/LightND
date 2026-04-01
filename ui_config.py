@@ -182,6 +182,10 @@ class ConfigEntry(QWidget):
             self.e_content.setFont(df14)
 
         if _type == 'int':
+            entry_content = max(-65536, min(65536, int(entry_content)))
+            self.entry_content = entry_content
+            self.init_content = entry_content
+
             self.e_content = QLineEdit(parent=self)
             self.e_content.setText(str(entry_content))
             self.e_content.setGeometry(8, 32, 100, 30)
@@ -208,7 +212,10 @@ class ConfigEntry(QWidget):
         self.testifyChange(isfloat=False)
 
     def handleIntChange(self):
-        self.entry_content = int(self.e_content.text())
+        if self.e_content.text() == '-' or self.e_content.text() == '':
+            self.entry_content = 0
+        else:
+            self.entry_content = max(-65536, min(65536, int(self.e_content.text())))
         self.testifyChange()
 
     def testifyChange(self, isfloat: bool = False):
@@ -243,6 +250,12 @@ class ConfigEntry(QWidget):
         if self.type == 'directory' and not ext(self.entry_content):
             print('Directory invalid. Please enter a valid directory.')
             return
+        if self.type == 'float' and not isinstance(self.entry_content, float):
+            print('Float invalid. Please enter a valid float.')
+            return
+        if self.type == 'int' and not isinstance(self.entry_content, int):
+            print('Int invalid. Please enter a valid int.')
+            return
         self.save_data.emit((self.entry_name, self.entry_content))
         self.init_content = self.entry_content
         self.testifyChange()
@@ -251,34 +264,6 @@ class ConfigEntry(QWidget):
 def activate1():
     app = QApplication([])
     ui = Ui_Config()
-    ui.show()
-    app.exec()
-
-
-def activate2():
-    app = QApplication([])
-    ui = ConfigEntry('bool', 'ILLUSTRATION_REQUEST_SLEEP_TIME', True)
-    ui.show()
-    app.exec()
-
-
-def activate3():
-    app = QApplication([])
-    ui = ConfigEntry('float', 'ILLUSTRATION_REQUEST_SLEEP_TIME', 3.55)
-    ui.show()
-    app.exec()
-
-
-def activate4():
-    app = QApplication([])
-    ui = ConfigEntry('str', 'ILLUSTRATION_REQUEST_SLEEP_TIME', 'setaer')
-    ui.show()
-    app.exec()
-
-
-def activate5():
-    app = QApplication([])
-    ui = ConfigEntry('directory', 'ILLUSTRATION_REQUEST_SLEEP_TIME', 'D:/')
     ui.show()
     app.exec()
 
