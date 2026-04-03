@@ -11,3 +11,4 @@ __pycache__
 bank.json
 config.json
 rmz
+uploader.py

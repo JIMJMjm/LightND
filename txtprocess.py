@@ -156,6 +156,9 @@ class HFolder(object):
         dfc = get_cover_from(f'{self.globa}{self.name}/{self.volumes[0]}')
         self.cover = dfc if ext(dfc) else None
 
+    def __getitem__(self, item):
+        return self.volumes[item]
+
     @staticmethod
     def format_pic_fdr(path):
         for i in ldr(path):
