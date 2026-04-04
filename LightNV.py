@@ -691,7 +691,6 @@ class MainWindow(QMainWindow):
         # y_pos = self.ui.BBScroll.verticalScrollBar()
         # y_pos.valueChanged.connect(lambda: print(y_pos.value()))
 
-        # for
         # self.ui.BBScroll.mainwidget.setGeometry(0, 0, 1042, 170 * ht)
 
     def process_bw_list(self) -> list:
