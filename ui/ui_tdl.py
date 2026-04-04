@@ -182,7 +182,7 @@ class EditableTableWindow(QMainWindow):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             LANG['SELECT_FILE'],
-            "./",
+            "../",
             "Text Files (*.txt)"
         )
 

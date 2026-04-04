@@ -261,12 +261,5 @@ class ConfigEntry(QWidget):
         self.testifyChange()
 
 
-def activate1():
-    app = QApplication([])
-    ui = Ui_Config()
-    ui.show()
-    app.exec()
-
-
 if __name__ == "__main__":
-    activate1()
+    pass

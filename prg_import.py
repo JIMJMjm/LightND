@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QDialog, QFrame, QWidget, QLabel, QPushButton, QCh
 
 from BySide import ScrollField, DefaultFont, ClickableLabel
 from book_struct import HmzedBook, BookLuxury
-from rating import StarRatingWidget
+from ui.ui_rating import StarRatingWidget
 
 DFont = DefaultFont(14)
 SFont = DefaultFont()
@@ -397,9 +397,5 @@ class RmzImportWindow(QDialog):
         self.rtg_save.emit(rtg)
 
 
-def activate():
-    pass
-
-
 if __name__ == '__main__':
-    activate()
+    pass

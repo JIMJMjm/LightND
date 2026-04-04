@@ -256,10 +256,6 @@ def get_all_info():
     return sorted(list(set(pre_g))), sorted(list(set(pre_b)))
 
 
-def activate():
-    print(order_bank(('addtime', '+'), filter_bank(('bunko', "MF文库J"))))
-
-
 def update_to_date():
     bank = read_json('bank.json')
     new_bank = []
@@ -303,8 +299,9 @@ def update():
 
 
 if __name__ == '__main__':
+    pass
     # refresh_hmz()
     # update_to_date()
     # post_process()
     # generate_book_bank()
-    update()
+    # update()

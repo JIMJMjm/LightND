@@ -10,8 +10,8 @@ from BySide import ClickableLabel, DefaultFont
 from book_struct import BankedBook, BookLuxury, HmzedBook
 from bookbank import add_to_bank, getTimeStringFromStamp, read_hmz_par
 from config import confirm_name, CONFIG, translate_to as tsl
-from rating import StarRatingWidget as Rtw, FavouriteWidget as Fvw
-from ui_ctask import DetailedWindow
+from .ui_rating import StarRatingWidget as Rtw, FavouriteWidget as Fvw
+from .ui_ctask import DetailedWindow
 
 DF_11 = DefaultFont(11)
 DF_12 = DefaultFont(12)
@@ -36,7 +36,6 @@ class BookWidget(QWidget):
         self.numname = bankinfo.numname
         self.lux_info: BookLuxury = bankinfo.lux
 
-        self.hmzinfo: HmzedBook
         if ext(f'{bankinfo.directory}/{bankinfo.name}/{self.numname}.hmz'):
             self.hmzpath = f'{bankinfo.directory}/{bankinfo.name}/{self.numname}.hmz'
             self.hmzinfo = read_hmz_par(self.hmzpath)
@@ -50,6 +49,7 @@ class BookWidget(QWidget):
         self.name = bankinfo[1]
 
         self.set_to_exported = False
+        self.is_initialized = False
         self.setMouseTracking(True)
 
     def __repr__(self):
@@ -228,6 +228,7 @@ class BookWidget(QWidget):
     def Initialize(self):
         self.setupUI()
         self.setConnection()
+        self.is_initialized = True
 
     def getAddress(self):
         if ext(addr := f'{self.bankinfo.directory}/{self.bankinfo.name}'):

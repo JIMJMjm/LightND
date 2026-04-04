@@ -11,7 +11,7 @@ from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget, QMessageBox
 
 from book_struct import BankedBook
-from downloadprocess import DownloadTask, confirm_name, get_img
+from downloadprocess import DownloadTask, get_img
 from netwk import get_alllist
 from prg_export import save_as_rmz, read_from_rmz
 from prg_import import RmzImportWindow
@@ -19,14 +19,14 @@ from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, read_h
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
                       filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank)
-from ui_LightNV import Ui_MainWindow
-from ui_bookwidget import BookWidget as BkWt
-from ui_config import Ui_Config
-from ui_ctask import DetailedWindow, get_default_name, restore_from_default_name
-from config import CONFIG, succeeded, find_hmz
-from ui_missions import MissionWindow
-from ui_tdl import EditableTableWindow
-from ui_update import UpdateWindow
+from ui.ui_LightNV import Ui_MainWindow
+from ui.ui_bookwidget import BookWidget as BkWt
+from ui.ui_config import Ui_Config
+from ui.ui_ctask import DetailedWindow, get_default_name, restore_from_default_name
+from config import CONFIG, succeeded, find_hmz, confirm_name
+from ui.ui_missions import MissionWindow
+from ui.ui_tdl import EditableTableWindow
+from ui.ui_update import UpdateWindow
 
 ALLDOCX, SEPDOCX, ALLEPUB, SEPEPUB, ALLAZW3, SEPAZW3 = 0, 1, 2, 3, 4, 5
 ORDER_BB, FILTER_BB = 0, 1
@@ -198,6 +198,8 @@ class MainWindow(QMainWindow):
 
             self.export_mode = False
 
+        # bll = [BkWt(bankinfo=i) for i in bank]
+
         self.bw_list: list[BkWt] = odb((1, '+'), bll)
 
         self.bb_param = ['', '', [1, '+'], '']
@@ -244,10 +246,6 @@ class MainWindow(QMainWindow):
         self.TextFormulaControl()
         self.OutputRDControl()
         self.OutputCKControl()
-
-    def init_bookgrid(self):
-        for i in self.bw_list:
-            i.setParent(self.hidden_veil)
 
     def GoptionControl(self, idx: str | int):
         if idx == 0:
@@ -465,29 +463,6 @@ class MainWindow(QMainWindow):
             self.ui.Exit.setHidden(False)
             self.ui.GLB_setting.setHidden(False)
 
-    # def od_button_update(self, mouse: int):
-    #     bt = self.ui.od_bank
-    #     bord = self.bb_param[2]
-    #     if mouse == 0:
-    #         bord += 1
-    #     if mouse == 1:
-    #         bord -= 1
-    #     if bord < 0:
-    #         bord = 2
-    #     if bord > 2:
-    #         bord = 0
-    #     self.bb_param[2] = bord
-    #     tplt = self.lang['BB_od_template']
-    #     ct = ''
-    #     if bord == 0:
-    #         ct =  self.lang['BB_od_numname']
-    #     elif bord == 1:
-    #         ct =  self.lang['BB_od_name']
-    #     elif bord == 2:
-    #         ct =  self.lang['BB_od_rating']
-    #     bt.setText(tplt.replace('%%', ct))
-    #     self.render_book_bank(self.process_bw_list())
-
     def sr_edit_update(self):
         self.bb_param[3] = self.ui.flt_search.text()
         self.render_book_bank(self.process_bw_list())
@@ -692,20 +667,32 @@ class MainWindow(QMainWindow):
     def render_book_bank(self, bw_list=None):
         if not ENABLE_BANK:
             return
-        self.init_bookgrid()
+
+        for i in self.bw_list:
+            i.setParent(self.hidden_veil)
+
         self.ui.none_sr.setHidden(True)
+
         if bw_list is None:
             bw_list = self.bw_list
         elif not bw_list:
             self.ui.none_sr.setHidden(False)
+
         bookgrid = WidgetGrid(self.ui.BBScroll)
         bookgrid.setChildSize((347, 170))
         ht = (len(bw_list) + 2) // 3
         bookgrid.setGridSize((3, ht))
+        bookgrid.setFixedSize(1042, 170 * ht)
+
         for i in bw_list:
             bookgrid.addWidget(i)
+
         self.ui.BBScroll.setMainWidget(bookgrid)
-        self.ui.BBScroll.mainwidget.setGeometry(0, 0, 1042, 170 * ht)
+        # y_pos = self.ui.BBScroll.verticalScrollBar()
+        # y_pos.valueChanged.connect(lambda: print(y_pos.value()))
+
+        # for
+        # self.ui.BBScroll.mainwidget.setGeometry(0, 0, 1042, 170 * ht)
 
     def process_bw_list(self) -> list:
         bw_list = self.bw_list
@@ -971,28 +958,22 @@ class MainWindow(QMainWindow):
         self.task_window.show()
 
 
-def activate():
+def timetest(func, *args, **kwargs):
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.set_connection()
-    window.render_book_bank()
-    window.show()
-    window.init_bwlist()
-    sys.exit(app.exec())
-
-
-def activate_t():
     a = pfc()
-    app = QApplication(sys.argv)
+    func(*args, **kwargs)
+    b = pfc()
+    print(f'{b - a:2f} seconds used to activate.')
+    sys.exit(app.exec())
+
+
+def activate():
     window = MainWindow()
     window.render_book_bank()
     window.show()
     window.init_bwlist()
     window.set_connection()
-    b = pfc()
-    print(f'{b - a:2f} seconds used to activate the window.')
-    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
-    activate_t()
+    timetest(activate)

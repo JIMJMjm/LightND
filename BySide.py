@@ -283,6 +283,40 @@ class WidgetGrid(QWidget):
         return f"<{self.__class__.__name__} grid={self.grid}>"
 
 
+class BoundWidgetGrid(QWidget):
+    def __init__(self, parent, widget_list):
+        super().__init__(parent)
+        self.widget_list = widget_list
+        for i in self.widget_list:
+            i.setParent(self)
+        self.gridsize = (0, 0)
+        self.childsize = (0, 0)
+
+    def setWidgetList(self, widget_list):
+        self.widget_list = widget_list
+
+    def setGridSize(self, gsize: tuple[int, int]):
+        if not all(gsize):
+            print('Grid size is not valid!')
+            return
+        self.gridsize = gsize
+
+    def setChildSize(self, csize: tuple[int, int]):
+        if not all(csize):
+            print('Child size is not valid!')
+            return
+        self.childsize = csize
+
+    def render_widgetList(self):
+        self.setFixedSize(self.gridsize[0] * self.childsize[0], self.gridsize[1] * self.childsize[1])
+        for i in range(self.gridsize[0] * self.gridsize[1]):
+            x = i // self.gridsize[0]
+            y = i % self.gridsize[0]
+            self.widget_list[i].move(y * self.childsize[0], x * self.childsize[1])
+
+
+
+
 class BinaryCheckBox(QCheckBox):
     def __init__(self, parent=None):
         super().__init__(parent)

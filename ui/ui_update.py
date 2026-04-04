@@ -203,13 +203,5 @@ class UpdateWindow(QDialog):
         return self.menu_1[:] + self.menu_2[:]
 
 
-def activate1():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication([])
-    wd = UpdateWindow(('3057', '1919'), parent=None, additions=['1', '2', '3', '4'], modifications=['1', '2', '3', '5'])
-    wd.show()
-    app.exec()
-
-
 if __name__ == '__main__':
-    activate1()
+    pass

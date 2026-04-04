@@ -356,29 +356,5 @@ def ui_2_py(ui, py):
     runcommand(command)
 
 
-def activate():
-    doc = Document()
-    put_title_page(doc, "我的标题", "作者姓名")
-    doc.save('C:/Users/Administrator/Desktop/1122.docx')
-
-
-def activate2():
-    convert2epub_pandoc('D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.docx',
-                        'D:/ACGN/Novel/Re：从零开始的异世界生活/Re：从零开始的异世界生活.epub',
-                        'Re: 从零开始的异世界生活', '长月达平', 'MF文库J',
-                        cover='D:/Program Files/LightND/images/thumbnails/1861.jpg',
-                        discription='走出便利商店要回家的高中生‧菜月昴突然被召唤到异世界。\n'
-                                    '这莫非就是很流行的异世界召唤!?可是眼前没有召唤者就算了，还遭遇强盗迅速面临性命危机。'
-                                    '\n这时，一名神秘银发美少女和猫精灵拯救了一筹莫展的他。'
-                                    '\n以报恩为名义，昴自告奋勇要帮助少女找东西。'
-                                    '\n然而，好不容易才掌握到线索，昴和少女却被不明人士攻击而殒命──本来应该是这样，但回过神来，昴却发现自己置身在第一次被召唤到这个异世界时的所在位置。'
-                                    '\n「死亡回归」──无力的少年得到的唯一能力，是死后时间会倒转回到一开始。跨越无数绝望，从死亡的命运中拯救少女！')
-
-
-def activate3():
-    convert_to_azw3("D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.epub",
-                    'D:/HuaweiMoveData/Users/he660/Desktop/test/穿越时空的约定.azw3', 'mr')
-
-
 if __name__ == '__main__':
     pass

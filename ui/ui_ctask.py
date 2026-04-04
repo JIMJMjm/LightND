@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QDialog, QPushButton, QCheckBox, QLabel, 
 
 from BySide import ScrollField, ClickableLabel, WidgetGrid
 from book_struct import BankedBook
-from rating import StarRatingWidget as Rtw
+from .ui_rating import StarRatingWidget as Rtw
 from config import LANG
 
 EMPTY = QtCore.Qt.CheckState(0)
