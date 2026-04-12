@@ -52,13 +52,19 @@ class BookWidget(QWidget):
         self.is_initialized = False
         self.setMouseTracking(True)
 
+        # self.bookname = ClickableLabel(parent=self)
+        self.updatebt = ClickableLabel(parent=self, text=LANG['BW_update'])
+        self.detailmd = ClickableLabel(parent=self, text=LANG['BW_texter'])
+
     def __repr__(self):
         return self.bankinfo.__repr__() + '_BOOKWIDGET'
 
     def upd_bank(self, lck: bool = False):
         add_to_bank(self.bankinfo, force_cover=True)
         if not lck:
-            self.update_lux_widgets()
+            self.favrt.setFaved(self.lux_info.fav)
+            self.rating.set_rating(int(round(sum(self.lux_info.rtg.values()) / max(len(self.lux_info.rtg), 1), 0)))
+            self.progs.setValue(self.get_percentage_prg())
 
     def handle_fav_clicked(self):
         self.lux_info.fav = self.favrt.get_fav()
@@ -113,11 +119,6 @@ class BookWidget(QWidget):
                     break
         return int(round((cur_c/all_c * 100), 0))
 
-    def update_lux_widgets(self):
-        self.favrt.setFaved(self.lux_info.fav)
-        self.rating.set_rating(int(round(sum(self.lux_info.rtg.values())/max(len(self.lux_info.rtg), 1), 0)))
-        self.progs.setValue(self.get_percentage_prg())
-
     def setupUI(self):
         if len(self.name) > 32:
             delta_y = 48
@@ -127,6 +128,7 @@ class BookWidget(QWidget):
             delta_y = 35
 
         self.bookname = ClickableLabel(parent=self)
+        self.bookname.setHidden(False)
         self.bookname.setGeometry(118, 8, 225, delta_y)
         self.bookname.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.bookname.setText(self.name)
@@ -137,6 +139,7 @@ class BookWidget(QWidget):
         self.bookname.setWordWrap(True)
 
         self.thumbr = ClickableLabel(parent=self, pic=(219, 112, 147, 154))
+        self.thumbr.setHidden(False)
         self.thumbr.setGeometry(0, 0, 113, 170)
         if self.thumb is not None:
             self.thumbr.setPixmap(QPixmap(self.thumb).scaled(113, 170))
@@ -144,38 +147,42 @@ class BookWidget(QWidget):
             self.thumbr.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.thumbr.setText('?')
 
-        self.updatebt = ClickableLabel(parent=self, text=LANG['BW_update'])
         self.updatebt.setGeometry(195, 117, 50, 17)
         self.updatebt.setFont(DF_11)
 
-        self.detailmd = ClickableLabel(parent=self, text=LANG['BW_texter'])
         self.detailmd.setGeometry(130, 117, 47, 17)
         self.detailmd.setFont(DF_11)
 
         rrtg = self.lux_info.rtg
         self.rating = Rtw(parent=self, click=False, rating_=0 if not rrtg else sum(rrtg.values())/len(rrtg))
+        self.rating.setHidden(False)
         self.rating.move(200, 60)
 
         self.favrt = Fvw(parent=self, fav=self.lux_info.fav)
+        self.favrt.setHidden(False)
         self.favrt.move(312, 61)
 
         self.open_prg = ClickableLabel(text=LANG['BW_progress'], parent=self)
+        self.open_prg.setHidden(False)
         self.open_prg.setFont(DF_12)
         self.open_prg.setGeometry(120, 88, 80, 18)
         self.open_prg.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.open_rts = ClickableLabel(text=LANG['BW_rating'], parent=self)
+        self.open_rts.setHidden(False)
         self.open_rts.setFont(DF_12)
         self.open_rts.setGeometry(120, 61, 80, 18)
         self.open_rts.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.progs = QProgressBar(parent=self)
+        self.progs.setHidden(False)
         self.progs.setTextVisible(False)
         self.progs.setRange(0, 100)
         self.progs.setValue(0 if not self.lux_info.prg else self.get_percentage_prg())
         self.progs.setGeometry(200, 89, 133, 18)
 
         self.update_info = QLabel(parent=self)
+        self.update_info.setHidden(False)
         self.update_info.setText(f'{LANG['BW_lck']} : ' + (LANG['BW_never'] if not self.lux_info.lck else
                                                            getTimeStringFromStamp(self.lux_info.lck)))
         self.update_info.setFont(DF_11)
@@ -187,6 +194,7 @@ class BookWidget(QWidget):
         """)
 
         self.update_result = QLabel(parent=self)
+        self.update_result.setHidden(False)
         self.update_result.setGeometry(252, 117, 100, 17)
         self.update_result.setFont(DF_11)
 
@@ -226,6 +234,8 @@ class BookWidget(QWidget):
         self.export_layer.lclicked.connect(self.handleExportLayer)
 
     def Initialize(self):
+        if self.is_initialized:
+            return
         self.setupUI()
         self.setConnection()
         self.is_initialized = True

@@ -336,7 +336,7 @@ class DownloadTask(object):
                     future.result()
         hmz = get_fullinfo(self.numname, 1)
         hmz.save_at(f'{self.rname}/{self.numname}.hmz')
-
+        print('\n')
         succeeded()
 
     def get_image_from_vol(self, slice_ind: None | list = None):

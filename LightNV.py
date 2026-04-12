@@ -182,7 +182,6 @@ class MainWindow(QMainWindow):
         self.hidden_veil.setHidden(True)
 
         bank = read_bank_file()
-        bll = []
         self.g_opt = [self.ui.g_menu.addAction(self.lang['BB_MenuAll'])]
         self.b_opt = [self.ui.b_menu.addAction(self.lang['BB_MenuAll'])]
 
@@ -198,9 +197,7 @@ class MainWindow(QMainWindow):
 
             self.export_mode = False
 
-        # bll = [BkWt(bankinfo=i) for i in bank]
-
-        self.bw_list: list[BkWt] = odb((1, '+'), bll)
+            self.bw_list: list[BkWt] = odb((1, '+'), bll)
 
         self.bb_param = ['', '', [1, '+'], '']
         self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
@@ -308,10 +305,6 @@ class MainWindow(QMainWindow):
             target.formazw3()
 
         return 0
-
-    def getInput_t(self):
-        hfd = self.ui.HFolderInput.text()
-        return hfd
 
     def select_directory_t(self, ask=True, directory=''):
         directory = QFileDialog.getExistingDirectory(
@@ -443,7 +436,9 @@ class MainWindow(QMainWindow):
             self.buttonGroup[0].setChecked(True)
         indicator = [i.isEnabled() and i.isChecked() for i in self.buttonGroup]
         self.texter.indicator = indicator
-        print(indicator)
+        print('Docx: Series[{}], Volumes[{}];\n'
+              'Epub: Series[{}], Volumes[{}];\n'
+              'Azw3: Series[{}], Volumes[{}];'.format(*indicator))
 
     def unlock_Texter_options(self):
         for i in self.buttonGroup:
@@ -559,6 +554,9 @@ class MainWindow(QMainWindow):
             ui.flt_liked.lclicked.connect(lambda: self.handleFltLiked(0))
             ui.flt_liked.rclicked.connect(lambda: self.handleFltLiked(1))
 
+            scr_bar = ui.BBScroll.verticalScrollBar()
+            scr_bar.valueChanged.connect(lambda: self.init_bwlist(scr_bar.value()))
+
         if ENABLE_ISF:
             ui.sr_start.clicked.connect(
                 lambda: self.start_task(searchimg(int(ui.sr_input1.text()), ui.sr_input2.text())))
@@ -635,7 +633,7 @@ class MainWindow(QMainWindow):
         self.child_detail.show()
 
     def generate_detail_window_t(self):
-        path = self.getInput_t()
+        path = self.ui.HFolderInput.text()
         if not path:
             print('Empty Path! Please Enter a Path.')
             return 112
@@ -678,7 +676,11 @@ class MainWindow(QMainWindow):
         elif not bw_list:
             self.ui.none_sr.setHidden(False)
 
+        for i in bw_list[:15]:
+            i.Initialize()
+
         bookgrid = WidgetGrid(self.ui.BBScroll)
+        bookgrid.widgetList = bw_list
         bookgrid.setChildSize((347, 170))
         ht = (len(bw_list) + 2) // 3
         bookgrid.setGridSize((3, ht))
@@ -722,8 +724,13 @@ class MainWindow(QMainWindow):
         self.ui.flt_bunko.setText(self.lang["BB_selectbunko"])
         self.render_book_bank()
 
-    def init_bwlist(self):
-        for i in self.bw_list:
+    def init_bwlist(self, y_pos: int):
+        if not ENABLE_BANK:
+            return
+        bw_list = self.ui.BBScroll.mainwidget.widgetList
+        cur_wid = y_pos // 170 * 3
+        part_list = bw_list[cur_wid: cur_wid + 15]
+        for i in part_list:
             i.Initialize()
 
     def refresh_bw_list(self):
@@ -970,7 +977,6 @@ def activate():
     window = MainWindow()
     window.render_book_bank()
     window.show()
-    window.init_bwlist()
     window.set_connection()
 
 

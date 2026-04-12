@@ -162,7 +162,7 @@ class ScrollField(QScrollArea):
         r_widget.setParent(None)
         for i in self.widgets[index:]:
             i.move(i.x(), i.y() - h)
-        self.mainwidget.resize(self.mainwidget.width(), self.mainwidget.height() -h)
+        self.mainwidget.resize(self.mainwidget.width(), self.mainwidget.height() - h)
 
     def __repr__(self):
         return f"<{self.__class__.__name__} widgets={self.widgets}>"
@@ -230,12 +230,31 @@ class WidgetGrid(QWidget):
         self.gridsize = [1, 1]
         self.rendersize = [0, 0]
         self.grid = [[None]]
+        self.widget_list = []
 
     def __getitem__(self, item):
         a = []
         for i in self.grid:
             a += i
         return a[item]
+
+    @property
+    def widgetList(self):
+        if self.widget_list:
+            return self.widget_list
+        a = []
+        lasi = 0
+        for i in range(len(self.grid[-1])):
+            if self.grid[-1][i] == 0:
+                lasi = i
+        for i in self.grid[:-1]:
+            a += i
+        a += self.grid[-1][:lasi]
+        return a
+
+    @widgetList.setter
+    def widgetList(self, a):
+        self.widget_list = a
 
     def setWidgetAt(self, widget, pos=(0, 0)):
         grid = self.grid
@@ -313,8 +332,6 @@ class BoundWidgetGrid(QWidget):
             x = i // self.gridsize[0]
             y = i % self.gridsize[0]
             self.widget_list[i].move(y * self.childsize[0], x * self.childsize[1])
-
-
 
 
 class BinaryCheckBox(QCheckBox):
