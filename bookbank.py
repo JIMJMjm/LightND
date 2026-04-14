@@ -1,3 +1,4 @@
+from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from os import listdir as ldr
 from os.path import exists as ext, getctime as gct
@@ -40,7 +41,10 @@ def getTimeStringFromStamp(timestamp: int | float) -> str:
     return datetime.fromtimestamp(timestamp).strftime("%Y/%m/%d %H:%M:%S")
 
 
-def read_hmz_par(hmzpath: str) -> HmzedBook:
+def read_hmz_par(hmzpath: str, force_refresh=False) -> HmzedBook:
+    if not force_refresh:
+        return HMZFILES[hmzpath]
+
     def update_hmz():
         numname = hmzpath[:-4].split('/')[-1]
         print(f"Update Required! Auto updating {numname}...")
@@ -85,6 +89,17 @@ def read_bank_file():
     bookbank = read_json('bank.json')
     newbookbank = [BankedBook(**i) for i in bookbank]
     return newbookbank
+
+
+def get_global_hmzfiles():
+    bank = read_bank_file()
+    with ThreadPoolExecutor(max_workers=min(len(bank), 16)) as executor:
+        futures = []
+        for b in bank:
+            path = f'{b.directory}/{b.name}/{b.numname}.hmz'
+            ft = executor.submit(read_hmz_par, path, force_refresh=True)
+            futures.append((path, ft))
+    return {i[0]: i[1].result() for i in futures}
 
 
 def getBookFromNumname(numname: str) -> BankedBook | None:
@@ -297,6 +312,8 @@ def update():
     post_process()
     refresh_hmz()
 
+
+HMZFILES = get_global_hmzfiles()
 
 if __name__ == '__main__':
     pass

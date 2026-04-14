@@ -15,10 +15,10 @@ from downloadprocess import DownloadTask, get_img
 from netwk import get_alllist
 from prg_export import save_as_rmz, read_from_rmz
 from prg_import import RmzImportWindow
-from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, read_hmz, get_cover_from, convert2epub_pandoc
+from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_cover_from, convert2epub_pandoc
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
-                      filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank)
+                      filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank, read_hmz_par)
 from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
 from ui.ui_config import Ui_Config
@@ -352,7 +352,7 @@ class MainWindow(QMainWindow):
         paras[1] = filename
         if dirs[-2] == 'Slices' and (hmzfile := find_hmz('/'.join(dirs[:-2]))):
             vol = restore_from_default_name(path)
-            _, writer, _, allname = read_hmz('/'.join(dirs[:-2]) + '/' + hmzfile)
+            _, writer, _, allname = read_hmz_par('/'.join(dirs[:-2]) + '/' + hmzfile)
             paras[2] = writer
             if vol == 0:
                 return paras
@@ -366,7 +366,7 @@ class MainWindow(QMainWindow):
         if filename != dirs[-2]:
             return paras
         if hmzfile := find_hmz('/'.join(dirs[:-1])):
-            _, writer, _, allname = read_hmz('/'.join(dirs[:-1]) + '/' + hmzfile)
+            _, writer, _, allname = read_hmz_par('/'.join(dirs[:-1]) + '/' + hmzfile)
             paras[2] = writer
             paras[3] = get_cover_from('/'.join(dirs[:-1]) + '/' + allname[0][0])
             if paras[3] == '':
@@ -395,7 +395,7 @@ class MainWindow(QMainWindow):
         if not SHOW_FORMATED_FILE:
             return
 
-        hmzfile = read_hmz(f'{directory}/{hmz}')
+        hmzfile = read_hmz_par(f'{directory}/{hmz}')
         name, allnet = hmzfile.name, hmzfile.allnet
 
         if ext(f'{directory}/{name}.docx'):
@@ -436,9 +436,10 @@ class MainWindow(QMainWindow):
             self.buttonGroup[0].setChecked(True)
         indicator = [i.isEnabled() and i.isChecked() for i in self.buttonGroup]
         self.texter.indicator = indicator
+        print(f'Formats for {self.texter.target.name if self.texter.target else 'Unknown'}')
         print('Docx: Series[{}], Volumes[{}];\n'
               'Epub: Series[{}], Volumes[{}];\n'
-              'Azw3: Series[{}], Volumes[{}];'.format(*indicator))
+              'Azw3: Series[{}], Volumes[{}];'.format(*indicator), end='\033[4A')
 
     def unlock_Texter_options(self):
         for i in self.buttonGroup:
@@ -597,7 +598,7 @@ class MainWindow(QMainWindow):
         :param bankinfo:
         :return:
         """
-        current_hmz = read_hmz(f'{bankinfo.directory}/{bankinfo.name}/{bankinfo.numname}.hmz')
+        current_hmz = read_hmz_par(f'{bankinfo.directory}/{bankinfo.name}/{bankinfo.numname}.hmz')
         current_allnet = current_hmz.allnet
         updated_alllist = get_alllist(bankinfo.numname, 'all')
         updated_allnet = updated_alllist[0]
@@ -644,7 +645,7 @@ class MainWindow(QMainWindow):
             return 113
 
         numname = hmz.split('.')[0] if hmz else ''
-        hmzbook = read_hmz(f'{path}/{hmz}')
+        hmzbook = read_hmz_par(f'{path}/{hmz}')
         name, writer, allnet = hmzbook.name, hmzbook.writer, hmzbook.allnet
         cpnames = [i[0] for i in allnet]
 
@@ -907,8 +908,8 @@ class MainWindow(QMainWindow):
             if (resultp != 1 and resultp != 0) or (resultr != 1 and resultr != 0):
                 old_info = thisbw.bankinfo
                 self.import_window.initData(rmz=[bankfile.numname, bankfile.name, bankfile.lux],
-                                            hmzinfo=read_hmz(f'{old_info.directory}/'
-                                                             f'{old_info.name}/{old_info.numname}.hmz'))
+                                            hmzinfo=read_hmz_par(f'{old_info.directory}/'
+                                                                 f'{old_info.name}/{old_info.numname}.hmz'))
                 self.import_window.exec()
                 self.import_window.rtg_save.connect(thisbw.checkRTG)
                 self.import_window.prg_save.connect(thisbw.checkPRG)

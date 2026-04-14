@@ -12,7 +12,7 @@ from docx.shared import RGBColor, Cm, Pt
 from docx import Document
 import yaml
 
-from bookbank import read_hmz_par as read_hmz, getBookFromNumname
+from bookbank import read_hmz_par, getBookFromNumname
 from config import CONFIG, LANG, ordered_ldr, makedir, find_hmz
 
 FONT_SIZE = [18, 16, 15, 14]
@@ -147,7 +147,7 @@ class HFolder(object):
         self.hmz = find_hmz(folder_adr)
         self.numname = self.hmz.split('.')[0] if self.hmz else ''
 
-        hmzfile = read_hmz(f'{self.folder}/{self.hmz}')
+        hmzfile = read_hmz_par(f'{self.folder}/{self.hmz}')
         _, self.name, self.writer, self.allnet, self.allname, self.description = hmzfile.toDict().values()
         self.bunko = ''
         if ENABLE_PANDOC:

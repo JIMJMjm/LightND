@@ -1,4 +1,5 @@
 from sys import exit
+from typing import Callable, overload
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QMouseEvent, QFont
@@ -126,7 +127,7 @@ class ScrollField(QScrollArea):
         widget.setParent(self.mainwidget)
         widget.move(0, self.widget_size[1])
         if not self.widget_size[0]:
-            self.widget_size[0] = size[0] - 20  # NOQA
+            self.widget_size[0] = size[0] - 18  # NOQA
         self.widget_size[1] += size[1]  # NOQA
         self.mainwidget.setGeometry(*self.Geometry[:2], *self.widget_size)  # NOQA
 
@@ -344,3 +345,32 @@ class BinaryCheckBox(QCheckBox):
             self.setCheckState(Qt.CheckState.Unchecked)
         else:
             self.setCheckState(Qt.CheckState.Checked)
+
+
+class AbstractSignalBond:
+    @overload
+    def __init__(self, signals: tuple): ...
+
+    @overload
+    def __init__(self, *args): ...
+
+    def __init__(self, signals, *args):
+        self.signals = signals
+        if isinstance(signals, Signal):
+            self.signals = (signals, *args)
+        self.__is_locked__ = False
+
+    def setConnection(self, function: Callable):
+        def exclusive_function():
+            if self.__is_locked__:
+                return
+            self.__is_locked__ = True
+            try:
+                for signa in self.signals:
+                    signa.emit()
+                function()
+            finally:
+                self.__is_locked__ = False
+
+        for i in self.signals:
+            i.connect(exclusive_function)

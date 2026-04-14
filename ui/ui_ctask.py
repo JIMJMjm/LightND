@@ -94,32 +94,35 @@ class TitleWidget(QWidget):
 class ChapterWigdet(QWidget):
     def __init__(self, parent, chap: str):
         super().__init__(parent)
+
         self.checked = False
+
         self.setFixedSize(441, 30)
         self.label = ClickableLabel(parent=self, text=chap)
         self.label.setObjectName('MAIN')
         self.setStyleSheet(
-            "#MAIN { border: 2px solid rgb(100, 100, 100); padding: 2px; }"
-            "#MAIN:hover { border: 2px solid rgba(219, 112, 147, 154); padding: 2px; }"
+            "#MAIN { border: 2px solid rgb(180, 180, 180); }"
+            "#MAIN:hover { border: 2px solid rgba(219, 112, 147, 200);"
+            " color: rgb(219, 112, 147);}"
         )
         self.label.setFont(font)
+        self.label.setStyleSheet("QLabel { padding: 0px 0px 0px 5px; }")
         self.label.setGeometry(1, 0, 401, 30)
 
         self.checkBox = QtWidgets.QCheckBox(parent=self)
-        self.checkBox.setText("")
-        self.checkBox.setIconSize(QtCore.QSize(16, 16))
-        self.checkBox.setGeometry(414, 9, 16, 16)
+        self.checkBox.setText('')
+        self.checkBox.setGeometry(410, 0, 20, 30)
         self.checkBox.clicked.connect(self.upd)
-        self.label.clicked.connect(self._label_clicked)
+        self.label.clicked.connect(self.upd)
 
     def upd(self):
-        self.checked = self.checkBox.isChecked()
-
-    def _label_clicked(self):
         if not self.checkBox.isEnabled():
             return
-        self.checkBox.nextCheckState()
-        self.upd()
+        self.setChecked(not self.checked)
+
+    def setChecked(self, checked: bool):
+        self.checked = checked
+        self.checkBox.setChecked(checked)
 
 
 class VolumeWidget(QWidget):
@@ -134,7 +137,7 @@ class VolumeWidget(QWidget):
         self.setGeometry(0, 0, 500, 40)
 
         self.volume = QFrame(self)
-        self.volume.setStyleSheet("#Task { border: 2px solid rgb(100, 100, 100); padding: 1px; }")
+        self.volume.setStyleSheet("#Task { border: 2px solid rgb(80, 80, 80); }")
         self.volume.setObjectName("Task")
         self.volume.setGeometry(0, 0, 481, 41)
 
@@ -144,7 +147,7 @@ class VolumeWidget(QWidget):
         self.line.setFrameShadow(QFrame.Shadow.Sunken)
         self.line.setObjectName("line")
 
-        self.label = QLabel(parent=self.volume)
+        self.label = ClickableLabel(parent=self.volume)
         self.label.setGeometry(58, 0, 390, 40)
         self.label.setFont(font)
         self.label.setWordWrap(True)
@@ -158,14 +161,14 @@ class VolumeWidget(QWidget):
             self.checkBox.setObjectName("checkBox")
             self.checkBox.setGeometry(14, 13, 16, 16)
             self.label.setText(text)
+
             self.checkBox.clicked.connect(self.update_state)
+            self.label.lclicked.connect(self.update_state)
             return
 
         self._text = text[1:]
         self.ext_chaps = self._text if ext_chaps is True else ext_chaps
-        self._exp_len = len(self._text) * 30
-
-        self.label.setText(text[0])
+        self._exp_len = len(self._text) * 29 + 2
 
         self._dar = QtGui.QPixmap('images/d_arrow.png').scaled(16, 16)
         self._rar = QtGui.QPixmap('images/r_arrow.png').scaled(16, 16)
@@ -182,12 +185,17 @@ class VolumeWidget(QWidget):
         self.line2.setObjectName("line")
 
         self.checkBox = QCheckBox(self.volume)
+        self.checkBox.setTristate(True)
         self.checkBox.setCheckState(EMPTY)
-        self.checkBox.setGeometry(454, 13, 16, 16)
+        self.checkBox.setGeometry(450, 0, 20, 40)
+
+        self.label.setText(text[0])
+        self.label.lclicked.connect(self.handle_arrow)
+        self.label.rclicked.connect(self.handle_volume_checkbox)
 
         self.chapterWidgets = WidgetGrid(self.volume)
         self.chapterWidgets.setGridSize((1, len(self._text)))
-        self.chapterWidgets.setChildSize((441, 30))
+        self.chapterWidgets.setChildSize((441, 29))
         self.chapterWidgets.move(39, 41)
         self.chapterWidgets.setHidden(True)
         if ext_chaps is True:
@@ -197,7 +205,8 @@ class VolumeWidget(QWidget):
         self.checkBox.clicked.connect(self.handle_volume_checkbox)
 
     def update_state(self):
-        self.isChecked = self.checkBox.isChecked()
+        self.isChecked = not self.isChecked
+        self.checkBox.setChecked(self.isChecked)
 
     def generate_chaps(self):
         for i in self._text:
@@ -242,17 +251,23 @@ class VolumeWidget(QWidget):
 
     def setAllChapterCB(self, state: bool):
         for i in self.chapterWidgets:
+            i: ChapterWigdet
             if not i.checkBox.isEnabled():
                 continue
-            i.checkBox.setChecked(state)
+            i.setChecked(state)
 
-    def handle_volume_checkbox(self):
-        if not self.checkBox.isChecked():
-            self.checkBox.setCheckState(QtCore.Qt.CheckState.Unchecked)
+    def handle_volume_checkbox(self, do_next=None):
+        if not self.checkBox.isEnabled():
+            return
+        if do_next is not None:
+            self.checkBox.nextCheckState()
+            self.checkBox.nextCheckState()
+        if self.checkBox.checkState() == FULL:
             self.setAllChapterCB(False)
+            self.checkBox.setCheckState(QtCore.Qt.CheckState.Unchecked)
         else:
-            self.checkBox.setCheckState(QtCore.Qt.CheckState.Checked)
             self.setAllChapterCB(True)
+            self.checkBox.setCheckState(QtCore.Qt.CheckState.Checked)
 
     def handle_save_bt(self):
         if self.checkBox.checkState() == FULL:
@@ -277,7 +292,7 @@ class VolumeWidget_R(QWidget):
         self.volume.setGeometry(0, 0, 481, 41)
 
         self.label = QLabel(parent=self.volume)
-        self.label.setGeometry(8, 0, 320, 40)
+        self.label.setGeometry(18, 0, 310, 40)
         self.label.setFont(font)
         self.label.setWordWrap(True)
         self.label.setText(text)
@@ -343,7 +358,7 @@ class DetailedWindow(QDialog):
             self.SelectAll = QCheckBox(parent=self)
             self.SelectAll.setGeometry(14, 667, 100, 16)
             self.SelectAll.setText(LANG['CTASK_select_all'])
-            self.SelectAll.clicked.connect(lambda: self.setAllState(self.SelectAll.isChecked()))
+            self.SelectAll.clicked.connect(self.setAllState)
 
             self.text1 = QLabel(parent=self)
             self.text1.setGeometry(105, 660, 80, 30)
@@ -393,7 +408,10 @@ class DetailedWindow(QDialog):
 
     def generate_widget(self):
         for i in self.volumes:
-            self.scroll_area.addWidget(VolumeWidget(i, None, self.renderChapters))
+            cur_wid = VolumeWidget(i, None, self.renderChapters)
+            cur_wid.checkBox.clicked.connect(self.setAllButton)
+            cur_wid.label.lclicked.connect(self.setAllButton)
+            self.scroll_area.addWidget(cur_wid)
 
     @staticmethod
     def _get_prgi(vol, prg):
@@ -417,9 +435,8 @@ class DetailedWindow(QDialog):
 
     def setAllState(self, state: bool):
         for i in self.scroll_area:
-            i.checkBox.setChecked(state)
+            i.isChecked = not state
             i.update_state()
-        self.get_novel_state()
 
     def get_goal_filename(self):
         filename = self.nameIP.text()
@@ -433,6 +450,13 @@ class DetailedWindow(QDialog):
             x, y = i.x(), i.y()
             i.move(x, y + _exp_len)
         self.scroll_area.expandMainWidget((0, _exp_len))
+
+    def setAllButton(self):
+        states = self.get_novel_state()
+        if all(states):
+            self.SelectAll.setChecked(True)
+        else:
+            self.SelectAll.setChecked(False)
 
 
 if __name__ == "__main__":
