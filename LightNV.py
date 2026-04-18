@@ -691,10 +691,6 @@ class MainWindow(QMainWindow):
             bookgrid.addWidget(i)
 
         self.ui.BBScroll.setMainWidget(bookgrid)
-        # y_pos = self.ui.BBScroll.verticalScrollBar()
-        # y_pos.valueChanged.connect(lambda: print(y_pos.value()))
-
-        # self.ui.BBScroll.mainwidget.setGeometry(0, 0, 1042, 170 * ht)
 
     def process_bw_list(self) -> list:
         bw_list = self.bw_list

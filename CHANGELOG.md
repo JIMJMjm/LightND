@@ -1,3 +1,10 @@
+## LightND - Release v8.3.1
+
+### Bug Fixes:
+ - 修复了书库刷新时的报错问题。
+ - 修复了特定情况下下载不符合预期的问题。
+
+
 ## LightND - Release v8.3
 
 ### What's New:

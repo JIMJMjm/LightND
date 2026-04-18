@@ -106,11 +106,9 @@ class DownloadTask(object):
     def illu_page(self, volumeName, url):
         dirnamr = f'{self.rname}/{volumeName}/插图'
         makedir(dirnamr)
-
         img_list = GetRq(url).run('f')
         for y, i in enumerate(img_list):
             save_img(i, f'{dirnamr}/{y + 1}.jpg')
-
         return 1
 
     def process_page(self, i: int, j: int, alllists=None):

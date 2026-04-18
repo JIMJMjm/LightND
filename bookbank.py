@@ -42,7 +42,7 @@ def getTimeStringFromStamp(timestamp: int | float) -> str:
 
 
 def read_hmz_par(hmzpath: str, force_refresh=False) -> HmzedBook:
-    if not force_refresh:
+    if not force_refresh and HMZFILES.get(hmzpath) is not None:
         return HMZFILES[hmzpath]
 
     def update_hmz():

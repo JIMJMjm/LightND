@@ -296,6 +296,9 @@ class BookWidget(QWidget):
             self.upd_bank()
             return 1
 
+    def update_info(self, info: HmzedBook):
+        pass
+
 
 if __name__ == '__main__':
     pass
