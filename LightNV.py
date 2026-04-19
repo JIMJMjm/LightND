@@ -750,7 +750,7 @@ class MainWindow(QMainWindow):
         self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
 
         self.bw_list = odb((1, '+'), bll)
-        for i in bll:
+        for i in bll[:15]:
             i.Initialize()
 
         self.render_book_bank(self.process_bw_list())
