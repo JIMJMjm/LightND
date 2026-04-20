@@ -190,8 +190,8 @@ class MainWindow(QMainWindow):
             self.DAR = QPixmap("images/uorder.png").scaled(28, 28)
 
             bll = [BkWt(bankinfo=i) for i in bank]
-            bb_info = get_all_info()
 
+            bb_info = get_all_info()
             self.g_opt += [self.ui.g_menu.addAction(i) for i in bb_info[0]]
             self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
 
@@ -199,8 +199,8 @@ class MainWindow(QMainWindow):
 
             self.bw_list: list[BkWt] = odb((1, '+'), bll)
 
-        self.bb_param = ['', '', [1, '+'], '']
-        self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
+            self.bb_param = ['', '', [1, '+'], '']
+            self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
 
         self.warningWindow = QMessageBox()
         self.uiConfig = Ui_Config()
@@ -565,7 +565,7 @@ class MainWindow(QMainWindow):
         if AWW:
             self.showWarning.connect(lambda warning: self.showWarningWindow(warning))
 
-        ui.none_sr.lclicked.connect(self.init_bbgrid)
+        ui.none_sr.lclicked.connect(self.init_bankFrame)
         ui.GLB_setting.clicked.connect(self.uiConfig.show)
 
         ui.export_btn.clicked.connect(self.setExportMode)
@@ -577,20 +577,21 @@ class MainWindow(QMainWindow):
 
         ui.unlock_button.clicked.connect(self.unlock_Texter_options)
 
-    def set_bw_connection(self):
+    def set_bw_connection(self, init=True):
         for i in self.g_opt[1:]:
             i.triggered.connect(lambda checked, action=i: self.GoptionControl(action.text()))
         for i in self.b_opt[1:]:
             i.triggered.connect(lambda checked, action=i: self.BoptionControl(action.text()))
-        for i in self.ui.o_actions:
-            i.triggered.connect(lambda checked, action=i: self.OoptionControl(action.text()))
 
-        self.ui.order_arrow.clicked.connect(self.handleODArrow)
         self.g_opt[0].triggered.connect(lambda: self.GoptionControl(0))
         self.b_opt[0].triggered.connect(lambda: self.BoptionControl(0))
         for i in self.bw_list:
             i.detailmd.lclicked.connect(lambda bookwidget=i: self.jump_to_texter(bookwidget))
             i.updatebt.lclicked.connect(lambda bk=i: self.check_update_as(bk))
+        if init:
+            self.ui.order_arrow.clicked.connect(self.handleODArrow)
+            for i in self.ui.o_actions:
+                i.triggered.connect(lambda checked, action=i: self.OoptionControl(action.text()))
 
     @staticmethod
     def check_update(bankinfo: BankedBook):
@@ -709,7 +710,9 @@ class MainWindow(QMainWindow):
         cons = tuple(cons)
         return odb(cons, bw_list)
 
-    def init_bbgrid(self):
+    def init_bankFrame(self):
+        if not ENABLE_BANK:
+            return
         self.bb_param = ['', '', [1, '+'], '']
         self.bb_liked = 0
         self.ui.flt_liked.setPixmap(QPixmap("images/heart_h.png").scaled(28, 28))
@@ -736,7 +739,6 @@ class MainWindow(QMainWindow):
         self.ui.g_menu.clear()
         self.ui.b_menu.clear()
         del self.hidden_veil
-        self.ui.BBScroll.resetMainWidget()
 
         self.bw_list = []
         self.hidden_veil = QWidget()
@@ -749,12 +751,12 @@ class MainWindow(QMainWindow):
         self.g_opt += [self.ui.g_menu.addAction(i) for i in bb_info[0]]
         self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
 
-        self.bw_list = odb((1, '+'), bll)
+        self.bw_list = odb(tuple(self.bb_param[2]), bll)
         for i in bll[:15]:
             i.Initialize()
 
         self.render_book_bank(self.process_bw_list())
-        self.set_bw_connection()
+        self.set_bw_connection(init=False)
 
     def jump_to_texter(self, bookWidget: BkWt):
         self.select_directory_t(ask=False, directory=bookWidget.getAddress())

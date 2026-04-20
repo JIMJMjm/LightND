@@ -1,3 +1,10 @@
+## LightND - Release v8.3.2
+
+### Bug Fixes:
+ - 修复了书库刷新时排序失效及排序组件异常卡顿的问题。
+ - 修复了刷新后动态渲染失效的问题。
+
+
 ## LightND - Release v8.3.1
 
 ### Bug Fixes:
