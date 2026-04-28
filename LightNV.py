@@ -18,7 +18,7 @@ from prg_import import RmzImportWindow
 from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_cover_from, convert2epub_pandoc
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
-                      filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank, read_hmz_par)
+                      filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank, read_hmz_par, update_hmzfiles)
 from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
 from ui.ui_config import Ui_Config
@@ -736,6 +736,7 @@ class MainWindow(QMainWindow):
     def refresh_bw_list(self):
         bb_info = get_all_info()
         bank = read_bank_file()
+        update_hmzfiles()
 
         del self.g_opt
         del self.b_opt
