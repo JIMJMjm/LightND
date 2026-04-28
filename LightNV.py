@@ -738,8 +738,6 @@ class MainWindow(QMainWindow):
         bank = read_bank_file()
         update_hmzfiles()
 
-        del self.g_opt
-        del self.b_opt
         self.ui.g_menu.clear()
         self.ui.b_menu.clear()
         self.g_opt = [self.ui.g_menu.addAction('全部')]

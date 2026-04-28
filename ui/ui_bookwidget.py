@@ -118,6 +118,21 @@ class BookWidget(QWidget):
                     break
         return int(round((cur_c/all_c * 100), 0))
 
+    def SpecUI(self):
+        self.bookname.setText(self.name)
+
+        if self.thumb is not None:
+            self.thumbr.setPixmap(QPixmap(self.thumb).scaled(113, 170))
+        else:
+            self.thumbr.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.thumbr.setText('?')
+
+        self.progs.setValue(0 if not self.lux_info.prg else self.get_percentage_prg())
+
+        self.update_info.setText(f'{LANG['BW_lck']} : ' + (LANG['BW_never'] if not self.lux_info.lck else
+                                                           getTimeStringFromStamp(self.lux_info.lck)))
+        self.hover_widget.setText(f'{self.rating.r_rating:.2f}')
+
     def setupUI(self):
         if len(self.name) > 32:
             delta_y = 48
@@ -130,7 +145,6 @@ class BookWidget(QWidget):
         self.bookname.setHidden(False)
         self.bookname.setGeometry(118, 8, 225, delta_y)
         self.bookname.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.bookname.setText(self.name)
         if len(self.name) > 20:
             self.bookname.setFont(DF_10_B)
         else:
@@ -140,11 +154,6 @@ class BookWidget(QWidget):
         self.thumbr = ClickableLabel(parent=self, pic=(219, 112, 147, 154))
         self.thumbr.setHidden(False)
         self.thumbr.setGeometry(0, 0, 113, 170)
-        if self.thumb is not None:
-            self.thumbr.setPixmap(QPixmap(self.thumb).scaled(113, 170))
-        else:
-            self.thumbr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.thumbr.setText('?')
 
         self.updatebt.setGeometry(195, 117, 50, 17)
         self.updatebt.setFont(DF_11)
@@ -177,13 +186,11 @@ class BookWidget(QWidget):
         self.progs.setHidden(False)
         self.progs.setTextVisible(False)
         self.progs.setRange(0, 100)
-        self.progs.setValue(0 if not self.lux_info.prg else self.get_percentage_prg())
         self.progs.setGeometry(200, 89, 133, 18)
 
         self.update_info = QLabel(parent=self)
         self.update_info.setHidden(False)
-        self.update_info.setText(f'{LANG['BW_lck']} : ' + (LANG['BW_never'] if not self.lux_info.lck else
-                                                           getTimeStringFromStamp(self.lux_info.lck)))
+
         self.update_info.setFont(DF_11)
         self.update_info.setGeometry(120, 142, 205, 18)
         self.update_info.setStyleSheet("""
@@ -215,7 +222,7 @@ class BookWidget(QWidget):
 
         self.hover_widget = QLabel(self)
         self.hover_widget.setStyleSheet("QLabel { background-color: rgb(219, 234, 255); }")
-        self.hover_widget.setText(f'{self.rating.r_rating:.2f}')
+
         self.hover_widget.setGeometry(200, 60, 38, 18)
         self.hover_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.hover_widget.setFont(QFont('Times New Roman', 12))
@@ -237,6 +244,7 @@ class BookWidget(QWidget):
             return
         self.setupUI()
         self.setConnection()
+        self.SpecUI()
         self.is_initialized = True
 
     def getAddress(self):
@@ -297,8 +305,9 @@ class BookWidget(QWidget):
 
     def update_hmzinfo(self, info: HmzedBook):
         self.hmzinfo = info
-        if self.is_initialized:
-            self.upd_bank()
+        if not self.is_initialized:
+            return
+        self.SpecUI()
 
 
 if __name__ == '__main__':
