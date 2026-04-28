@@ -179,15 +179,12 @@ def filter_liked_bw(liked: int, bw_list: list) -> list:
 
 
 def order_bw_ranked(reverse: bool, bw_list: list) -> list:
-    pre = []
-    for i in bw_list:
-        lux_i = i.bankinfo.lux
-        if not lux_i.rtg:
-            pre.append((i, 0))
-            continue
-        pre.append((i, sum(lux_i.rtg.values()) / len(lux_i.rtg)))
-    rt = sorted(pre, key=lambda bk: bk[1], reverse=reverse)
-    return [i[0] for i in rt]
+    def get_avg_rtg(bw):
+        rtg = bw.bankinfo.lux.rtg
+        if not rtg:
+            return 0.0
+        return sum(rtg.values()) / len(rtg)
+    return sorted(bw_list, key=get_avg_rtg, reverse=reverse)
 
 
 def order_bank(constraint: tuple, bank: list['BankedBook'] = None):
@@ -207,6 +204,8 @@ def order_bank(constraint: tuple, bank: list['BankedBook'] = None):
         return sorted(bank, key=lambda bk: (int(bk.numname), bk.name), reverse=sgn)
     elif order == 1:
         return sorted(bank, key=lambda bk: (slug(bk.name, separator=''), int(bk.numname)), reverse=sgn)
+    elif order == -1:
+        return order_bw_ranked(reverse=sgn, bw_list=bank)
     else:
         return sorted(bank, key=lambda bk: (bk[order], int(bk.numname)), reverse=sgn)
 
@@ -314,6 +313,12 @@ def update():
 
 
 HMZFILES = get_global_hmzfiles()
+
+
+def update_hmzfiles():
+    global HMZFILES
+    HMZFILES = get_global_hmzfiles()
+
 
 if __name__ == '__main__':
     pass

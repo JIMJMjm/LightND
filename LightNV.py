@@ -577,7 +577,7 @@ class MainWindow(QMainWindow):
 
         ui.unlock_button.clicked.connect(self.unlock_Texter_options)
 
-    def set_bw_connection(self, init=True):
+    def set_bw_connection(self, init=True, new_bw: list = None):
         for i in self.g_opt[1:]:
             i.triggered.connect(lambda checked, action=i: self.GoptionControl(action.text()))
         for i in self.b_opt[1:]:
@@ -585,7 +585,7 @@ class MainWindow(QMainWindow):
 
         self.g_opt[0].triggered.connect(lambda: self.GoptionControl(0))
         self.b_opt[0].triggered.connect(lambda: self.BoptionControl(0))
-        for i in self.bw_list:
+        for i in self.bw_list if new_bw is None else new_bw:
             i.detailmd.lclicked.connect(lambda bookwidget=i: self.jump_to_texter(bookwidget))
             i.updatebt.lclicked.connect(lambda bk=i: self.check_update_as(bk))
         if init:
@@ -734,29 +734,32 @@ class MainWindow(QMainWindow):
             i.Initialize()
 
     def refresh_bw_list(self):
+        bb_info = get_all_info()
+        bank = read_bank_file()
+
         del self.g_opt
         del self.b_opt
         self.ui.g_menu.clear()
         self.ui.b_menu.clear()
-        del self.hidden_veil
-
-        self.bw_list = []
-        self.hidden_veil = QWidget()
-        bank = read_bank_file()
         self.g_opt = [self.ui.g_menu.addAction('全部')]
         self.b_opt = [self.ui.b_menu.addAction('全部')]
-        bll = [BkWt(bankinfo=i) for i in bank]
-        bb_info = get_all_info()
-
         self.g_opt += [self.ui.g_menu.addAction(i) for i in bb_info[0]]
         self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
 
-        self.bw_list = odb(tuple(self.bb_param[2]), bll)
-        for i in bll[:15]:
-            i.Initialize()
-
+        curr_bank = [i.bankinfo for i in self.bw_list]
+        new_bw = []
+        for i in bank:
+            if i not in curr_bank:
+                bw_new = BkWt(bankinfo=i)
+                new_bw.append(bw_new)
+                self.bw_list.append(bw_new)
+        for y, i in enumerate(curr_bank):
+            if i in bank:
+                path = f'{i.directory}/{i.name}/{i.numname}.hmz'
+                hmzfi = read_hmz_par(path)
+                self.bw_list[y].update_hmzinfo(hmzfi)
         self.render_book_bank(self.process_bw_list())
-        self.set_bw_connection(init=False)
+        self.set_bw_connection(init=False, new_bw=new_bw)
 
     def jump_to_texter(self, bookWidget: BkWt):
         self.select_directory_t(ask=False, directory=bookWidget.getAddress())

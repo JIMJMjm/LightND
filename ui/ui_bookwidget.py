@@ -52,7 +52,6 @@ class BookWidget(QWidget):
         self.is_initialized = False
         self.setMouseTracking(True)
 
-        # self.bookname = ClickableLabel(parent=self)
         self.updatebt = ClickableLabel(parent=self, text=LANG['BW_update'])
         self.detailmd = ClickableLabel(parent=self, text=LANG['BW_texter'])
 
@@ -296,8 +295,10 @@ class BookWidget(QWidget):
             self.upd_bank()
             return 1
 
-    def update_info(self, info: HmzedBook):
-        pass
+    def update_hmzinfo(self, info: HmzedBook):
+        self.hmzinfo = info
+        if self.is_initialized:
+            self.upd_bank()
 
 
 if __name__ == '__main__':
