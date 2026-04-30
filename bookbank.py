@@ -93,6 +93,8 @@ def read_bank_file():
 
 def get_global_hmzfiles():
     bank = read_bank_file()
+    if not bank:
+        return {}
     with ThreadPoolExecutor(max_workers=min(len(bank), 16)) as executor:
         futures = []
         for b in bank:
