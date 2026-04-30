@@ -222,8 +222,6 @@ class BookWidget(QWidget):
 
         self.hover_widget = QLabel(self)
         self.hover_widget.setStyleSheet("QLabel { background-color: rgb(219, 234, 255); }")
-
-        self.hover_widget.setGeometry(200, 60, 38, 18)
         self.hover_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.hover_widget.setFont(QFont('Times New Roman', 12))
         self.hover_widget.setHidden(True)

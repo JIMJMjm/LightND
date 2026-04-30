@@ -26,7 +26,7 @@ class StarRatingWidget(QWidget):
             star.setGeometry(i*(self.star_zize+2), 0, self.star_zize, self.star_zize)
             self._stars.append(star)
 
-        self.hover_widget = QLabel(self)
+        self.hover_widget = None
 
         self._update_display()
 
@@ -38,6 +38,8 @@ class StarRatingWidget(QWidget):
 
     def _update_display(self):
         rating = self.rating
+        if self.hover_widget is not None:
+            self.hover_widget.setText(f'{rating:.2f}')
         for i in range(5):
             star_value = int(min(max(rating - i * 2, 0), 2))
             self._stars[i].setPixmap(self._sstate[star_value])
@@ -60,9 +62,13 @@ class StarRatingWidget(QWidget):
             self._handle_click(pos)
 
     def enterEvent(self, event, /):
+        if self.hover_widget is None:
+            return
         self.hover_widget.setHidden(False)
 
     def leaveEvent(self, event, /):
+        if self.hover_widget is None:
+            return
         self.hover_widget.setHidden(True)
 
     def mouseMoveEvent(self, event, /):

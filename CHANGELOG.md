@@ -1,5 +1,11 @@
 ## LightND - Release v8.3.3
 
+### Improvements:
+ - 现在评分组件的悬浮数字组件更新将自动完成，不再需要手动刷新。
+
+
+## LightND - Release v8.3.3
+
 ### Bug Fixes:
  - 修复了版本号未正常更新的问题
  - 修复了特定情况下书库刷新时图书组件绑定异常的问题。
