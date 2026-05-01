@@ -268,6 +268,8 @@ class BookWidget(QWidget):
             self.export_layer.setPixmap(QPixmap())
 
     def setExport(self, is_export_mode: bool):
+        if not self.is_initialized:
+            return
         self.export_layer.setHidden(not is_export_mode)
 
     def checkPRG(self, prg) -> int | HmzedBook:

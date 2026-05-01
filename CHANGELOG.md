@@ -1,4 +1,15 @@
-## LightND - Release v8.3.3
+## LightND - Release v8.3.5
+
+### Bug Fixes:
+ - 修复了书库为空时可能引发的部分问题。
+ - 修复了特定情况下书库导出功能异常的问题。
+
+### Improvements:
+ - 现在提供将其他文件作为`bank.json`打开的函数，这将在未来为某些功能的实装提供接口。
+ - `评分`排序项的实现方式现在更加合理。
+
+
+## LightND - Release v8.3.4
 
 ### Improvements:
  - 现在评分组件的悬浮数字组件更新将自动完成，不再需要手动刷新。
