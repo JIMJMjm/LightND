@@ -10,6 +10,9 @@ from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid
 from config import (CONFIG, CONFIG_NOTATION, DEFAULT_SETTING,
                     modify_global_settings as mgs, get_global_settings as ggs, translate_to as tsl)
 
+# Config keys managed exclusively by the Cloud Sync tab
+_CLOUD_SYNC_KEYS = {'ENABLE_CLOUD_SYNC', 'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD'}
+
 df15 = DefaultFont(15, underline=True)
 df13 = DefaultFont(13)
 df12 = DefaultFont(12)
@@ -53,7 +56,7 @@ class Ui_Config(QDialog):
         self.reset_button.setGeometry(15, 509, 50, 32)
         self.reset_button.lclicked.connect(lambda: self.handleResetAll(q=False))
 
-        entry_number = len(CONFIG)
+        entry_number = len(CONFIG) - len(_CLOUD_SYNC_KEYS)
         self.entry_content_grid = WidgetGrid(self)
         self.entry_content_grid.move(0, 0)
         self.entry_content_grid.setGridSize((1, entry_number))
@@ -61,6 +64,8 @@ class Ui_Config(QDialog):
         self.entry_content_grid.resize(980, 65 * entry_number)
 
         for i, j in zip(CONFIG.keys(), CONFIG.values()):
+            if i in _CLOUD_SYNC_KEYS:
+                continue
             _type = ''
             if isinstance(j, bool):
                 _type = 'bool'

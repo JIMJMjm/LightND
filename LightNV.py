@@ -1,13 +1,16 @@
 from os import listdir as ldr
 from os.path import exists as ext
+import json
+import shutil
 import sys
 from sys import exit
 from time import perf_counter as pfc
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 from PySide6.QtGui import QPixmap
 from typing_extensions import Literal
-from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject
+from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject, QThread
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget, QMessageBox
 
 from book_struct import BankedBook
@@ -18,6 +21,10 @@ from prg_import import RmzImportWindow
 from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_cover_from, convert2epub_pandoc
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
+                      filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
+                      remove_from_bank, delete_book_files, compare_banks)
+from ftpsync import FtpSyncManager
+from config import modify_global_settings as mgs
                       filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles)
 from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
@@ -42,6 +49,7 @@ RMZ_FILENAME_FORMAT = CONFIG['RMZ_FILENAME_FORMAT']
 LANGUAGE = CONFIG['LANGUAGE']
 AUTO_UNLOCK_TEXTER = CONFIG['AUTO_UNLOCK_TEXTER']
 SHOW_FORMATED_FILE = CONFIG['SHOW_FORMATED_FILE']
+ENABLE_CLOUD_SYNC = CONFIG['ENABLE_CLOUD_SYNC']
 
 if ENABLE_ISF:
     from image_search import search_for as searchimg
@@ -58,6 +66,41 @@ class WorkerRunnable(QRunnable):
     def run(self):
         self.task(*self.args, **self.kw)
         self.callback()
+
+
+class FtpWorker(QObject):
+    finished = Signal(str)
+    error = Signal(str)
+    bank_downloaded = Signal(bytes)
+
+    def __init__(self, manager: FtpSyncManager, operation: str, args: tuple):
+        super().__init__()
+        self.manager = manager
+        self.operation = operation
+        self.args = args
+
+    def run(self):
+        if self.operation == 'test':
+            host, port, username, password = self.args
+            ok, msg = self.manager.test_connection(host, port, username, password)
+            if ok:
+                self.finished.emit(msg)
+            else:
+                self.error.emit(msg)
+        elif self.operation == 'upload':
+            host, port, username, password = self.args
+            ok, msg = self.manager.upload_bank(host, port, username, password)
+            if ok:
+                self.finished.emit(msg)
+            else:
+                self.error.emit(msg)
+        elif self.operation == 'download':
+            host, port, username, password = self.args
+            ok, msg, data = self.manager.download_bank(host, port, username, password)
+            if ok and data is not None:
+                self.bank_downloaded.emit(data)
+            else:
+                self.error.emit(msg)
 
 
 class Downloader:
@@ -219,6 +262,10 @@ class MainWindow(QMainWindow):
         self.task_window = MissionWindow()
 
         self.import_window = RmzImportWindow()
+
+        self.ftp_sync = FtpSyncManager()
+        self._sync_thread = None
+        self._sync_worker = None
 
     def start_task(self, task, *args, **kwargs):
         self.thread_pool.start(WorkerRunnable(task, lambda: None, *args, **kwargs))
@@ -576,6 +623,208 @@ class MainWindow(QMainWindow):
         ui.import_btn.clicked.connect(self.handleImport)
 
         ui.unlock_button.clicked.connect(self.unlock_Texter_options)
+
+        self.set_cloud_sync_connection()
+
+    def set_cloud_sync_connection(self):
+        ui = self.ui
+
+        ui.cs_host_input.setText(CONFIG.get('FTP_HOST', ''))
+        ui.cs_port_input.setText(str(CONFIG.get('FTP_PORT', 21)))
+        ui.cs_user_input.setText(CONFIG.get('FTP_USERNAME', ''))
+        ui.cs_pass_input.setText(CONFIG.get('FTP_PASSWORD', ''))
+        ui.cs_enable.setChecked(CONFIG.get('ENABLE_CLOUD_SYNC', False))
+
+        self._update_cloud_sync_ui_state()
+
+        ui.cs_enable.toggled.connect(self._on_cloud_sync_toggle)
+        ui.cs_test_btn.clicked.connect(self._on_cloud_sync_test)
+        ui.cs_upload_btn.clicked.connect(self._on_cloud_sync_upload)
+        ui.cs_download_btn.clicked.connect(self._on_cloud_sync_download)
+
+    def _update_cloud_sync_ui_state(self):
+        enabled = self.ui.cs_enable.isChecked()
+        self.ui.cs_host_input.setEnabled(enabled)
+        self.ui.cs_port_input.setEnabled(enabled)
+        self.ui.cs_user_input.setEnabled(enabled)
+        self.ui.cs_pass_input.setEnabled(enabled)
+        self.ui.cs_test_btn.setEnabled(enabled)
+        self.ui.cs_upload_btn.setEnabled(enabled)
+        self.ui.cs_download_btn.setEnabled(enabled)
+
+    def _on_cloud_sync_toggle(self, checked):
+        self._update_cloud_sync_ui_state()
+        if not checked:
+            self.ui.cs_status.setText(self.lang['CLOUD_STATUS_IDLE'])
+
+    def _on_cloud_sync_test(self):
+        host = self.ui.cs_host_input.text().strip()
+        port_str = self.ui.cs_port_input.text().strip()
+        username = self.ui.cs_user_input.text().strip()
+        password = self.ui.cs_pass_input.text()
+
+        if not host:
+            QMessageBox.warning(self, self.lang['CLOUD_STATUS_ERROR'],
+                                self.lang['CLOUD_ERR_EMPTY_HOST'])
+            return
+
+        try:
+            port = int(port_str) if port_str else 21
+        except ValueError:
+            port = 21
+
+        self.ui.cs_status.setText(self.lang['CLOUD_STATUS_CONNECTING'])
+        self.ui.cs_test_btn.setEnabled(False)
+        self.ui.cs_upload_btn.setEnabled(False)
+        self.ui.cs_download_btn.setEnabled(False)
+
+        self._sync_worker = FtpWorker(self.ftp_sync, 'test', (host, port, username, password))
+        self._sync_thread = QThread()
+        self._sync_worker.moveToThread(self._sync_thread)
+        self._sync_thread.started.connect(self._sync_worker.run)
+        self._sync_worker.finished.connect(lambda msg: self._on_ftp_test_done(True, msg, host, port, username, password))
+        self._sync_worker.error.connect(lambda msg: self._on_ftp_test_done(False, msg, host, port, username, password))
+        self._sync_worker.finished.connect(self._sync_thread.quit)
+        self._sync_worker.error.connect(self._sync_thread.quit)
+        self._sync_worker.finished.connect(self._sync_worker.deleteLater)
+        self._sync_worker.error.connect(self._sync_worker.deleteLater)
+        self._sync_thread.finished.connect(self._sync_thread.deleteLater)
+        self._sync_thread.start()
+
+    def _on_ftp_test_done(self, success: bool, message: str,
+                          host: str, port: int, username: str, password: str):
+        self.ui.cs_test_btn.setEnabled(True)
+        self.ui.cs_upload_btn.setEnabled(self.ui.cs_enable.isChecked())
+        self.ui.cs_download_btn.setEnabled(self.ui.cs_enable.isChecked())
+
+        if success:
+            self.ui.cs_status.setText(self.lang['CLOUD_STATUS_CONNECTED'])
+            cfg = CONFIG
+            cfg['FTP_HOST'] = host
+            cfg['FTP_PORT'] = port
+            cfg['FTP_USERNAME'] = username
+            cfg['FTP_PASSWORD'] = password
+            cfg['ENABLE_CLOUD_SYNC'] = True
+            mgs(cfg)
+        else:
+            self.ui.cs_status.setText(
+                f"{self.lang['CLOUD_STATUS_FAILED']}: {message}")
+            QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'], message)
+
+    def _on_cloud_sync_upload(self):
+        if not self.ui.cs_enable.isChecked():
+            return
+
+        if not ext('bank.json'):
+            QMessageBox.warning(self, self.lang['CLOUD_STATUS_ERROR'],
+                                self.lang['CLOUD_ERR_BANK_NOT_FOUND'])
+            return
+
+        host = self.ui.cs_host_input.text().strip()
+        port = int(self.ui.cs_port_input.text().strip() or '21')
+        username = self.ui.cs_user_input.text().strip()
+        password = self.ui.cs_pass_input.text()
+
+        self.ui.cs_status.setText(self.lang['CLOUD_STATUS_UPLOADING'])
+        self.ui.cs_upload_btn.setEnabled(False)
+        self.ui.cs_download_btn.setEnabled(False)
+
+        self._sync_worker = FtpWorker(self.ftp_sync, 'upload', (host, port, username, password))
+        self._sync_thread = QThread()
+        self._sync_worker.moveToThread(self._sync_thread)
+        self._sync_thread.started.connect(self._sync_worker.run)
+        self._sync_worker.finished.connect(self._on_ftp_upload_done)
+        self._sync_worker.error.connect(lambda msg: self._on_ftp_generic_error(msg))
+        self._sync_worker.finished.connect(self._sync_thread.quit)
+        self._sync_worker.error.connect(self._sync_thread.quit)
+        self._sync_worker.finished.connect(self._sync_worker.deleteLater)
+        self._sync_worker.error.connect(self._sync_worker.deleteLater)
+        self._sync_thread.finished.connect(self._sync_thread.deleteLater)
+        self._sync_thread.start()
+
+    def _on_ftp_upload_done(self, msg: str):
+        self.ui.cs_status.setText(self.lang['CLOUD_STATUS_UPLOADED'])
+        self.ui.cs_upload_btn.setEnabled(True)
+        self.ui.cs_download_btn.setEnabled(True)
+
+    def _on_cloud_sync_download(self):
+        if not self.ui.cs_enable.isChecked():
+            return
+
+        host = self.ui.cs_host_input.text().strip()
+        port = int(self.ui.cs_port_input.text().strip() or '21')
+        username = self.ui.cs_user_input.text().strip()
+        password = self.ui.cs_pass_input.text()
+
+        self.ui.cs_status.setText(self.lang['CLOUD_STATUS_DOWNLOADING'])
+        self.ui.cs_upload_btn.setEnabled(False)
+        self.ui.cs_download_btn.setEnabled(False)
+
+        self._sync_worker = FtpWorker(self.ftp_sync, 'download', (host, port, username, password))
+        self._sync_thread = QThread()
+        self._sync_worker.moveToThread(self._sync_thread)
+        self._sync_thread.started.connect(self._sync_worker.run)
+        self._sync_worker.bank_downloaded.connect(self._on_ftp_download_done)
+        self._sync_worker.error.connect(lambda msg: self._on_ftp_generic_error(msg))
+        self._sync_worker.bank_downloaded.connect(self._sync_thread.quit)
+        self._sync_worker.error.connect(self._sync_thread.quit)
+        self._sync_worker.bank_downloaded.connect(self._sync_worker.deleteLater)
+        self._sync_worker.error.connect(self._sync_worker.deleteLater)
+        self._sync_thread.finished.connect(self._sync_thread.deleteLater)
+        self._sync_thread.start()
+
+    def _on_ftp_generic_error(self, msg: str):
+        self.ui.cs_status.setText(f"{self.lang['CLOUD_STATUS_ERROR']}: {msg}")
+        self.ui.cs_upload_btn.setEnabled(True)
+        self.ui.cs_download_btn.setEnabled(True)
+        QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'], msg)
+
+    def _on_ftp_download_done(self, data: bytes):
+        try:
+            new_bank_data = json.loads(data)
+        except json.JSONDecodeError:
+            self.ui.cs_status.setText(self.lang['CLOUD_ERR_INVALID_JSON'])
+            self.ui.cs_upload_btn.setEnabled(True)
+            self.ui.cs_download_btn.setEnabled(True)
+            QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'],
+                                 self.lang['CLOUD_ERR_INVALID_JSON'])
+            return
+
+        old_bank = read_bank_file() if ext('bank.json') else []
+
+        # Create local backup
+        if ext('bank.json'):
+            backup_path = f'bank.json.{int(datetime.now().timestamp())}.backup'
+            shutil.copy2('bank.json', backup_path)
+            self.ui.cs_status.setText(
+                f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
+
+        # Write new bank.json
+        from config import save_json
+        save_json('bank.json', new_bank_data, format_=1)
+
+        # Compare and act
+        added, removed = compare_banks(old_bank, new_bank_data)
+
+        if added:
+            self.ui.cs_status.setText(
+                self.lang['CLOUD_N_BOOKS_ADDED'].format(len(added)))
+            for book_dict in added:
+                self.start_task(self.downloadSingle, book_dict['numname'])
+
+        if removed:
+            self.ui.cs_status.setText(
+                self.lang['CLOUD_N_BOOKS_REMOVED'].format(len(removed)))
+            for book in removed:
+                delete_book_files(book)
+
+        # Refresh bank UI
+        if ENABLE_BANK:
+            self.refresh_bw_list()
+
+        self.ui.cs_upload_btn.setEnabled(True)
+        self.ui.cs_download_btn.setEnabled(True)
+        self.ui.cs_status.setText(self.lang['CLOUD_STATUS_DOWNLOADED'])
 
     def set_bw_connection(self, init=True, new_bw: list = None):
         for i in self.g_opt[1:]:

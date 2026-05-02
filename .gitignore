@@ -12,3 +12,4 @@ bank.json
 config.json
 rmz
 uploader.py
+*.backup

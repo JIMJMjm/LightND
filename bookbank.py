@@ -333,6 +333,42 @@ def update_hmzfiles():
     HMZFILES = get_global_hmzfiles()
 
 
+def remove_from_bank(numname: str) -> bool:
+    """Remove a book from bank.json by numname. Returns True if removed."""
+    bank = read_bank_file()
+    for i, book in enumerate(bank):
+        if book.numname == numname:
+            bank.pop(i)
+            save_as_bank(bank)
+            return True
+    return False
+
+
+def delete_book_files(book: BankedBook) -> bool:
+    """Delete a book's directory and thumbnail from disk."""
+    import shutil
+    book_dir = f'{book.directory}/{confirm_name(book.name)}'
+    thumbnail = f'images/thumbnails/{book.numname}.jpg'
+    deleted = False
+    if ext(book_dir):
+        shutil.rmtree(book_dir)
+        deleted = True
+    if ext(thumbnail):
+        from os import remove as rm
+        rm(thumbnail)
+        deleted = True
+    return deleted
+
+
+def compare_banks(old_bank: list[BankedBook], new_bank_data: list[dict]) -> tuple[list, list]:
+    """Compare two bank lists by numname. Returns (added_dicts, removed_BankedBooks)."""
+    old_names = {b.numname for b in old_bank}
+    new_names = {d['numname'] for d in new_bank_data}
+    added = [d for d in new_bank_data if d['numname'] not in old_names]
+    removed = [b for b in old_bank if b.numname not in new_names]
+    return added, removed
+
+
 if __name__ == '__main__':
     pass
     # refresh_hmz()
