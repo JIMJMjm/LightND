@@ -1,11 +1,9 @@
 from os import listdir as ldr
 from os.path import exists as ext
 import json
-import shutil
-import sys
-from sys import exit
+from shutil import copy2
+from sys import exit, argv
 from time import perf_counter as pfc
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 from PySide6.QtGui import QPixmap
@@ -22,10 +20,9 @@ from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_co
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
                       filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
-                      remove_from_bank, delete_book_files, compare_banks)
+                      compare_banks, save_as_bank)
 from ftpsync import FtpSyncManager
 from config import modify_global_settings as mgs
-                      filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles)
 from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
 from ui.ui_config import Ui_Config
@@ -628,34 +625,9 @@ class MainWindow(QMainWindow):
 
     def set_cloud_sync_connection(self):
         ui = self.ui
-
-        ui.cs_host_input.setText(CONFIG.get('FTP_HOST', ''))
-        ui.cs_port_input.setText(str(CONFIG.get('FTP_PORT', 21)))
-        ui.cs_user_input.setText(CONFIG.get('FTP_USERNAME', ''))
-        ui.cs_pass_input.setText(CONFIG.get('FTP_PASSWORD', ''))
-        ui.cs_enable.setChecked(CONFIG.get('ENABLE_CLOUD_SYNC', False))
-
-        self._update_cloud_sync_ui_state()
-
-        ui.cs_enable.toggled.connect(self._on_cloud_sync_toggle)
         ui.cs_test_btn.clicked.connect(self._on_cloud_sync_test)
         ui.cs_upload_btn.clicked.connect(self._on_cloud_sync_upload)
         ui.cs_download_btn.clicked.connect(self._on_cloud_sync_download)
-
-    def _update_cloud_sync_ui_state(self):
-        enabled = self.ui.cs_enable.isChecked()
-        self.ui.cs_host_input.setEnabled(enabled)
-        self.ui.cs_port_input.setEnabled(enabled)
-        self.ui.cs_user_input.setEnabled(enabled)
-        self.ui.cs_pass_input.setEnabled(enabled)
-        self.ui.cs_test_btn.setEnabled(enabled)
-        self.ui.cs_upload_btn.setEnabled(enabled)
-        self.ui.cs_download_btn.setEnabled(enabled)
-
-    def _on_cloud_sync_toggle(self, checked):
-        self._update_cloud_sync_ui_state()
-        if not checked:
-            self.ui.cs_status.setText(self.lang['CLOUD_STATUS_IDLE'])
 
     def _on_cloud_sync_test(self):
         host = self.ui.cs_host_input.text().strip()
@@ -694,8 +666,8 @@ class MainWindow(QMainWindow):
     def _on_ftp_test_done(self, success: bool, message: str,
                           host: str, port: int, username: str, password: str):
         self.ui.cs_test_btn.setEnabled(True)
-        self.ui.cs_upload_btn.setEnabled(self.ui.cs_enable.isChecked())
-        self.ui.cs_download_btn.setEnabled(self.ui.cs_enable.isChecked())
+        self.ui.cs_upload_btn.setEnabled(True)
+        self.ui.cs_download_btn.setEnabled(True)
 
         if success:
             self.ui.cs_status.setText(self.lang['CLOUD_STATUS_CONNECTED'])
@@ -712,7 +684,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'], message)
 
     def _on_cloud_sync_upload(self):
-        if not self.ui.cs_enable.isChecked():
+        if not ENABLE_CLOUD_SYNC:
             return
 
         if not ext('bank.json'):
@@ -748,7 +720,7 @@ class MainWindow(QMainWindow):
         self.ui.cs_download_btn.setEnabled(True)
 
     def _on_cloud_sync_download(self):
-        if not self.ui.cs_enable.isChecked():
+        if not ENABLE_CLOUD_SYNC:
             return
 
         host = self.ui.cs_host_input.text().strip()
@@ -790,20 +762,17 @@ class MainWindow(QMainWindow):
                                  self.lang['CLOUD_ERR_INVALID_JSON'])
             return
 
-        old_bank = read_bank_file() if ext('bank.json') else []
+        new_bank_data = [BankedBook(**i) for i in new_bank_data]
 
-        # Create local backup
+        old_bank = []
         if ext('bank.json'):
-            backup_path = f'bank.json.{int(datetime.now().timestamp())}.backup'
-            shutil.copy2('bank.json', backup_path)
-            self.ui.cs_status.setText(
-                f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
+            old_bank = read_bank_file()
+            backup_path = f'bank.backup'
+            copy2('bank.json', backup_path)
+            self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
 
-        # Write new bank.json
-        from config import save_json
-        save_json('bank.json', new_bank_data, format_=1)
+        save_as_bank(new_bank_data)
 
-        # Compare and act
         added, removed = compare_banks(old_bank, new_bank_data)
 
         if added:
@@ -812,13 +781,6 @@ class MainWindow(QMainWindow):
             for book_dict in added:
                 self.start_task(self.downloadSingle, book_dict['numname'])
 
-        if removed:
-            self.ui.cs_status.setText(
-                self.lang['CLOUD_N_BOOKS_REMOVED'].format(len(removed)))
-            for book in removed:
-                delete_book_files(book)
-
-        # Refresh bank UI
         if ENABLE_BANK:
             self.refresh_bw_list()
 
@@ -1213,12 +1175,12 @@ class MainWindow(QMainWindow):
 
 
 def timetest(func, *args, **kwargs):
-    app = QApplication(sys.argv)
+    app = QApplication(argv)
     a = pfc()
     func(*args, **kwargs)
     b = pfc()
     print(f'{b - a:2f} seconds used to activate.')
-    sys.exit(app.exec())
+    exit(app.exec())
 
 
 def activate():

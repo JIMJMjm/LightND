@@ -8,6 +8,7 @@ ENABLE_BANK = CONFIG['ENABLE_BANK']
 ENABLE_ISF = CONFIG['ENABLE_ISF']
 LANGUAGE = CONFIG['LANGUAGE']
 AUTO_UNLOCK_TEXTER = CONFIG['AUTO_UNLOCK_TEXTER']
+ENABLE_CLOUD_SYNC = CONFIG['ENABLE_CLOUD_SYNC']
 
 
 # noinspection PyAttributeOutsideInit
@@ -398,14 +399,8 @@ class Ui_MainWindow(object):
 
         self.NovelSearcher = QtWidgets.QWidget()
 
-        # CloudSync Tab
         self.CloudSync = QtWidgets.QWidget()
         self.CloudSync.setObjectName("CloudSync")
-
-        self.cs_enable = QtWidgets.QCheckBox(parent=self.CloudSync)
-        self.cs_enable.setGeometry(rct(30, 10, 220, 28))
-        self.cs_enable.setFont(Sfont)
-        self.cs_enable.setObjectName("cs_enable")
 
         self.cs_host_label = QtWidgets.QLabel(parent=self.CloudSync)
         self.cs_host_label.setGeometry(rct(30, 50, 80, 21))
@@ -470,8 +465,14 @@ class Ui_MainWindow(object):
         self.cs_status.setWordWrap(True)
         self.cs_status.setObjectName("cs_status")
 
-        self.tabWidget.addTab(self.CloudSync, "")
-        self.tabList.append('CloudSync')
+        self.cs_host_input.setText(CONFIG.get('FTP_HOST', ''))
+        self.cs_port_input.setText(str(CONFIG.get('FTP_PORT', 21)))
+        self.cs_user_input.setText(CONFIG.get('FTP_USERNAME', ''))
+        self.cs_pass_input.setText(CONFIG.get('FTP_PASSWORD', ''))
+
+        if ENABLE_CLOUD_SYNC:
+            self.tabWidget.addTab(self.CloudSync, "")
+            self.tabList.append('CloudSync')
 
         self.OU_CK = AdvButtonGroup(MainWindow, False, [self.OU_3, self.OU_4, self.OU_5])
         self.OU_R = AdvButtonGroup(MainWindow, True, [self.OU_1, self.OU_2])
@@ -536,7 +537,6 @@ class Ui_MainWindow(object):
         self.od_bank.setText(_translate("MainWindow", self.lang['BB_od_name']))
         self.flt_bunko.setText(_translate("MainWindow", self.lang['BB_flt_bunko']))
         self.flt_genre.setText(_translate("MainWindow", self.lang['BB_flt_genre']))
-        self.cs_enable.setText(_translate("MainWindow", self.lang['CLOUD_ENABLE']))
         self.cs_host_label.setText(_translate("MainWindow", self.lang['CLOUD_HOST']))
         self.cs_port_label.setText(_translate("MainWindow", self.lang['CLOUD_PORT']))
         self.cs_user_label.setText(_translate("MainWindow", self.lang['CLOUD_USERNAME']))

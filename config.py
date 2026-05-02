@@ -335,12 +335,16 @@ def translate_to(code: str) -> dict[str, str]:
                 "CLOUD_N_BOOKS_ADDED": {'en-US': "{} new book(s) to download.", 'zh-CN': "{} 本新书待下载。"},
                 "CLOUD_N_BOOKS_REMOVED": {'en-US': "{} book(s) to delete.", 'zh-CN': "{} 本书待删除。"},
                 "CLOUD_ERR_EMPTY_HOST": {'en-US': "FTP host address cannot be empty.", 'zh-CN': "FTP主机地址不能为空。"},
-                "CLOUD_ERR_REMOTE_NOT_FOUND": {'en-US': "Remote file not found. Please upload first.", 'zh-CN': "远程文件未找到，请先上传。"},
-                "CLOUD_ERR_BANK_NOT_FOUND": {'en-US': "Local bank.json not found. Nothing to upload.", 'zh-CN': "本地bank.json未找到，无内容可上传。"},
-                "CLOUD_ERR_INVALID_JSON": {'en-US': "Downloaded file is not valid JSON. Aborted.", 'zh-CN': "下载的文件不是有效的JSON格式，已中止。"},
+                "CLOUD_ERR_REMOTE_NOT_FOUND": {'en-US': "Remote file not found. Please upload first.",
+                                               'zh-CN': "远程文件未找到，请先上传。"},
+                "CLOUD_ERR_BANK_NOT_FOUND": {'en-US': "Local bank.json not found. Nothing to upload.",
+                                             'zh-CN': "本地bank.json未找到，无内容可上传。"},
+                "CLOUD_ERR_INVALID_JSON": {'en-US': "Downloaded file is not valid JSON. Aborted.",
+                                           'zh-CN': "下载的文件不是有效的JSON格式，已中止。"},
                 "CFG_ENABLE_CLOUD_SYNC": {
-                    'en-US': "Enable cloud synchronization via FTP. Configure server in the Cloud Sync tab.\nDefault: False.",
-                    'zh-CN': "通过FTP启用云同步。请在云同步标签页中配置FTP服务器。\n默认值: False。"
+                    'en-US': "Enable cloud synchronization via FTP. Configure server in the Cloud Sync tab.\nDefault: "
+                             "False.",
+                    'zh-CN': "启用基于远程FTP云同步。请在云同步标签页中配置FTP服务器。\n默认值: False。"
                 },
                 "": {'en-US': "", 'zh-CN': ""},
                 }

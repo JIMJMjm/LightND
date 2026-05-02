@@ -1,12 +1,7 @@
 import ftplib
-import json
-import os
+from os.path import exists as ext
 from io import BytesIO
 from typing import Optional
-
-
-class FtpSyncError(Exception):
-    pass
 
 
 class FtpSyncManager:
@@ -64,7 +59,7 @@ class FtpSyncManager:
                     local_path: str = "bank.json",
                     remote_dir: str = "/lightnd/",
                     remote_file: str = "bank.json") -> tuple[bool, str]:
-        if not os.path.exists(local_path):
+        if not ext(local_path):
             return False, "Local bank.json not found."
 
         ok, msg = self._connect(host, port, username, password)
