@@ -1,3 +1,16 @@
+## LightND - Release v8.4
+
+### What's New:
+ - 现在你可以通过远程的ftp服务器完成`bank.json`的同步。
+ - 新的配置项。你可以通过`ENABLE_CLOUD_SYNC`配置项来启用或禁用这个菜单。
+
+### Improvements:
+ - 现在各类`Book`对象可以被哈希化(`hash()`)。
+
+### Bug Fixes:
+ - 修复了部分情况下`rmz`进度同步时的报错。
+
+
 ## LightND - Release v8.3.5
 
 ### Bug Fixes:

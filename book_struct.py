@@ -29,6 +29,9 @@ class Book:
     def strictlyEqual(self, other: 'Book'):
         return self.numname == other.numname and self.writer == other.writer and self.name == other.name
 
+    def __hash__(self):
+        return hash(self.numname)
+
 
 @dataclass
 class BookLuxury:
@@ -47,6 +50,9 @@ class BookLuxury:
             'fav': self.fav,
             'lck': self.lck
         }
+
+    def __hash__(self):
+        return hash(tuple(self.prg))
 
 
 class BankedBook(Book):

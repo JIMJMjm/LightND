@@ -346,12 +346,12 @@ def remove_from_bank(numname: str) -> bool:
 
 def delete_book_files(book: BankedBook) -> bool:
     """Delete a book's directory and thumbnail from disk."""
-    import shutil
+    from shutil import rmtree
     book_dir = f'{book.directory}/{confirm_name(book.name)}'
     thumbnail = f'images/thumbnails/{book.numname}.jpg'
     deleted = False
     if ext(book_dir):
-        shutil.rmtree(book_dir)
+        rmtree(book_dir)
         deleted = True
     if ext(thumbnail):
         from os import remove as rm
@@ -360,12 +360,12 @@ def delete_book_files(book: BankedBook) -> bool:
     return deleted
 
 
-def compare_banks(old_bank: list[BankedBook], new_bank_data: list[dict]) -> tuple[list, list]:
+def compare_banks(old_bank: list[BankedBook], new_bank_data: list[BankedBook]) -> tuple[list, list]:
     """Compare two bank lists by numname. Returns (added_dicts, removed_BankedBooks)."""
-    old_names = {b.numname for b in old_bank}
-    new_names = {d['numname'] for d in new_bank_data}
-    added = [d for d in new_bank_data if d['numname'] not in old_names]
-    removed = [b for b in old_bank if b.numname not in new_names]
+    old_names = set(old_bank)
+    new_names = set(new_bank_data)
+    added = new_names - old_names
+    removed = new_names - old_names
     return added, removed
 
 
