@@ -106,7 +106,7 @@ class Downloader:
 
 class Texter:
     def __init__(self):
-        self.target: HFd
+        self.target: HFd = None
         self.formets = [0, 0, 0, 0, 0, 0]
         self.indicator = [0, 0, 0, 0, 0, 0]
         self.child_detail = None
