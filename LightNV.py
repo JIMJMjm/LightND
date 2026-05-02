@@ -819,9 +819,7 @@ class MainWindow(QMainWindow):
 
         # Refresh bank UI
         if ENABLE_BANK:
-            bank = read_bank_file()
-            self.bw_list = [BkWt(bankinfo=i) for i in bank]
-            self.init_bankFrame()
+            self.refresh_bw_list()
 
         self.ui.cs_upload_btn.setEnabled(True)
         self.ui.cs_download_btn.setEnabled(True)

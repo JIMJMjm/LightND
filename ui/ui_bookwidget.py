@@ -101,10 +101,10 @@ class BookWidget(QWidget):
         self.upd_bank()
         self.prg_ctask.close()
 
-    def get_percentage_prg(self):
+    def get_percentage_prg(self) -> int:
         if self.hmzinfo is None:
             print("No hmzinfo, progress bar invalid!")
-            return None
+            return 0
         allname = self.hmzinfo.allname
         all_c = sum([len(i) for i in allname]) - len(allname)
         cur_c = 0
@@ -120,6 +120,10 @@ class BookWidget(QWidget):
 
     def SpecUI(self):
         self.bookname.setText(self.name)
+
+        self.thumb = f'images/thumbnails/{self.numname}.jpg'
+        if not ext(f'images/thumbnails/{self.numname}.jpg'):
+            self.thumb = None
 
         if self.thumb is not None:
             self.thumbr.setPixmap(QPixmap(self.thumb).scaled(113, 170))
