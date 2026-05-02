@@ -21,10 +21,11 @@ from prg_import import RmzImportWindow
 from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_cover_from, convert2epub_pandoc
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
-                      filter_liked_bw as flb, order_bw_ranked as odr, generate_book_bank, read_hmz_par, update_hmzfiles,
+                      filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
                       remove_from_bank, delete_book_files, compare_banks)
 from ftpsync import FtpSyncManager
 from config import modify_global_settings as mgs
+                      filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles)
 from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
 from ui.ui_config import Ui_Config
@@ -135,10 +136,20 @@ class Downloader:
             self.docx_control = data
         return data
 
+    def select_global_directory(self):
+        directory = QFileDialog.getExistingDirectory(
+            None,
+            LANGUAGE['SELECT_DIRECTORY'],
+            BANK_PATH,
+        )
+
+        if directory:
+            self.global_directory = directory
+
 
 class Texter:
     def __init__(self):
-        self.target: HFd | None = None
+        self.target: HFd
         self.formets = [0, 0, 0, 0, 0, 0]
         self.indicator = [0, 0, 0, 0, 0, 0]
         self.child_detail = None
@@ -307,16 +318,6 @@ class MainWindow(QMainWindow):
         # noinspection PyTypeChecker
         self.bb_param[1] = idx
         self.render_book_bank(self.process_bw_list())
-
-    def select_global_directory(self):
-        directory = QFileDialog.getExistingDirectory(
-            self,
-            self.lang['SELECT_DIRECTORY'],
-            BANK_PATH,
-        )
-
-        if directory:
-            self.downloader.global_directory = directory
 
     def convert_start(self):
         UI = self.ui
@@ -564,7 +565,7 @@ class MainWindow(QMainWindow):
         ui.TF.buttonClicked.connect(self.TextFormulaControl)
         ui.OU_R.buttonClicked.connect(self.OutputRDControl)
         ui.OU_CK.buttonClicked.connect(self.OutputCKControl)
-        ui.DirectoryCh.clicked.connect(self.select_global_directory)
+        ui.DirectoryCh.clicked.connect(self.downloader.select_global_directory)
         ui.TDList.clicked.connect(self.todolist.start)
         ui.StartB.clicked.connect(self.downloadStart)
 
@@ -953,8 +954,6 @@ class MainWindow(QMainWindow):
 
         bw_list = srb(srkey, bw_list)
 
-        if cons[0] == -1:
-            return odr(True if cons[1] == '-' else False, bw_list)
         cons = tuple(cons)
         return odb(cons, bw_list)
 

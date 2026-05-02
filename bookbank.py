@@ -91,6 +91,12 @@ def read_bank_file():
     return newbookbank
 
 
+def read_file_as_bank(filename):
+    bookbank = read_json(filename)
+    newbookbank = [BankedBook(**i) for i in bookbank]
+    return newbookbank
+
+
 def get_global_hmzfiles():
     bank = read_bank_file()
     if not bank:
@@ -180,15 +186,6 @@ def filter_liked_bw(liked: int, bw_list: list) -> list:
     return rt
 
 
-def order_bw_ranked(reverse: bool, bw_list: list) -> list:
-    def get_avg_rtg(bw):
-        rtg = bw.bankinfo.lux.rtg
-        if not rtg:
-            return 0.0
-        return sum(rtg.values()) / len(rtg)
-    return sorted(bw_list, key=get_avg_rtg, reverse=reverse)
-
-
 def order_bank(constraint: tuple, bank: list['BankedBook'] = None):
     """
     To order the bw_list as constraint ordered.
@@ -202,12 +199,18 @@ def order_bank(constraint: tuple, bank: list['BankedBook'] = None):
     order = constraint[0]
     sgn = True if constraint[1] == '-' else False
 
+    def get_avg_rtg(bankinfo):
+        rtg = bankinfo.lux.rtg
+        if not rtg:
+            return 0.0
+        return sum(rtg.values()) / len(rtg)
+
     if not order or order == 3:
         return sorted(bank, key=lambda bk: (int(bk.numname), bk.name), reverse=sgn)
     elif order == 1:
         return sorted(bank, key=lambda bk: (slug(bk.name, separator=''), int(bk.numname)), reverse=sgn)
     elif order == -1:
-        return order_bw_ranked(reverse=sgn, bw_list=bank)
+        return sorted(bank, key=get_avg_rtg, reverse=sgn)
     else:
         return sorted(bank, key=lambda bk: (bk[order], int(bk.numname)), reverse=sgn)
 
@@ -224,6 +227,12 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
     if constraint is None:
         return bw_list
 
+    def get_avg_rtg(bw):
+        rtg = bw.bankinfo.lux.rtg
+        if not rtg:
+            return 0.0
+        return sum(rtg.values()) / len(rtg)
+
     order = constraint[0]
     sgn = True if constraint[1] == '-' else False
 
@@ -234,6 +243,8 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
                       reverse=sgn)
     elif order == 2:
         return sorted(bw_list, key=lambda bk: (int(bk.bankinfo.addtime), bk.bankinfo.name), reverse=sgn)
+    elif order == -1:
+        return sorted(bw_list, key=get_avg_rtg, reverse=sgn)
     else:
         return sorted(bw_list, key=lambda bk: (bk.bankinfo[order], int(bk.bankinfo.numname)), reverse=sgn)
 
