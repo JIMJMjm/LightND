@@ -370,10 +370,16 @@ class Ui_MainWindow(object):
         self.import_btn.setText(self.lang['BB_ImportRMZ'])
 
         self.start_export = ClickableLabel(parent=self.BookBank)
-        self.start_export.setGeometry(800, 2, 70, 24)
+        self.start_export.setGeometry(775, 2, 70, 24)
         self.start_export.setFont(Dfont)
         self.start_export.setText(self.lang['BB_Export'])
         self.start_export.setHidden(True)
+
+        self.start_delete = ClickableLabel(parent=self.BookBank)
+        self.start_delete.setGeometry(840, 2, 78, 24)
+        self.start_delete.setFont(Dfont)
+        self.start_delete.setText(self.lang['BB_Delete'])
+        self.start_delete.setHidden(True)
 
         if ENABLE_BANK:
             self.tabWidget.addTab(self.BookBank, '')

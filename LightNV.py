@@ -251,6 +251,7 @@ class MainWindow(QMainWindow):
 
             self.bb_param = ['', '', [1, '+'], '']
             self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
+            self._delete_pending = False
 
         self.warningWindow = QMessageBox()
         self.uiConfig = Ui_Config()
@@ -614,6 +615,7 @@ class MainWindow(QMainWindow):
 
         ui.export_btn.clicked.connect(self.setExportMode)
         ui.start_export.lclicked.connect(self.handleExport)
+        ui.start_delete.lclicked.connect(self.handleDelete)
 
         ui.regenerate_bank.lclicked.connect(lambda: self.handleWarning('RESETBANK'))
         self.resetBank.connect(generate_book_bank)
@@ -968,17 +970,24 @@ class MainWindow(QMainWindow):
         self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
 
         curr_bank = [i.bankinfo for i in self.bw_list]
+
+        stale_indices = [y for y, i in enumerate(curr_bank) if i not in bank]
+        for y in reversed(stale_indices):
+            self.bw_list[y].setHidden(True)
+            self.bw_list[y].deleteLater()
+            self.bw_list.pop(y)
+
         new_bw = []
         for i in bank:
             if i not in curr_bank:
                 bw_new = BkWt(bankinfo=i)
                 new_bw.append(bw_new)
                 self.bw_list.append(bw_new)
-        for y, i in enumerate(curr_bank):
-            if i in bank:
-                path = f'{i.directory}/{i.name}/{i.numname}.hmz'
+        for bw in self.bw_list:
+            if bw.bankinfo in bank:
+                path = f'{bw.bankinfo.directory}/{bw.bankinfo.name}/{bw.bankinfo.numname}.hmz'
                 hmzfi = read_hmz_par(path)
-                self.bw_list[y].update_hmzinfo(hmzfi)
+                bw.update_hmzinfo(hmzfi)
         self.render_book_bank(self.process_bw_list())
         self.set_bw_connection(init=False, new_bw=new_bw)
 
@@ -1103,15 +1112,36 @@ class MainWindow(QMainWindow):
         self.render_book_bank(self.process_bw_list())
 
     def setExportMode(self):
-        self.ui.start_export.setHidden(not self.ui.export_btn.isChecked())
+        checked = self.ui.export_btn.isChecked()
+        self.ui.start_export.setHidden(not checked)
+        self.ui.start_delete.setHidden(not checked)
+        if not checked:
+            self._delete_pending = False
+            self.ui.start_delete.setText(self.lang['BB_Delete'])
+            self.ui.start_delete.setStyleSheet("QLabel { color: black; } QLabel:hover { color: blue; }")
         for i in self.bw_list:
-            i.setExport(self.ui.export_btn.isChecked())
+            i.setExport(checked)
 
     def handleExport(self):
         for i in self.bw_list:
             if i.set_to_exported:
                 save_as_rmz(1, i.bankinfo, RMZ_EXPORT_PATH, RMZ_FILENAME_FORMAT)
         succeeded('All RMZ exported!')
+
+    def handleDelete(self):
+        if not self._delete_pending:
+            self._delete_pending = True
+            self.ui.start_delete.setText(self.lang['BB_ConfirmDelete'])
+            self.ui.start_delete.setStyleSheet("QLabel { color: red; } QLabel:hover { color: red; }")
+        else:
+            for i in self.bw_list:
+                if i.set_to_exported:
+                    delete_book_files(i.bankinfo)
+                    remove_from_bank(i.bankinfo.numname)
+            self._delete_pending = False
+            self.refresh_bw_list()
+            self.ui.export_btn.setChecked(False)
+            self.setExportMode()
 
     def handleSingleImport(self, filename):
         rmzfile, _type = read_from_rmz(filename)
