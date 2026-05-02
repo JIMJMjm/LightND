@@ -34,6 +34,7 @@ class BookWidget(QWidget):
 
         self.setFixedSize(347, 170)
         self.numname = bankinfo.numname
+        self.name = bankinfo.name
         self.lux_info: BookLuxury = bankinfo.lux
 
         if ext(f'{bankinfo.directory}/{bankinfo.name}/{self.numname}.hmz'):
@@ -42,11 +43,6 @@ class BookWidget(QWidget):
         else:
             print('Hmz File not found!')
             self.hmzinfo = None
-
-        self.thumb = f'images/thumbnails/{self.numname}.jpg'
-        if not ext(f'images/thumbnails/{self.numname}.jpg'):
-            self.thumb = None
-        self.name = bankinfo[1]
 
         self.set_to_exported = False
         self.is_initialized = False
@@ -122,9 +118,8 @@ class BookWidget(QWidget):
         self.bookname.setText(self.name)
 
         self.thumb = f'images/thumbnails/{self.numname}.jpg'
-        if not ext(f'images/thumbnails/{self.numname}.jpg'):
+        if not ext(self.thumb):
             self.thumb = None
-
         if self.thumb is not None:
             self.thumbr.setPixmap(QPixmap(self.thumb).scaled(113, 170))
         else:
@@ -245,8 +240,9 @@ class BookWidget(QWidget):
         if self.is_initialized:
             return
         self.setupUI()
-        self.setConnection()
         self.SpecUI()
+        self.setConnection()
+
         self.is_initialized = True
 
     def getAddress(self):
