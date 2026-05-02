@@ -20,7 +20,7 @@ from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_co
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
                       filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
-                      compare_banks, save_as_bank)
+                      compare_banks, save_as_bank, delete_book_files, remove_from_bank)
 from ftpsync import FtpSyncManager
 from config import modify_global_settings as mgs
 from ui.ui_LightNV import Ui_MainWindow
@@ -767,13 +767,26 @@ class MainWindow(QMainWindow):
         old_bank = []
         if ext('bank.json'):
             old_bank = read_bank_file()
-            backup_path = f'bank.backup'
-            copy2('bank.json', backup_path)
-            self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
-
-        save_as_bank(new_bank_data)
+            if self.ui.cs_backup_cb.isChecked():
+                backup_path = f'bank.backup'
+                copy2('bank.json', backup_path)
+                self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
 
         added, removed = compare_banks(old_bank, new_bank_data)
+
+        if self.ui.cs_delete_cb.isChecked():
+            if removed:
+                self.ui.cs_status.setText(
+                    self.lang['CLOUD_N_BOOKS_REMOVED'].format(len(removed)))
+                for book in removed:
+                    delete_book_files(book)
+                    remove_from_bank(book.numname)
+        else:
+            new_bank_data += removed
+            if removed:
+                self.ui.cs_status.setText(
+                    self.lang['CLOUD_BOOKS_MERGED'].format(len(removed)))
+        save_as_bank(new_bank_data)
 
         if added:
             self.ui.cs_status.setText(

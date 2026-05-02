@@ -365,7 +365,7 @@ def compare_banks(old_bank: list[BankedBook], new_bank_data: list[BankedBook]) -
     old_names = set(old_bank)
     new_names = set(new_bank_data)
     added = new_names - old_names
-    removed = new_names - old_names
+    removed = old_names - new_names
     return added, removed
 
 

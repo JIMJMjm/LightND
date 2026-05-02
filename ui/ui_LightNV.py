@@ -403,60 +403,60 @@ class Ui_MainWindow(object):
         self.CloudSync.setObjectName("CloudSync")
 
         self.cs_host_label = QtWidgets.QLabel(parent=self.CloudSync)
-        self.cs_host_label.setGeometry(rct(30, 50, 80, 21))
+        self.cs_host_label.setGeometry(rct(30, 20, 80, 21))
         self.cs_host_label.setObjectName("cs_host_label")
 
         self.cs_host_input = QtWidgets.QLineEdit(parent=self.CloudSync)
-        self.cs_host_input.setGeometry(rct(120, 48, 250, 24))
+        self.cs_host_input.setGeometry(rct(120, 18, 250, 24))
         self.cs_host_input.setPlaceholderText("ftp.example.com")
         self.cs_host_input.setObjectName("cs_host_input")
 
         self.cs_port_label = QtWidgets.QLabel(parent=self.CloudSync)
-        self.cs_port_label.setGeometry(rct(390, 50, 40, 21))
+        self.cs_port_label.setGeometry(rct(390, 20, 40, 21))
         self.cs_port_label.setObjectName("cs_port_label")
 
         self.cs_port_input = QtWidgets.QLineEdit(parent=self.CloudSync)
-        self.cs_port_input.setGeometry(rct(435, 48, 60, 24))
+        self.cs_port_input.setGeometry(rct(435, 18, 60, 24))
         self.cs_port_input.setText("21")
         self.cs_port_input.setValidator(QtGui.QIntValidator(1, 65535))
         self.cs_port_input.setObjectName("cs_port_input")
 
         self.cs_user_label = QtWidgets.QLabel(parent=self.CloudSync)
-        self.cs_user_label.setGeometry(rct(30, 85, 80, 21))
+        self.cs_user_label.setGeometry(rct(30, 55, 80, 21))
         self.cs_user_label.setObjectName("cs_user_label")
 
         self.cs_user_input = QtWidgets.QLineEdit(parent=self.CloudSync)
-        self.cs_user_input.setGeometry(rct(120, 83, 250, 24))
+        self.cs_user_input.setGeometry(rct(120, 53, 250, 24))
         self.cs_user_input.setPlaceholderText("username")
         self.cs_user_input.setObjectName("cs_user_input")
 
         self.cs_pass_label = QtWidgets.QLabel(parent=self.CloudSync)
-        self.cs_pass_label.setGeometry(rct(30, 120, 80, 21))
+        self.cs_pass_label.setGeometry(rct(30, 90, 80, 21))
         self.cs_pass_label.setObjectName("cs_pass_label")
 
         self.cs_pass_input = QtWidgets.QLineEdit(parent=self.CloudSync)
-        self.cs_pass_input.setGeometry(rct(120, 118, 250, 24))
+        self.cs_pass_input.setGeometry(rct(120, 88, 250, 24))
         self.cs_pass_input.setPlaceholderText("password")
         self.cs_pass_input.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
         self.cs_pass_input.setObjectName("cs_pass_input")
 
         self.cs_test_btn = QtWidgets.QPushButton(parent=self.CloudSync)
-        self.cs_test_btn.setGeometry(rct(200, 160, 200, 28))
+        self.cs_test_btn.setGeometry(rct(200, 130, 200, 28))
         self.cs_test_btn.setFont(Dfont)
         self.cs_test_btn.setObjectName("cs_test_btn")
 
         self.cs_separator = QtWidgets.QFrame(parent=self.CloudSync)
-        self.cs_separator.setGeometry(rct(30, 205, 600, 2))
+        self.cs_separator.setGeometry(rct(30, 175, 600, 2))
         self.cs_separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         self.cs_separator.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
 
         self.cs_upload_btn = QtWidgets.QPushButton(parent=self.CloudSync)
-        self.cs_upload_btn.setGeometry(rct(100, 225, 180, 28))
+        self.cs_upload_btn.setGeometry(rct(100, 195, 180, 28))
         self.cs_upload_btn.setFont(Dfont)
         self.cs_upload_btn.setObjectName("cs_upload_btn")
 
         self.cs_download_btn = QtWidgets.QPushButton(parent=self.CloudSync)
-        self.cs_download_btn.setGeometry(rct(350, 225, 180, 28))
+        self.cs_download_btn.setGeometry(rct(350, 195, 180, 28))
         self.cs_download_btn.setFont(Dfont)
         self.cs_download_btn.setObjectName("cs_download_btn")
 
@@ -464,6 +464,16 @@ class Ui_MainWindow(object):
         self.cs_status.setGeometry(rct(30, 240, 600, 60))
         self.cs_status.setWordWrap(True)
         self.cs_status.setObjectName("cs_status")
+
+        self.cs_backup_cb = QtWidgets.QCheckBox(parent=self.CloudSync)
+        self.cs_backup_cb.setGeometry(rct(30, 230, 250, 24))
+        self.cs_backup_cb.setChecked(True)
+        self.cs_backup_cb.setObjectName("cs_backup_cb")
+
+        self.cs_delete_cb = QtWidgets.QCheckBox(parent=self.CloudSync)
+        self.cs_delete_cb.setGeometry(rct(220, 230, 250, 24))
+        self.cs_delete_cb.setChecked(False)
+        self.cs_delete_cb.setObjectName("cs_delete_cb")
 
         self.cs_host_input.setText(CONFIG.get('FTP_HOST', ''))
         self.cs_port_input.setText(str(CONFIG.get('FTP_PORT', 21)))
@@ -545,6 +555,8 @@ class Ui_MainWindow(object):
         self.cs_upload_btn.setText(_translate("MainWindow", self.lang['CLOUD_UPLOAD']))
         self.cs_download_btn.setText(_translate("MainWindow", self.lang['CLOUD_DOWNLOAD']))
         self.cs_status.setText(_translate("MainWindow", self.lang['CLOUD_STATUS_IDLE']))
+        self.cs_backup_cb.setText(_translate("MainWindow", self.lang['CLOUD_BACKUP_CB']))
+        self.cs_delete_cb.setText(_translate("MainWindow", self.lang['CLOUD_DELETE_CB']))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CloudSync),
                                   _translate("MainWindow", self.lang['CLOUD_TABNAME']))
 
