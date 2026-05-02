@@ -398,6 +398,81 @@ class Ui_MainWindow(object):
 
         self.NovelSearcher = QtWidgets.QWidget()
 
+        # CloudSync Tab
+        self.CloudSync = QtWidgets.QWidget()
+        self.CloudSync.setObjectName("CloudSync")
+
+        self.cs_enable = QtWidgets.QCheckBox(parent=self.CloudSync)
+        self.cs_enable.setGeometry(rct(30, 10, 220, 28))
+        self.cs_enable.setFont(Sfont)
+        self.cs_enable.setObjectName("cs_enable")
+
+        self.cs_host_label = QtWidgets.QLabel(parent=self.CloudSync)
+        self.cs_host_label.setGeometry(rct(30, 50, 80, 21))
+        self.cs_host_label.setObjectName("cs_host_label")
+
+        self.cs_host_input = QtWidgets.QLineEdit(parent=self.CloudSync)
+        self.cs_host_input.setGeometry(rct(120, 48, 250, 24))
+        self.cs_host_input.setPlaceholderText("ftp.example.com")
+        self.cs_host_input.setObjectName("cs_host_input")
+
+        self.cs_port_label = QtWidgets.QLabel(parent=self.CloudSync)
+        self.cs_port_label.setGeometry(rct(390, 50, 40, 21))
+        self.cs_port_label.setObjectName("cs_port_label")
+
+        self.cs_port_input = QtWidgets.QLineEdit(parent=self.CloudSync)
+        self.cs_port_input.setGeometry(rct(435, 48, 60, 24))
+        self.cs_port_input.setText("21")
+        self.cs_port_input.setValidator(QtGui.QIntValidator(1, 65535))
+        self.cs_port_input.setObjectName("cs_port_input")
+
+        self.cs_user_label = QtWidgets.QLabel(parent=self.CloudSync)
+        self.cs_user_label.setGeometry(rct(30, 85, 80, 21))
+        self.cs_user_label.setObjectName("cs_user_label")
+
+        self.cs_user_input = QtWidgets.QLineEdit(parent=self.CloudSync)
+        self.cs_user_input.setGeometry(rct(120, 83, 250, 24))
+        self.cs_user_input.setPlaceholderText("username")
+        self.cs_user_input.setObjectName("cs_user_input")
+
+        self.cs_pass_label = QtWidgets.QLabel(parent=self.CloudSync)
+        self.cs_pass_label.setGeometry(rct(30, 120, 80, 21))
+        self.cs_pass_label.setObjectName("cs_pass_label")
+
+        self.cs_pass_input = QtWidgets.QLineEdit(parent=self.CloudSync)
+        self.cs_pass_input.setGeometry(rct(120, 118, 250, 24))
+        self.cs_pass_input.setPlaceholderText("password")
+        self.cs_pass_input.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
+        self.cs_pass_input.setObjectName("cs_pass_input")
+
+        self.cs_test_btn = QtWidgets.QPushButton(parent=self.CloudSync)
+        self.cs_test_btn.setGeometry(rct(200, 160, 200, 28))
+        self.cs_test_btn.setFont(Dfont)
+        self.cs_test_btn.setObjectName("cs_test_btn")
+
+        self.cs_separator = QtWidgets.QFrame(parent=self.CloudSync)
+        self.cs_separator.setGeometry(rct(30, 205, 600, 2))
+        self.cs_separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        self.cs_separator.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+
+        self.cs_upload_btn = QtWidgets.QPushButton(parent=self.CloudSync)
+        self.cs_upload_btn.setGeometry(rct(100, 225, 180, 28))
+        self.cs_upload_btn.setFont(Dfont)
+        self.cs_upload_btn.setObjectName("cs_upload_btn")
+
+        self.cs_download_btn = QtWidgets.QPushButton(parent=self.CloudSync)
+        self.cs_download_btn.setGeometry(rct(350, 225, 180, 28))
+        self.cs_download_btn.setFont(Dfont)
+        self.cs_download_btn.setObjectName("cs_download_btn")
+
+        self.cs_status = QtWidgets.QLabel(parent=self.CloudSync)
+        self.cs_status.setGeometry(rct(30, 240, 600, 60))
+        self.cs_status.setWordWrap(True)
+        self.cs_status.setObjectName("cs_status")
+
+        self.tabWidget.addTab(self.CloudSync, "")
+        self.tabList.append('CloudSync')
+
         self.OU_CK = AdvButtonGroup(MainWindow, False, [self.OU_3, self.OU_4, self.OU_5])
         self.OU_R = AdvButtonGroup(MainWindow, True, [self.OU_1, self.OU_2])
         self.TF = AdvButtonGroup(MainWindow, True, [self.TF_1, self.TF_2, self.TF_3])
@@ -461,6 +536,17 @@ class Ui_MainWindow(object):
         self.od_bank.setText(_translate("MainWindow", self.lang['BB_od_name']))
         self.flt_bunko.setText(_translate("MainWindow", self.lang['BB_flt_bunko']))
         self.flt_genre.setText(_translate("MainWindow", self.lang['BB_flt_genre']))
+        self.cs_enable.setText(_translate("MainWindow", self.lang['CLOUD_ENABLE']))
+        self.cs_host_label.setText(_translate("MainWindow", self.lang['CLOUD_HOST']))
+        self.cs_port_label.setText(_translate("MainWindow", self.lang['CLOUD_PORT']))
+        self.cs_user_label.setText(_translate("MainWindow", self.lang['CLOUD_USERNAME']))
+        self.cs_pass_label.setText(_translate("MainWindow", self.lang['CLOUD_PASSWORD']))
+        self.cs_test_btn.setText(_translate("MainWindow", self.lang['CLOUD_TEST']))
+        self.cs_upload_btn.setText(_translate("MainWindow", self.lang['CLOUD_UPLOAD']))
+        self.cs_download_btn.setText(_translate("MainWindow", self.lang['CLOUD_DOWNLOAD']))
+        self.cs_status.setText(_translate("MainWindow", self.lang['CLOUD_STATUS_IDLE']))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.CloudSync),
+                                  _translate("MainWindow", self.lang['CLOUD_TABNAME']))
 
 
 def activate():

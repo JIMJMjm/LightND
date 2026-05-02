@@ -25,7 +25,12 @@ DEFAULT_SETTING = {
     "SHOW_FORMATED_FILE": True,
     "AUTO_UNLOCK_TEXTER": False,
     "SIMPLE_BANK_FILE": False,
-    "PROXY_PORT": -1
+    "PROXY_PORT": -1,
+    "ENABLE_CLOUD_SYNC": False,
+    "FTP_HOST": "",
+    "FTP_PORT": 21,
+    "FTP_USERNAME": "",
+    "FTP_PASSWORD": "",
 }
 
 
@@ -306,6 +311,37 @@ def translate_to(code: str) -> dict[str, str]:
                 "MIS_button": {'en-US': "Tasks", 'zh-CN': "任务视窗"},
                 "TX_Unlock": {'en-US': "Unlock", 'zh-CN': "解锁"},
                 "TODOLIST_window": {'en-US': "To-do List", 'zh-CN': "任务清单"},
+                "CLOUD_TABNAME": {'en-US': "Cloud Sync", 'zh-CN': "云同步"},
+                "CLOUD_ENABLE": {'en-US': "Enable Cloud Sync", 'zh-CN': "启用云同步"},
+                "CLOUD_HOST": {'en-US': "FTP Host:", 'zh-CN': "FTP主机:"},
+                "CLOUD_PORT": {'en-US': "Port:", 'zh-CN': "端口:"},
+                "CLOUD_USERNAME": {'en-US': "Username:", 'zh-CN': "用户名:"},
+                "CLOUD_PASSWORD": {'en-US': "Password:", 'zh-CN': "密码:"},
+                "CLOUD_TEST": {'en-US': "Test Connection && Save", 'zh-CN': "测试连接并保存"},
+                "CLOUD_UPLOAD": {'en-US': "Upload to Cloud", 'zh-CN': "上传到云端"},
+                "CLOUD_DOWNLOAD": {'en-US': "Download from Cloud", 'zh-CN': "从云端下载"},
+                "CLOUD_STATUS_IDLE": {'en-US': "Idle", 'zh-CN': "就绪"},
+                "CLOUD_STATUS_CONNECTING": {'en-US': "Testing connection...", 'zh-CN': "正在测试连接..."},
+                "CLOUD_STATUS_CONNECTED": {'en-US': "Connection successful, settings saved.", 'zh-CN': "连接成功，设置已保存。"},
+                "CLOUD_STATUS_FAILED": {'en-US': "Connection failed", 'zh-CN': "连接失败"},
+                "CLOUD_STATUS_UPLOADING": {'en-US': "Uploading...", 'zh-CN': "正在上传..."},
+                "CLOUD_STATUS_DOWNLOADING": {'en-US': "Downloading...", 'zh-CN': "正在下载..."},
+                "CLOUD_STATUS_UPLOADED": {'en-US': "Upload complete", 'zh-CN': "上传完成"},
+                "CLOUD_STATUS_DOWNLOADED": {'en-US': "Download complete, bank refreshed.", 'zh-CN': "下载完成，书库已刷新。"},
+                "CLOUD_STATUS_ERROR": {'en-US': "Error", 'zh-CN': "错误"},
+                "CLOUD_BACKUP_CREATED": {'en-US': "Local backup created", 'zh-CN': "本地备份已创建"},
+                "CLOUD_DOWNLOADING_NEW": {'en-US': "Downloading new books...", 'zh-CN': "正在下载新书..."},
+                "CLOUD_DELETING_REMOVED": {'en-US': "Deleting removed books...", 'zh-CN': "正在删除已移除的书籍..."},
+                "CLOUD_N_BOOKS_ADDED": {'en-US': "{} new book(s) to download.", 'zh-CN': "{} 本新书待下载。"},
+                "CLOUD_N_BOOKS_REMOVED": {'en-US': "{} book(s) to delete.", 'zh-CN': "{} 本书待删除。"},
+                "CLOUD_ERR_EMPTY_HOST": {'en-US': "FTP host address cannot be empty.", 'zh-CN': "FTP主机地址不能为空。"},
+                "CLOUD_ERR_REMOTE_NOT_FOUND": {'en-US': "Remote file not found. Please upload first.", 'zh-CN': "远程文件未找到，请先上传。"},
+                "CLOUD_ERR_BANK_NOT_FOUND": {'en-US': "Local bank.json not found. Nothing to upload.", 'zh-CN': "本地bank.json未找到，无内容可上传。"},
+                "CLOUD_ERR_INVALID_JSON": {'en-US': "Downloaded file is not valid JSON. Aborted.", 'zh-CN': "下载的文件不是有效的JSON格式，已中止。"},
+                "CFG_ENABLE_CLOUD_SYNC": {
+                    'en-US': "Enable cloud synchronization via FTP. Configure server in the Cloud Sync tab.\nDefault: False.",
+                    'zh-CN': "通过FTP启用云同步。请在云同步标签页中配置FTP服务器。\n默认值: False。"
+                },
                 "": {'en-US': "", 'zh-CN': ""},
                 }
 
@@ -348,4 +384,9 @@ CONFIG_NOTATION = {
     "AUTO_UNLOCK_TEXTER": LANG['CFG_AUTO_UNLOCK_TEXTER'],
     "SIMPLE_BANK_FILE": LANG['CFG_SIMPLE_BANK_FILE'],
     "PROXY_PORT": LANG['CFG_PROXY_PORT'],
+    "ENABLE_CLOUD_SYNC": LANG['CFG_ENABLE_CLOUD_SYNC'],
+    "FTP_HOST": LANG['CFG_ENABLE_CLOUD_SYNC'],
+    "FTP_PORT": LANG['CFG_ENABLE_CLOUD_SYNC'],
+    "FTP_USERNAME": LANG['CFG_ENABLE_CLOUD_SYNC'],
+    "FTP_PASSWORD": LANG['CFG_ENABLE_CLOUD_SYNC'],
 }
