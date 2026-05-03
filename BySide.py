@@ -37,8 +37,8 @@ class ClickableLabel(QLabel):
             color: blue;  
         }
         """
-        eff_pic = '''QLabel { border: 3px solid transparent; }
-            QLabel:hover { border: 3px solid rgba''' + str(pic) + '''; }'''
+        eff_pic = '''QLabel { border: 2px solid transparent; }
+            QLabel:hover { border: 2px solid rgba''' + str(pic) + '''; }'''
 
         if pic:
             self.setStyleSheet(eff_pic)

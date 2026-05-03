@@ -31,6 +31,9 @@ DEFAULT_SETTING = {
     "FTP_PORT": 21,
     "FTP_USERNAME": "",
     "FTP_PASSWORD": "",
+    "BANK_RESOLUTION": (1068, 640),
+    "SCROLL_POSTION_KEEPER": 2,
+    "RESIZE_DELAY": 16,
 }
 
 
@@ -83,8 +86,13 @@ def find_hmz(path, default=None):
 
 
 def get_global_settings(reset: bool = False) -> dict:
-    if (not ext('config.json')) or reset:
-        save_json('config.json', DEFAULT_SETTING)
+    if reset or (not ext('config.json')):
+        config = DEFAULT_SETTING
+    else:
+        config = read_json('config.json')
+    sh_config = {i: config[i] if config.get(i) else DEFAULT_SETTING[i] for i in DEFAULT_SETTING}
+
+    save_json('config.json', sh_config)
     return read_json('config.json')
 
 
@@ -160,12 +168,12 @@ def translate_to(code: str) -> dict[str, str]:
                 "BB_flt_genre": {"en-US": "Select genre", "zh-CN": "选择标签"},
                 "TX_DetailMode": {'en-US': "DetailMode", 'zh-CN': "细节模式"},
                 "DL_DetailMode": {'en-US': "DetailMode", 'zh-CN': "细节模式"},
-                "BB_TextPlaceholder": {'en-US': "numname|name|writer", 'zh-CN': "数字编码|书名|作者"},
+                "BB_TextPlaceholder": {'en-US': "numname | name | writer", 'zh-CN': "数字编码 | 书名 | 作者"},
                 "BB_nonesr": {'en-US': "No reselt. Click to clear all conditions.",
                               'zh-CN': "没有结果,点击清除所有条件."},
                 "BB_ExportMode": {'en-US': "Manage", 'zh-CN': "管理"},
                 "BB_ImportRMZ": {'en-US': "ImportRMZ", 'zh-CN': "导入RMZ"},
-                "BB_Export": {'en-US': "Export", 'zh-CN': "导出"},
+                "BB_Export": {'en-US': "ExportRMZ", 'zh-CN': "导出RMZ"},
                 "BB_Delete": {'en-US': "Delete", 'zh-CN': "删除"},
                 "BB_ConfirmDelete": {'en-US': "Confirm Delete?", 'zh-CN': "确认删除？"},
                 "BB_MenuAll": {'en-US': "All", 'zh-CN': "全部"},

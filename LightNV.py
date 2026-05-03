@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from PySide6.QtGui import QPixmap
 from typing_extensions import Literal
-from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject, QThread
+from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject, QThread, QTimer
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget, QMessageBox
 
 from book_struct import BankedBook
@@ -47,6 +47,12 @@ LANGUAGE = CONFIG['LANGUAGE']
 AUTO_UNLOCK_TEXTER = CONFIG['AUTO_UNLOCK_TEXTER']
 SHOW_FORMATED_FILE = CONFIG['SHOW_FORMATED_FILE']
 ENABLE_CLOUD_SYNC = CONFIG['ENABLE_CLOUD_SYNC']
+BANK_RESOLUTION = CONFIG['BANK_RESOLUTION']
+SCROLL_POSTION_KEEPER = CONFIG['SCROLL_POSTION_KEEPER']
+RESIZE_DELAY = CONFIG['RESIZE_DELAY']
+
+BANK_X, BANK_Y = BANK_RESOLUTION
+RENDER_X, RENDER_Y = BANK_X // 347, BANK_Y // 170 + 1
 
 if ENABLE_ISF:
     from image_search import search_for as searchimg
@@ -236,8 +242,8 @@ class MainWindow(QMainWindow):
         self.b_opt = [self.ui.b_menu.addAction(self.lang['BB_MenuAll'])]
 
         if ENABLE_BANK:
-            self.UAR = QPixmap("images/dorder.png").scaled(28, 28)
-            self.DAR = QPixmap("images/uorder.png").scaled(28, 28)
+            self.UAR = QPixmap("images/dorder.png").scaled(26, 26)
+            self.DAR = QPixmap("images/uorder.png").scaled(26, 26)
 
             bll = [BkWt(bankinfo=i) for i in bank]
 
@@ -253,6 +259,10 @@ class MainWindow(QMainWindow):
             self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
             self._delete_pending = False
 
+            self.banktimer = QTimer()
+            self.banktimer.setSingleShot(True)
+            self.banktimer.timeout.connect(self.render_bank_page)
+
         self.warningWindow = QMessageBox()
         self.uiConfig = Ui_Config()
 
@@ -265,8 +275,30 @@ class MainWindow(QMainWindow):
         self._sync_thread = None
         self._sync_worker = None
 
+        self.current_bank = False
+
     def start_task(self, task, *args, **kwargs):
         self.thread_pool.start(WorkerRunnable(task, lambda: None, *args, **kwargs))
+
+    def render_bank_page(self):
+        scr_value = self.ui.BBScroll.verticalScrollBar().value()
+        old_rx = RENDER_X
+        total_bws = len(self.bw_list)
+
+        self.render_book_bank(self.process_bw_list(), render_param=((self.width()-20) // 347, self.height() // 170 + 1))
+        self.ui.tabWidget.resize(self.width(), self.height())
+        self.ui.BBScroll.resize(self.width() - 6, self.height() - 58)
+
+        new_value1 = ((scr_value // 170 * old_rx + RENDER_X) // RENDER_X) * 170 - 170
+        new_value2 = int(scr_value * old_rx / RENDER_X)
+        new_value3 = int(scr_value * (total_bws // RENDER_X) / (total_bws // old_rx))
+        if SCROLL_POSTION_KEEPER == 1:
+            vl = new_value1
+        elif SCROLL_POSTION_KEEPER == 2:
+            vl = new_value2
+        else:
+            vl = new_value3
+        self.ui.BBScroll.verticalScrollBar().setValue(vl)
 
     def DownloadContentControl(self):
         self.downloader.set_param(4 + self.ui.DC.id(self.ui.DC.checkedButton()), 1)
@@ -492,17 +524,33 @@ class MainWindow(QMainWindow):
         self.ref_button()
         self.ui.unlock_button.setEnabled(False)
 
+    def resizeEvent(self, event):
+        if not self.current_bank:
+            return
+        self.banktimer.start(RESIZE_DELAY)
+
     def tab_change_event(self, index):
-        if self.ui.tabList[index] == 'BookBank' or self.ui.tabList[index] == 'NovelSearcher':
-            self.ui.Exit.setHidden(True)
-            self.ui.GLB_setting.setHidden(True)
-            self.ui.MainWindow.resize(1068, 640)
-            self.ui.tabWidget.resize(1068, 640)
-        else:
+        self.current_bank = False
+        if self.ui.tabList[index] != 'BookBank' and self.ui.tabList[index] != 'NovelSearcher':
+            self.ui.MainWindow.setMinimumSize(660, 380)
             self.ui.MainWindow.resize(660, 380)
             self.ui.tabWidget.resize(660, 380)
             self.ui.Exit.setHidden(False)
             self.ui.GLB_setting.setHidden(False)
+            return
+        self.ui.Exit.setHidden(True)
+        self.ui.GLB_setting.setHidden(True)
+        if self.ui.tabList[index] == 'NovelSearcher':
+            self.ui.MainWindow.resize(1068, 640)
+            self.ui.tabWidget.resize(1068, 640)
+            return
+        if self.ui.tabList[index] == 'BookBank':
+            self.ui.MainWindow.setMinimumSize(1068, 640)
+            self.ui.MainWindow.resize(*BANK_RESOLUTION)
+            self.ui.tabWidget.resize(*BANK_RESOLUTION)
+            self.render_bank_page()
+            self.current_bank = True
+            return
 
     def sr_edit_update(self):
         self.bb_param[3] = self.ui.flt_search.text()
@@ -656,8 +704,8 @@ class MainWindow(QMainWindow):
         self._sync_thread = QThread()
         self._sync_worker.moveToThread(self._sync_thread)
         self._sync_thread.started.connect(self._sync_worker.run)
-        self._sync_worker.finished.connect(lambda msg: self._on_ftp_test_done(True, msg, host, port, username, password))
-        self._sync_worker.error.connect(lambda msg: self._on_ftp_test_done(False, msg, host, port, username, password))
+        self._sync_worker.finished.connect(lambda msg: self._done_ftp_test(True, msg, host, port, username, password))
+        self._sync_worker.error.connect(lambda msg: self._done_ftp_test(False, msg, host, port, username, password))
         self._sync_worker.finished.connect(self._sync_thread.quit)
         self._sync_worker.error.connect(self._sync_thread.quit)
         self._sync_worker.finished.connect(self._sync_worker.deleteLater)
@@ -665,8 +713,8 @@ class MainWindow(QMainWindow):
         self._sync_thread.finished.connect(self._sync_thread.deleteLater)
         self._sync_thread.start()
 
-    def _on_ftp_test_done(self, success: bool, message: str,
-                          host: str, port: int, username: str, password: str):
+    def _done_ftp_test(self, success: bool, message: str,
+                       host: str, port: int, username: str, password: str):
         self.ui.cs_test_btn.setEnabled(True)
         self.ui.cs_upload_btn.setEnabled(True)
         self.ui.cs_download_btn.setEnabled(True)
@@ -760,39 +808,33 @@ class MainWindow(QMainWindow):
             self.ui.cs_status.setText(self.lang['CLOUD_ERR_INVALID_JSON'])
             self.ui.cs_upload_btn.setEnabled(True)
             self.ui.cs_download_btn.setEnabled(True)
-            QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'],
-                                 self.lang['CLOUD_ERR_INVALID_JSON'])
+            QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'], self.lang['CLOUD_ERR_INVALID_JSON'])
             return
 
         new_bank_data = [BankedBook(**i) for i in new_bank_data]
-
         old_bank = []
         if ext('bank.json'):
             old_bank = read_bank_file()
             if self.ui.cs_backup_cb.isChecked():
-                backup_path = f'bank.backup'
-                copy2('bank.json', backup_path)
-                self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
+                copy2('bank.json', f'bank.backup')
+                self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: bank.backup")
 
         added, removed = compare_banks(old_bank, new_bank_data)
 
-        if self.ui.cs_delete_cb.isChecked():
-            if removed:
-                self.ui.cs_status.setText(
-                    self.lang['CLOUD_N_BOOKS_REMOVED'].format(len(removed)))
+        if removed:
+            if self.ui.cs_delete_cb.isChecked():
+                self.ui.cs_status.setText(self.lang['CLOUD_N_BOOKS_REMOVED'].format(len(removed)))
                 for book in removed:
                     delete_book_files(book)
                     remove_from_bank(book.numname)
-        else:
-            new_bank_data += removed
-            if removed:
-                self.ui.cs_status.setText(
-                    self.lang['CLOUD_BOOKS_MERGED'].format(len(removed)))
+            else:
+                new_bank_data += removed
+                self.ui.cs_status.setText(self.lang['CLOUD_BOOKS_MERGED'].format(len(removed)))
+
         save_as_bank(new_bank_data)
 
         if added:
-            self.ui.cs_status.setText(
-                self.lang['CLOUD_N_BOOKS_ADDED'].format(len(added)))
+            self.ui.cs_status.setText(self.lang['CLOUD_N_BOOKS_ADDED'].format(len(added)))
             for book_dict in added:
                 self.start_task(self.downloadSingle, book_dict['numname'])
 
@@ -890,9 +932,10 @@ class MainWindow(QMainWindow):
         self.handleWarning(task.getWarning())
         succeeded()
 
-    def render_book_bank(self, bw_list=None):
+    def render_book_bank(self, bw_list=None, render_param=None, afterpos=0):
         if not ENABLE_BANK:
             return
+        global RENDER_X, RENDER_Y
 
         for i in self.bw_list:
             i.setParent(self.hidden_veil)
@@ -904,15 +947,22 @@ class MainWindow(QMainWindow):
         elif not bw_list:
             self.ui.none_sr.setHidden(False)
 
-        for i in bw_list[:15]:
+        if render_param is None:
+            rx, ry = RENDER_X, RENDER_Y
+        else:
+            rx, ry = render_param
+            RENDER_X = rx
+            RENDER_Y = ry
+
+        for i in bw_list[:rx * ry]:
             i.Initialize()
 
         bookgrid = WidgetGrid(self.ui.BBScroll)
         bookgrid.widgetList = bw_list
         bookgrid.setChildSize((347, 170))
-        ht = (len(bw_list) + 2) // 3
-        bookgrid.setGridSize((3, ht))
-        bookgrid.setFixedSize(1042, 170 * ht)
+        ht = (len(bw_list) + rx - 1) // rx
+        bookgrid.setGridSize((rx, ht))
+        bookgrid.setFixedSize(347*rx, 170 * ht)
 
         for i in bw_list:
             bookgrid.addWidget(i)
@@ -952,14 +1002,15 @@ class MainWindow(QMainWindow):
         if not ENABLE_BANK:
             return
         bw_list = self.ui.BBScroll.mainwidget.widgetList
-        cur_wid = y_pos // 170 * 3
-        part_list = bw_list[cur_wid: cur_wid + 15]
+        cur_wid = y_pos // 170 * RENDER_X + RENDER_X
+        part_list = bw_list[cur_wid: cur_wid + RENDER_X * RENDER_Y]
         for i in part_list:
             i.Initialize()
 
     def refresh_bw_list(self):
         bb_info = get_all_info()
         bank = read_bank_file()
+        curr_bank = [i.bankinfo for i in self.bw_list]
         update_hmzfiles()
 
         self.ui.g_menu.clear()
@@ -968,8 +1019,6 @@ class MainWindow(QMainWindow):
         self.b_opt = [self.ui.b_menu.addAction('全部')]
         self.g_opt += [self.ui.g_menu.addAction(i) for i in bb_info[0]]
         self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
-
-        curr_bank = [i.bankinfo for i in self.bw_list]
 
         stale_indices = [y for y, i in enumerate(curr_bank) if i not in bank]
         for y in reversed(stale_indices):
@@ -1115,6 +1164,7 @@ class MainWindow(QMainWindow):
         checked = self.ui.export_btn.isChecked()
         self.ui.start_export.setHidden(not checked)
         self.ui.start_delete.setHidden(not checked)
+        self.ui.start_delete.resize(self.ui.start_delete.sizeHint())
         if not checked:
             self._delete_pending = False
             self.ui.start_delete.setText(self.lang['BB_Delete'])
@@ -1132,16 +1182,18 @@ class MainWindow(QMainWindow):
         if not self._delete_pending:
             self._delete_pending = True
             self.ui.start_delete.setText(self.lang['BB_ConfirmDelete'])
-            self.ui.start_delete.setStyleSheet("QLabel { color: red; } QLabel:hover { color: red; }")
-        else:
-            for i in self.bw_list:
-                if i.set_to_exported:
-                    delete_book_files(i.bankinfo)
-                    remove_from_bank(i.bankinfo.numname)
-            self._delete_pending = False
-            self.refresh_bw_list()
-            self.ui.export_btn.setChecked(False)
-            self.setExportMode()
+            self.ui.start_delete.setStyleSheet("QLabel { color: magenta; } QLabel:hover { color: red; }")
+            self.ui.start_delete.resize(self.ui.start_delete.sizeHint())
+            return
+
+        for i in self.bw_list:
+            if i.set_to_exported:
+                delete_book_files(i.bankinfo)
+                remove_from_bank(i.bankinfo.numname)
+        self._delete_pending = False
+        self.refresh_bw_list()
+        self.ui.export_btn.setChecked(False)
+        self.setExportMode()
 
     def handleSingleImport(self, filename):
         rmzfile, _type = read_from_rmz(filename)
@@ -1228,7 +1280,6 @@ def timetest(func, *args, **kwargs):
 
 def activate():
     window = MainWindow()
-    window.render_book_bank()
     window.show()
     window.set_connection()
 

@@ -1,5 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtCore import QRect as rct, Qt
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 
 from BySide import ClickableLabel, ScrollField, ExitButton, DefaultFont, AdvButtonGroup
 from config import CONFIG, translate_to as tsl
@@ -9,6 +10,8 @@ ENABLE_ISF = CONFIG['ENABLE_ISF']
 LANGUAGE = CONFIG['LANGUAGE']
 AUTO_UNLOCK_TEXTER = CONFIG['AUTO_UNLOCK_TEXTER']
 ENABLE_CLOUD_SYNC = CONFIG['ENABLE_CLOUD_SYNC']
+BANK_RESOLUTION = CONFIG['BANK_RESOLUTION']
+BANK_X, BANK_Y = BANK_RESOLUTION
 
 
 # noinspection PyAttributeOutsideInit
@@ -275,10 +278,12 @@ class Ui_MainWindow(object):
         self.tabList.append('Converter')
 
         self.BookBank = QtWidgets.QWidget()
-        self.BBScroll = ScrollField(self.BookBank, None, (0, 30, 1062, 582))
+        self.BBScroll = ScrollField(self.BookBank, None, (0, 30, BANK_X-6, BANK_Y-58))
+        self.BBScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.od_bank = ClickableLabel(parent=self.BookBank)
-        self.od_bank.setGeometry(rct(14, 0, 72, 28))
+        self.od_bank.setFixedSize(70, 30)
+        self.od_bank.move(5, 0)
         self.od_bank.setFont(Sfont)
         self.od_bank.setObjectName("od_bank")
         self.od_bank.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -290,26 +295,27 @@ class Ui_MainWindow(object):
                           self.o_menu.addAction(self.lang['BB_od_addtime']))
 
         self.order_arrow = ClickableLabel(parent=self.BookBank, pic=(50, 50, 50, 150))
-        self.order_arrow.setGeometry(rct(88, 0, 32, 28))
-        self.order_arrow.setPixmap(QtGui.QPixmap("images/uorder.png").scaled(28, 28))
+        self.order_arrow.setFixedSize(30, 30)
+        self.order_arrow.move(80, 0)
+        self.order_arrow.setPixmap(QtGui.QPixmap("images/uorder.png").scaled(26, 26))
         self.order_arrow.setObjectName("uar")
 
         self.flt_bunko = ClickableLabel(parent=self.BookBank)
-        self.flt_bunko.setGeometry(rct(138, 3, 80, 24))
+        self.flt_bunko.setGeometry(138, 0, 80, 30)
         self.flt_bunko.setFont(Sfont)
         self.flt_bunko.setObjectName("flt_bunko")
 
         self.b_menu = QtWidgets.QMenu(parent=self.MainWindow)
 
         self.flt_genre = ClickableLabel(parent=self.BookBank)
-        self.flt_genre.setGeometry(rct(228, 3, 80, 24))
+        self.flt_genre.setGeometry(228, 0, 80, 30)
         self.flt_genre.setFont(Sfont)
         self.flt_genre.setObjectName("flt_genre")
 
         self.g_menu = QtWidgets.QMenu(parent=self.MainWindow)
 
         self.flt_search = QtWidgets.QLineEdit(parent=self.BookBank)
-        self.flt_search.setGeometry(rct(324, 0, 190, 28))
+        self.flt_search.setGeometry(320, 1, 250, 28)
         self.flt_search.setFont(Sfont)
         self.flt_search.setObjectName("flt_search")
         self.flt_search.setPlaceholderText(self.lang['BB_TextPlaceholder'])
@@ -317,12 +323,17 @@ class Ui_MainWindow(object):
         self.none_sr = ClickableLabel(parent=self.BookBank)
         self.none_sr.setText(self.lang['BB_nonesr'])
         self.none_sr.setFont(SSfont)
-        self.none_sr.setGeometry(425, 100, 209, 30)
+        self.none_sr.setGeometry(0, 100, BANK_X - 6, 30)
         self.none_sr.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        self.icon_buttons_layout = QHBoxLayout()
+        self.icon_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        self.icon_buttons_layout.setSpacing(1)
+        self.icon_buttons_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
         self.refresh_bank = ClickableLabel(parent=self.BookBank)
-        self.refresh_bank.setGeometry(rct(1000, 0, 28, 28))
-        self.refresh_bank.setPixmap(QtGui.QPixmap("images/refresh.png").scaled(32, 32))
+        self.refresh_bank.setFixedSize(28, 28)
+        self.refresh_bank.setPixmap(QtGui.QPixmap("images/refresh.png").scaled(28, 28))
         self.refresh_bank.setStyleSheet("""
             QLabel {
                 background-color: #FFFFFF;  
@@ -334,8 +345,8 @@ class Ui_MainWindow(object):
         """)
 
         self.flt_liked = ClickableLabel(parent=self.BookBank)
-        self.flt_liked.setGeometry(968, 0, 28, 28)
         self.flt_liked.setPixmap(QtGui.QPixmap("images/heart_h.png").scaled(28, 28))
+        self.flt_liked.setFixedSize(28, 28)
         self.flt_liked.setStyleSheet("""
             QLabel {
                 background-color: #FFFFFF;  
@@ -347,8 +358,8 @@ class Ui_MainWindow(object):
         """)
 
         self.regenerate_bank = ClickableLabel(parent=self.BookBank)
-        self.regenerate_bank.setGeometry(1032, 0, 28, 28)
         self.regenerate_bank.setPixmap(QtGui.QPixmap("images/reset.png").scaled(28, 28))
+        self.regenerate_bank.setFixedSize(28, 28)
         self.regenerate_bank.setStyleSheet("""
             QLabel {
                 background-color: #FFFFFF;  
@@ -358,25 +369,30 @@ class Ui_MainWindow(object):
                 background-color: #FFECF4; 
             }
         """)
+        self.icon_buttons_layout.addStretch()
+        self.icon_buttons_layout.addWidget(self.refresh_bank)
+        self.icon_buttons_layout.addWidget(self.flt_liked)
+        self.icon_buttons_layout.addWidget(self.regenerate_bank)
+        self.BookBank.setLayout(self.icon_buttons_layout)
 
         self.export_btn = QtWidgets.QCheckBox(parent=self.BookBank)
-        self.export_btn.setGeometry(690, 3, 160, 24)
+        self.export_btn.setGeometry(690, 0, 160, 30)
         self.export_btn.setFont(Sfont)
         self.export_btn.setText(self.lang['BB_ExportMode'])
 
         self.import_btn = ClickableLabel(parent=self.BookBank)
-        self.import_btn.setGeometry(580, 3, 80, 24)
+        self.import_btn.setGeometry(590, 0, 80, 30)
         self.import_btn.setFont(Sfont)
         self.import_btn.setText(self.lang['BB_ImportRMZ'])
 
         self.start_export = ClickableLabel(parent=self.BookBank)
-        self.start_export.setGeometry(775, 2, 70, 24)
+        self.start_export.setGeometry(775, 0, 70, 30)
         self.start_export.setFont(Dfont)
         self.start_export.setText(self.lang['BB_Export'])
         self.start_export.setHidden(True)
 
         self.start_delete = ClickableLabel(parent=self.BookBank)
-        self.start_delete.setGeometry(840, 2, 78, 24)
+        self.start_delete.move(860, 5)
         self.start_delete.setFont(Dfont)
         self.start_delete.setText(self.lang['BB_Delete'])
         self.start_delete.setHidden(True)

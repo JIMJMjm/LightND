@@ -4,13 +4,14 @@ from os.path import exists as ext
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QDoubleValidator, QIntValidator, QIcon
-from PySide6.QtWidgets import QDialog, QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QFrame
+from PySide6.QtWidgets import QDialog, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QFrame
 
 from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid
 from config import (CONFIG, CONFIG_NOTATION, DEFAULT_SETTING,
                     modify_global_settings as mgs, get_global_settings as ggs, translate_to as tsl)
 
-BYPASS_RENDER_CONFIG = {'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME', 'FTP_PASSWORD'}
+BYPASS_RENDER_CONFIG = {'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME',
+                        'FTP_PASSWORD', 'BANK_RESOLUTION'}
 
 df15 = DefaultFont(15, underline=True)
 df13 = DefaultFont(13)
