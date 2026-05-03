@@ -20,7 +20,7 @@ from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_co
 from BySide import WidgetGrid
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
                       filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
-                      compare_banks, save_as_bank)
+                      compare_banks, save_as_bank, delete_book_files, remove_from_bank)
 from ftpsync import FtpSyncManager
 from config import modify_global_settings as mgs
 from ui.ui_LightNV import Ui_MainWindow
@@ -251,6 +251,7 @@ class MainWindow(QMainWindow):
 
             self.bb_param = ['', '', [1, '+'], '']
             self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
+            self._delete_pending = False
 
         self.warningWindow = QMessageBox()
         self.uiConfig = Ui_Config()
@@ -614,6 +615,7 @@ class MainWindow(QMainWindow):
 
         ui.export_btn.clicked.connect(self.setExportMode)
         ui.start_export.lclicked.connect(self.handleExport)
+        ui.start_delete.lclicked.connect(self.handleDelete)
 
         ui.regenerate_bank.lclicked.connect(lambda: self.handleWarning('RESETBANK'))
         self.resetBank.connect(generate_book_bank)
@@ -767,13 +769,26 @@ class MainWindow(QMainWindow):
         old_bank = []
         if ext('bank.json'):
             old_bank = read_bank_file()
-            backup_path = f'bank.backup'
-            copy2('bank.json', backup_path)
-            self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
-
-        save_as_bank(new_bank_data)
+            if self.ui.cs_backup_cb.isChecked():
+                backup_path = f'bank.backup'
+                copy2('bank.json', backup_path)
+                self.ui.cs_status.setText(f"{self.lang['CLOUD_BACKUP_CREATED']}: {backup_path}")
 
         added, removed = compare_banks(old_bank, new_bank_data)
+
+        if self.ui.cs_delete_cb.isChecked():
+            if removed:
+                self.ui.cs_status.setText(
+                    self.lang['CLOUD_N_BOOKS_REMOVED'].format(len(removed)))
+                for book in removed:
+                    delete_book_files(book)
+                    remove_from_bank(book.numname)
+        else:
+            new_bank_data += removed
+            if removed:
+                self.ui.cs_status.setText(
+                    self.lang['CLOUD_BOOKS_MERGED'].format(len(removed)))
+        save_as_bank(new_bank_data)
 
         if added:
             self.ui.cs_status.setText(
@@ -955,17 +970,24 @@ class MainWindow(QMainWindow):
         self.b_opt += [self.ui.b_menu.addAction(i) for i in bb_info[1]]
 
         curr_bank = [i.bankinfo for i in self.bw_list]
+
+        stale_indices = [y for y, i in enumerate(curr_bank) if i not in bank]
+        for y in reversed(stale_indices):
+            self.bw_list[y].setHidden(True)
+            self.bw_list[y].deleteLater()
+            self.bw_list.pop(y)
+
         new_bw = []
         for i in bank:
             if i not in curr_bank:
                 bw_new = BkWt(bankinfo=i)
                 new_bw.append(bw_new)
                 self.bw_list.append(bw_new)
-        for y, i in enumerate(curr_bank):
-            if i in bank:
-                path = f'{i.directory}/{i.name}/{i.numname}.hmz'
+        for bw in self.bw_list:
+            if bw.bankinfo in bank:
+                path = f'{bw.bankinfo.directory}/{bw.bankinfo.name}/{bw.bankinfo.numname}.hmz'
                 hmzfi = read_hmz_par(path)
-                self.bw_list[y].update_hmzinfo(hmzfi)
+                bw.update_hmzinfo(hmzfi)
         self.render_book_bank(self.process_bw_list())
         self.set_bw_connection(init=False, new_bw=new_bw)
 
@@ -1090,15 +1112,36 @@ class MainWindow(QMainWindow):
         self.render_book_bank(self.process_bw_list())
 
     def setExportMode(self):
-        self.ui.start_export.setHidden(not self.ui.export_btn.isChecked())
+        checked = self.ui.export_btn.isChecked()
+        self.ui.start_export.setHidden(not checked)
+        self.ui.start_delete.setHidden(not checked)
+        if not checked:
+            self._delete_pending = False
+            self.ui.start_delete.setText(self.lang['BB_Delete'])
+            self.ui.start_delete.setStyleSheet("QLabel { color: black; } QLabel:hover { color: blue; }")
         for i in self.bw_list:
-            i.setExport(self.ui.export_btn.isChecked())
+            i.setExport(checked)
 
     def handleExport(self):
         for i in self.bw_list:
             if i.set_to_exported:
                 save_as_rmz(1, i.bankinfo, RMZ_EXPORT_PATH, RMZ_FILENAME_FORMAT)
         succeeded('All RMZ exported!')
+
+    def handleDelete(self):
+        if not self._delete_pending:
+            self._delete_pending = True
+            self.ui.start_delete.setText(self.lang['BB_ConfirmDelete'])
+            self.ui.start_delete.setStyleSheet("QLabel { color: red; } QLabel:hover { color: red; }")
+        else:
+            for i in self.bw_list:
+                if i.set_to_exported:
+                    delete_book_files(i.bankinfo)
+                    remove_from_bank(i.bankinfo.numname)
+            self._delete_pending = False
+            self.refresh_bw_list()
+            self.ui.export_btn.setChecked(False)
+            self.setExportMode()
 
     def handleSingleImport(self, filename):
         rmzfile, _type = read_from_rmz(filename)
