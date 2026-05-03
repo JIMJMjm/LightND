@@ -90,7 +90,7 @@ def get_global_settings(reset: bool = False) -> dict:
         config = DEFAULT_SETTING
     else:
         config = read_json('config.json')
-    sh_config = {i: config[i] if config.get(i) else DEFAULT_SETTING[i] for i in DEFAULT_SETTING}
+    sh_config = {i: config[i] if config.get(i, None) is not None else DEFAULT_SETTING[i] for i in DEFAULT_SETTING}
 
     save_json('config.json', sh_config)
     return read_json('config.json')

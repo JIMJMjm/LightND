@@ -283,7 +283,7 @@ class MainWindow(QMainWindow):
     def render_bank_page(self):
         scr_value = self.ui.BBScroll.verticalScrollBar().value()
         old_rx = RENDER_X
-        total_bws = len(self.bw_list)
+        total_bws = max(len(self.bw_list), 1)
 
         self.render_book_bank(self.process_bw_list(), render_param=((self.width()-20) // 347, self.height() // 170 + 1))
         self.ui.tabWidget.resize(self.width(), self.height())
