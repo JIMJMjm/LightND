@@ -249,6 +249,51 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
         return sorted(bw_list, key=lambda bk: (bk.bankinfo[order], int(bk.bankinfo.numname)), reverse=sgn)
 
 
+def parse_srh_unit(unit_str: str) -> tuple | str:
+    if '=' in unit_str:
+        cons_pair = unit_str.split('=')[:2] + ['==']
+    elif '>' in unit_str:
+        cons_pair = unit_str.split('>')[:2] + ['>']
+    elif '<' in unit_str:
+        cons_pair = unit_str.split('<')[:2] + ['<']
+    else:
+        return unit_str
+
+    if cons_pair[0].strip().lower() == 'liked':
+        try:
+            cons_vl = int(cons_pair[1].strip())
+        except ValueError:
+            return unit_str
+        if cons_vl == 1 or cons_vl == 0:
+            return 'liked', cons_vl, cons_pair[-1]
+        return unit_str
+
+    if cons_pair[0].strip().lower() == 'bunko' and cons_pair[-1] == '==':
+        return 'bunko', cons_pair[1], cons_pair[-1]
+
+    if cons_pair[0].strip().lower() == 'writer' and cons_pair[-1] == '==':
+        return 'writer', cons_pair[1], cons_pair[-1]
+
+    if cons_pair[0].strip().lower() == 'tag' and cons_pair[-1] == '==':
+        return 'tag', cons_pair[1], cons_pair[-1]
+
+    if cons_pair[0].strip().lower() == 'numname':
+        try:
+            cons_vl = int(cons_pair[1].strip())
+        except ValueError:
+            return unit_str
+        return 'numname', cons_vl, cons_pair[-1]
+
+    if cons_pair[0].strip().lower() == 'star':
+        try:
+            cons_vl = float(cons_pair[1].strip())
+        except ValueError:
+            return unit_str
+        return 'star', cons_vl, cons_pair[-1]
+
+    return unit_str
+
+
 def search_bank(keyword: str = '', bank=None):
     if not bank:
         return []
@@ -263,8 +308,36 @@ def search_bank(keyword: str = '', bank=None):
 def search_bw(keyword: str = '', bw_list=None):
     if not bw_list:
         return []
-    rett = [i for i in bw_list if keyword in i.search_str]
-    return rett
+    if ' ' not in keyword:
+        return [i for i in bw_list if keyword in i.search_str]
+
+    units = keyword.split(' ')
+    params_ = []
+    keywords = []
+    for unit in units:
+        uts = parse_srh_unit(unit)
+        if isinstance(uts, tuple):
+            params_.append(uts)
+            continue
+        keywords.append(unit)
+
+    for i in params_:
+        if i[0] == 'numname':
+            bw_list = [bk for bk in bw_list if eval(f'{bk.bankinfo.numname}{i[2]}{i[1]}')]
+        if i[0] == 'star':
+            bw_list = [bk for bk in bw_list
+                       if eval(f'{round(sum(bk.lux_info.rtg.values()) / max(len(bk.lux_info.rtg.values()), 1), 0)}'
+                               f'{i[2]}{i[1]}')]
+        if i[0] == 'liked':
+            bw_list = [bk for bk in bw_list if eval(f'{bk.bankinfo.lux.fav}{i[2]}{i[1]}')]
+        if i[0] == 'tag':
+            bw_list = [bk for bk in bw_list if i[1] in bk.bankinfo.genre]
+        if i[0] == 'bunko':
+            bw_list = [bk for bk in bw_list if i[1] in bk.bankinfo.bunko]
+        if i[0] == 'writer':
+            bw_list = [bk for bk in bw_list if i[1] in bk.bankinfo.writer]
+
+    return [i for i in bw_list if ' '.join(keywords) in i.search_str]
 
 
 def get_all_info():
