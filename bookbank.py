@@ -262,14 +262,8 @@ def search_bank(keyword: str = '', bank=None):
 
 def search_bw(keyword: str = '', bw_list=None):
     if not bw_list:
-        return None
-    rett = []
-    lazy_info = [(f'{i.bankinfo[0]}'
-                  f'{slug(f'{i.bankinfo[1]}{i.bankinfo[2]}', separator='')}'
-                  f'{i.bankinfo[1]}{i.bankinfo[2]}') for i in bw_list]
-    for y, i in enumerate(bw_list):
-        if keyword in lazy_info[y]:
-            rett.append(i)
+        return []
+    rett = [i for i in bw_list if keyword in i.search_str]
     return rett
 
 
@@ -371,8 +365,3 @@ def compare_banks(old_bank: list[BankedBook], new_bank_data: list[BankedBook]) -
 
 if __name__ == '__main__':
     pass
-    # refresh_hmz()
-    # update_to_date()
-    # post_process()
-    # generate_book_bank()
-    # update()

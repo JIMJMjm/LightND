@@ -5,6 +5,7 @@ from os.path import exists as ext
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import QWidget, QProgressBar, QLabel
+from pypinyin import slug
 
 from BySide import ClickableLabel, DefaultFont
 from book_struct import BankedBook, BookLuxury, HmzedBook
@@ -47,6 +48,7 @@ class BookWidget(QWidget):
         self.set_to_exported = False
         self.is_initialized = False
         self.setMouseTracking(True)
+        self.search_str = f'{bankinfo[0]}{slug(f'{bankinfo[1]}{bankinfo[2]}', separator='')}{bankinfo[1]}{bankinfo[2]}'
 
         self.updatebt = ClickableLabel(parent=self, text=LANG['BW_update'])
         self.detailmd = ClickableLabel(parent=self, text=LANG['BW_texter'])
@@ -116,6 +118,8 @@ class BookWidget(QWidget):
 
     def SpecUI(self):
         self.bookname.setText(self.name)
+        self.search_str = (f'{self.bankinfo[0]}{slug(f'{self.bankinfo[1]}{self.bankinfo[2]}', separator='')}'
+                           f'{self.bankinfo[1]}{self.bankinfo[2]}')
 
         self.thumb = f'images/thumbnails/{self.numname}.jpg'
         if not ext(self.thumb):
