@@ -283,21 +283,18 @@ class MainWindow(QMainWindow):
     def render_bank_page(self):
         scr_value = self.ui.BBScroll.verticalScrollBar().value()
         old_rx = RENDER_X
-        total_bws = max(len(self.bw_list), 1)
+        total_bws = len(self.bw_list)
 
         self.render_book_bank(self.process_bw_list(), render_param=((self.width()-20) // 347, self.height() // 170 + 1))
         self.ui.tabWidget.resize(self.width(), self.height())
         self.ui.BBScroll.resize(self.width() - 6, self.height() - 58)
 
-        new_value1 = ((scr_value // 170 * old_rx + RENDER_X) // RENDER_X) * 170 - 170
-        new_value2 = int(scr_value * old_rx / RENDER_X)
-        new_value3 = int(scr_value * (total_bws // RENDER_X) / (total_bws // old_rx))
         if SCROLL_POSTION_KEEPER == 1:
-            vl = new_value1
+            vl = ((scr_value // 170 * old_rx + RENDER_X) // RENDER_X) * 170 - 170
         elif SCROLL_POSTION_KEEPER == 2:
-            vl = new_value2
+            vl = int(scr_value * old_rx / RENDER_X)
         else:
-            vl = new_value3
+            vl = int(scr_value * (total_bws // RENDER_X) / min((total_bws // old_rx), 1))
         self.ui.BBScroll.verticalScrollBar().setValue(vl)
 
     def DownloadContentControl(self):
