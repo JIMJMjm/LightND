@@ -622,8 +622,8 @@ class MainWindow(QMainWindow):
             i.clicked.connect(self.ref_button)
         ui.DirectoryChoose.clicked.connect(lambda: self.select_directory_t())
 
-        ui.detailBT.clicked.connect(self.generate_detail_window)
-        ui.detailBT_t.clicked.connect(self.generate_detail_window_t)
+        ui.detailBT.clicked.connect(self.gnrt_ctask_d)
+        ui.detailBT_t.clicked.connect(self.gnrt_ctask_t)
 
         ui.CoverChoose_c.clicked.connect(self.select_cover_c)
         ui.FileChoose_c.clicked.connect(self.select_file_c)
@@ -668,15 +668,15 @@ class MainWindow(QMainWindow):
 
         ui.unlock_button.clicked.connect(self.unlock_Texter_options)
 
-        self.set_cloud_sync_connection()
+        self.set_cloud_cnct()
 
-    def set_cloud_sync_connection(self):
+    def set_cloud_cnct(self):
         ui = self.ui
-        ui.cs_test_btn.clicked.connect(self._on_cloud_sync_test)
+        ui.cs_test_btn.clicked.connect(self._test_cloud_sync)
         ui.cs_upload_btn.clicked.connect(self._on_cloud_sync_upload)
         ui.cs_download_btn.clicked.connect(self._on_cloud_sync_download)
 
-    def _on_cloud_sync_test(self):
+    def _test_cloud_sync(self):
         host = self.ui.cs_host_input.text().strip()
         port_str = self.ui.cs_port_input.text().strip()
         username = self.ui.cs_user_input.text().strip()
@@ -783,7 +783,7 @@ class MainWindow(QMainWindow):
         self._sync_thread = QThread()
         self._sync_worker.moveToThread(self._sync_thread)
         self._sync_thread.started.connect(self._sync_worker.run)
-        self._sync_worker.bank_downloaded.connect(self._on_ftp_download_done)
+        self._sync_worker.bank_downloaded.connect(self._done_ftp_download)
         self._sync_worker.error.connect(lambda msg: self._on_ftp_generic_error(msg))
         self._sync_worker.bank_downloaded.connect(self._sync_thread.quit)
         self._sync_worker.error.connect(self._sync_thread.quit)
@@ -798,7 +798,7 @@ class MainWindow(QMainWindow):
         self.ui.cs_download_btn.setEnabled(True)
         QMessageBox.critical(self, self.lang['CLOUD_STATUS_ERROR'], msg)
 
-    def _on_ftp_download_done(self, data: bytes):
+    def _done_ftp_download(self, data: bytes):
         try:
             new_bank_data = json.loads(data)
         except json.JSONDecodeError:
@@ -883,7 +883,7 @@ class MainWindow(QMainWindow):
             return False
         return additions, modifications, updated_alllist
 
-    def generate_detail_window(self):
+    def gnrt_ctask_d(self):
         numname = self.downloader.set_param(self.ui.NumnameInput.text(), 0)
         if not numname:
             return
@@ -899,7 +899,7 @@ class MainWindow(QMainWindow):
         self.child_detail.startFBT.clicked.connect(lambda: self.start_task(self.dlslice_d, numname))
         self.child_detail.show()
 
-    def generate_detail_window_t(self):
+    def gnrt_ctask_t(self):
         path = self.ui.HFolderInput.text()
         if not path:
             print('Empty Path! Please Enter a Path.')

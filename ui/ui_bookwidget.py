@@ -34,12 +34,10 @@ class BookWidget(QWidget):
         self.bankinfo = bankinfo
 
         self.setFixedSize(347, 170)
-        self.numname = bankinfo.numname
-        self.name = bankinfo.name
         self.lux_info: BookLuxury = bankinfo.lux
 
-        if ext(f'{bankinfo.directory}/{bankinfo.name}/{self.numname}.hmz'):
-            self.hmzpath = f'{bankinfo.directory}/{bankinfo.name}/{self.numname}.hmz'
+        if ext(f'{bankinfo.directory}/{bankinfo.name}/{bankinfo.numname}.hmz'):
+            self.hmzpath = f'{bankinfo.directory}/{bankinfo.name}/{bankinfo.numname}.hmz'
             self.hmzinfo = read_hmz_par(self.hmzpath)
         else:
             print('Hmz File not found!')
@@ -72,7 +70,7 @@ class BookWidget(QWidget):
             print("No hmzinfo, ratings invalid!")
             return
 
-        volinfo = [self.hmzinfo.name, f'images/thumbnails/{self.numname}.jpg'] + [i[0] for i in self.hmzinfo.allname]
+        volinfo = [self.hmzinfo.name, f'images/thumbnails/{self.bankinfo.numname}.jpg'] + [i[0] for i in self.hmzinfo.allname]
         self.rating_ctask = DetailedWindow(volinfo, ratings=True, bankinfo=self.bankinfo)
         self.rating_ctask.setWindowTitle(LANG['RT_window'])
         self.rating_ctask.Close_as_dia.connect(self.handle_close_ratings)
@@ -83,7 +81,7 @@ class BookWidget(QWidget):
             print("No hmzinfo, reading progress invalid!")
             return
 
-        volinfo = [self.hmzinfo.name, f'images/thumbnails/{self.numname}.jpg'] + self.hmzinfo.allname
+        volinfo = [self.hmzinfo.name, f'images/thumbnails/{self.bankinfo.numname}.jpg'] + self.hmzinfo.allname
         self.prg_ctask = DetailedWindow(volinfo, chapters=True, bankinfo=self.bankinfo)
         self.prg_ctask.setWindowTitle(LANG['PG_window'])
         self.prg_ctask.Close_as_dia.connect(self.handle_close_prg)
@@ -117,11 +115,11 @@ class BookWidget(QWidget):
         return int(round((cur_c/all_c * 100), 0))
 
     def SpecUI(self):
-        self.bookname.setText(self.name)
+        self.bookname.setText(self.bankinfo.name)
         self.search_str = (f'{self.bankinfo[0]}{slug(f'{self.bankinfo[1]}{self.bankinfo[2]}', separator='')}'
                            f'{self.bankinfo[1]}{self.bankinfo[2]}')
 
-        self.thumb = f'images/thumbnails/{self.numname}.jpg'
+        self.thumb = f'images/thumbnails/{self.bankinfo.numname}.jpg'
         if not ext(self.thumb):
             self.thumb = None
         if self.thumb is not None:
@@ -137,9 +135,9 @@ class BookWidget(QWidget):
         self.hover_widget.setText(f'{self.rating.r_rating:.2f}')
 
     def setupUI(self):
-        if len(self.name) > 32:
+        if len(self.bankinfo.name) > 32:
             delta_y = 48
-        elif len(self.name) <= 13:
+        elif len(self.bankinfo.name) <= 13:
             delta_y = 20
         else:
             delta_y = 35
@@ -148,7 +146,7 @@ class BookWidget(QWidget):
         self.bookname.setHidden(False)
         self.bookname.setGeometry(118, 8, 225, delta_y)
         self.bookname.setAlignment(Qt.AlignmentFlag.AlignTop)
-        if len(self.name) > 20:
+        if len(self.bankinfo.name) > 20:
             self.bookname.setFont(DF_10_B)
         else:
             self.bookname.setFont(DF_11_B)
@@ -231,7 +229,7 @@ class BookWidget(QWidget):
         self.rating.setHoverWidget(self.hover_widget)
 
     def setConnection(self):
-        if ext(pth := f'{BANK_PATH}/{confirm_name(self.name)}'):
+        if ext(pth := f'{BANK_PATH}/{confirm_name(self.bankinfo.name)}'):
             self.bookname.lclicked.connect(lambda: startfile(f'{getcwd()}/{pth}' if ':' not in pth else pth))
         if self.thumb is not None:
             self.thumbr.lclicked.connect(lambda: startfile(f'{getcwd()}/{self.thumb}'))
@@ -256,7 +254,7 @@ class BookWidget(QWidget):
         return ''
 
     def getNum_name(self):
-        return self.numname, confirm_name(self.name)
+        return self.bankinfo.numname, confirm_name(self.bankinfo.name)
 
     def setLastCheck(self):
         current_time = datetime.now()
