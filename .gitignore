@@ -11,5 +11,11 @@ __pycache__
 bank.json
 config.json
 rmz
+
 uploader.py
+line_fit.py
+novelsrh.py
+samples.json
+image_search.py
+
 *.backup
