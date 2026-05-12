@@ -123,7 +123,7 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.1"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.2"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
@@ -286,12 +286,27 @@ def translate_to(code: str) -> dict[str, str]:
                 "CFG_SIMPLE_BANK_FILE": {
                     'en-US': "Toggle if the bank.json is more readable(False) or space-efficient(True)."
                              "\nDefault: False.",
-                    'zh-CN': "切换bank.json是否更易读（False）或更省空间（True）。\n默认值: False。"
+                    'zh-CN': "切换bank.json存储模式，使之更易读（False）或更省空间（True）。\n默认值: False。"
                 },
                 "CFG_PROXY_PORT": {
                     'en-US': "The proxy port of GET requests. -1 for not enabled, 0 for partially enabled."
                              "\nDefault: -1.",
                     'zh-CN': "GET请求的代理端口。设置为-1时不起效，0时部分起效。\n默认值: -1。"
+                },
+                "CFG_BANK_RESOLUTION": {
+                    'en-US': "The default resolution of bank page."
+                             "\nDefault: 1068 x 640.",
+                    'zh-CN': "书库页的默认分辨率。\n默认值: 1068 x 640。"
+                },
+                "CFG_SCROLL_POSTION_KEEPER": {
+                    'en-US': "The mode how bank page save your scroll progress."
+                             "\nDefault: 2.",
+                    'zh-CN': "书库页存储滚动进度的模式。\n默认值: 2。"
+                },
+                "CFG_RESIZE_DELAY": {
+                    'en-US': "Dicide how often the bank page render while resizing."
+                             "\nDefault: 16.",
+                    'zh-CN': "决定拖动书库页大小时的渲染延迟。\n默认值: 16。"
                 },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
@@ -400,6 +415,9 @@ CONFIG_NOTATION = {
     "LANGUAGE": LANG['CFG_LANGUAGE'],
     "SHOW_FORMATED_FILE": LANG['CFG_SHOW_FORMATED_FILE'],
     "AUTO_UNLOCK_TEXTER": LANG['CFG_AUTO_UNLOCK_TEXTER'],
+    "BANK_RESOLUTION": LANG['CFG_BANK_RESOLUTION'],
+    "SCROLL_POSTION_KEEPER": LANG['CFG_SCROLL_POSTION_KEEPER'],
+    "RESIZE_DELAY": LANG['CFG_RESIZE_DELAY'],
     "SIMPLE_BANK_FILE": LANG['CFG_SIMPLE_BANK_FILE'],
     "PROXY_PORT": LANG['CFG_PROXY_PORT'],
     "ENABLE_CLOUD_SYNC": LANG['CFG_ENABLE_CLOUD_SYNC'],

@@ -2,8 +2,8 @@ from sys import exit
 from typing import Callable, overload
 
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QMouseEvent, QFont
-from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox
+from PySide6.QtGui import QMouseEvent, QFont, QIntValidator
+from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox, QLineEdit
 
 
 def extand_list_to(lis, a, b):
@@ -108,7 +108,7 @@ class ScrollField(QScrollArea):
 
         self.widgets = widgets
         self.mainwidget = QWidget()
-        self.setGeometry(*Geometry) # NOQA
+        self.setGeometry(*Geometry)  # NOQA
         self.Geometry = Geometry
         self.setWidget(self.mainwidget)
 
@@ -349,10 +349,12 @@ class BinaryCheckBox(QCheckBox):
 
 class AbstractSignalBond:
     @overload
-    def __init__(self, signals: tuple): ...
+    def __init__(self, signals: tuple):
+        ...
 
     @overload
-    def __init__(self, *args): ...
+    def __init__(self, *args):
+        ...
 
     def __init__(self, signals, *args):
         self.signals = signals
@@ -374,3 +376,51 @@ class AbstractSignalBond:
 
         for i in self.signals:
             i.connect(exclusive_function)
+
+
+class LineEditPair(QWidget):
+    textChanged = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.lineEdit1 = QLineEdit(self)
+        self.sepText = QLabel(self)
+        self.lineEdit2 = QLineEdit(self)
+        self.lineEdit1.textChanged.connect(self.__emit_textChnage)
+        self.lineEdit2.textChanged.connect(self.__emit_textChnage)
+
+        self.__Lw__ = 0
+
+    def setSeparationText(self, text):
+        self.sepText.setText(text)
+
+    def setLineEditWidth(self, width):
+        self.__Lw__ = width
+        self.rerender()
+
+    def rerender(self):
+        sepsize = self.sepText.sizeHint().toTuple()
+        self.sepText.setGeometry(int((self.width() - sepsize[0]) / 2), int((self.height() - sepsize[1]) / 2), *sepsize)
+        if not self.__Lw__:
+            self.__Lw__ = int((self.width() - sepsize[0]) / 2)
+        self.lineEdit1.setGeometry(0, 0, self.__Lw__, self.height())
+        self.lineEdit2.setGeometry(self.__Lw__ + sepsize[0], 0, self.__Lw__, self.height())
+
+    def __emit_textChnage(self):
+        self.textChanged.emit()
+
+    def setGeometry(self, x: int, y: int, w: int, h: int, /):
+        super().setGeometry(x, y, w, h)
+        self.rerender()
+
+    def setText(self, text: tuple[int, int]):
+        self.lineEdit1.setText(str(text[0]))
+        self.lineEdit2.setText(str(text[1]))
+
+    def setValidator(self, validator: QIntValidator):
+        self.lineEdit1.setValidator(validator)
+        self.lineEdit2.setValidator(validator)
+
+    def text(self):
+        return self.lineEdit1.text(), self.lineEdit2.text()

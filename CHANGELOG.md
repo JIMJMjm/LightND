@@ -1,3 +1,14 @@
+## LightND - Release v8.5.2
+
+### What's New:
+ - 新增的三个配置项现在拥有自己的说明。
+ - `BANK_RESOLUTION`配置项现在可以被配置。
+
+### Improvements:
+ - 部分配置项说明被更改。
+ - 某些功能现在被隐藏/移出仓库。他们将在更完善时被放出。
+
+
 ## LightND - Release v8.5.1
 
 ### What's New:

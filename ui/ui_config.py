@@ -1,17 +1,17 @@
 from math import isclose
-from typing import Literal
+from typing import Literal, overload
 from os.path import exists as ext
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QDoubleValidator, QIntValidator, QIcon
 from PySide6.QtWidgets import QDialog, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QFrame
 
-from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid
+from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid, LineEditPair
 from config import (CONFIG, CONFIG_NOTATION, DEFAULT_SETTING,
                     modify_global_settings as mgs, get_global_settings as ggs, translate_to as tsl)
 
 BYPASS_RENDER_CONFIG = {'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME',
-                        'FTP_PASSWORD', 'BANK_RESOLUTION'}
+                        'FTP_PASSWORD', 'MAX_VOLUME_THREAD_WORKER'}
 
 df15 = DefaultFont(15, underline=True)
 df13 = DefaultFont(13)
@@ -77,6 +77,8 @@ class Ui_Config(QDialog):
                 _type = 'str'
                 if 'PATH' in i:
                     _type = 'directory'
+            elif isinstance(j, list):
+                _type = 'intpair'
             # noinspection PyTypeChecker
             self.entry_content_grid.addWidget(ConfigEntry(_type=_type, entry_name=i, entry_content=j,
                                                           parent=self.entry_content_grid))
@@ -104,10 +106,24 @@ class Ui_Config(QDialog):
 class ConfigEntry(QWidget):
     save_data = Signal(tuple)
 
+    @overload
+    def __init__(self,
+                 _type: Literal['intpair'],
+                 entry_name: str,
+                 entry_content: tuple,
+                 parent=None): ...
+
+    @overload
     def __init__(self,
                  _type: Literal['bool', 'str', 'directory', 'float', 'int'],
                  entry_name: str,
                  entry_content: bool | str | float,
+                 parent=None): ...
+
+    def __init__(self,
+                 _type,
+                 entry_name: str,
+                 entry_content,
                  parent=None):
         super().__init__(parent)
 
@@ -147,7 +163,7 @@ class ConfigEntry(QWidget):
         self.reset_button.setFont(df12)
         self.reset_button.setGeometry(320, 4, 37, 22)
         self.reset_button.setHidden(True)
-        self.reset_button.lclicked.connect(lambda isBool=_type == 'bool': self.handleReset(isBool))
+        self.reset_button.lclicked.connect(lambda: self.handleReset(_type=='bool', _type=='intpair'))
 
         if _type == 'bool':
             self.e_content = ClickableLabel(parent=self)
@@ -198,7 +214,23 @@ class ConfigEntry(QWidget):
             self.e_content.textChanged.connect(self.handleIntChange)
             self.e_content.setFont(df16)
 
+        if _type == 'intpair':
+            entry_content = tuple([max(-65536, min(65536, int(p))) for p in entry_content])
+            self.entry_content = entry_content
+            self.init_content = entry_content
+
+            self.e_content = LineEditPair(parent=self)
+            self.e_content.setText(entry_content)
+            self.e_content.setFont(df16)
+            self.e_content.setSeparationText('x')
+            self.e_content.setGeometry(8, 32, 200, 30)
+            self.e_content.setValidator(QIntValidator())
+            self.e_content.textChanged.connect(self.handleIntpairChange)
+
         # self.save_data.connect(lambda data: print(data))
+    def handleIntpairChange(self):
+        self.entry_content = tuple([max(-65536, min(65536, int(p))) for p in self.e_content.text()])
+        self.testifyChange()
 
     def handleBoolSwitch(self):
         self.entry_content = not self.entry_content
@@ -245,9 +277,9 @@ class ConfigEntry(QWidget):
             self.entry_content = directory
             self.e_content.setText(directory)
 
-    def handleReset(self, isBool: bool = False):
+    def handleReset(self, isBool: bool = False, isIntpair: bool = False):
         self.entry_content = self.init_content
-        self.e_content.setText(str(self.entry_content))
+        self.e_content.setText(str(self.entry_content) if not isIntpair else self.entry_content)
         if isBool:
             self.testifyChange()
 
