@@ -151,7 +151,7 @@ class ConfigEntry(QWidget):
 
         self.e_label = QLabel(parent=self, text=entry_name + ':')
         self.e_label.setFont(df13)
-        self.e_label.setGeometry(8, 0, 312, 30)
+        self.e_label.setGeometry(8, 0, 372, 30)
 
         self.save_button = ClickableLabel(parent=self, text='Save')
         self.save_button.setFont(df12)

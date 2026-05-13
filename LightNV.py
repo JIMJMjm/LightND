@@ -50,6 +50,7 @@ ENABLE_CLOUD_SYNC = CONFIG['ENABLE_CLOUD_SYNC']
 BANK_RESOLUTION = CONFIG['BANK_RESOLUTION']
 SCROLL_POSTION_KEEPER = CONFIG['SCROLL_POSTION_KEEPER']
 RESIZE_DELAY = CONFIG['RESIZE_DELAY']
+RENDER_RANGE = CONFIG['RENDER_RANGE']
 
 BANK_X, BANK_Y = BANK_RESOLUTION
 RENDER_X, RENDER_Y = BANK_X // 347, BANK_Y // 170 + 1
@@ -929,7 +930,7 @@ class MainWindow(QMainWindow):
         self.handleWarning(task.getWarning())
         succeeded()
 
-    def render_book_bank(self, bw_list=None, render_param=None, afterpos=0):
+    def render_book_bank(self, bw_list=None, render_param=None):
         if not ENABLE_BANK:
             return
         global RENDER_X, RENDER_Y
@@ -951,7 +952,7 @@ class MainWindow(QMainWindow):
             RENDER_X = rx
             RENDER_Y = ry
 
-        for i in bw_list[:rx * ry]:
+        for i in bw_list[:rx * (ry + RENDER_RANGE)]:
             i.Initialize()
 
         bookgrid = WidgetGrid(self.ui.BBScroll)

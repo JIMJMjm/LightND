@@ -1,3 +1,14 @@
+## LightND - Release v8.5.3
+
+### Improvements:
+ - 配置项及说明的生成现在更多为动态而不是完全依靠字面量。
+ - 现在更新细节窗口也有图标了。
+
+
+### Bug Fixes:
+ - 修复了某些配置项名称不能完全显示的问题。
+
+
 ## LightND - Release v8.5.2
 
 ### What's New:

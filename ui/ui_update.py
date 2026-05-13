@@ -1,4 +1,4 @@
-from PySide6.QtGui import QPixmap, QFont
+from PySide6.QtGui import QPixmap, QFont, QIcon
 from PySide6.QtWidgets import QDialog, QWidget, QLabel, QFrame, QCheckBox, QPushButton
 
 from BySide import DefaultFont, ScrollField, ClickableLabel
@@ -137,7 +137,7 @@ class UpdateWindow(QDialog):
     def __init__(self, num_name, parent=None, additions: list = None, modifications: list = None):
         super().__init__(parent)
         self.setWindowTitle(LANG['UPD_window'])
-        # self.setModal(True)
+        self.setWindowIcon(QIcon("images/icon.ico"))
         width = 1000
         mode = 'all'
 
