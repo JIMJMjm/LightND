@@ -3,7 +3,7 @@
 > 轻小说下载、管理与格式转换桌面工具  
 > Light Novel Downloader & Manager — 基于 PySide6 构建
 
-**当前版本**: Release v8.3.4  
+**当前版本**: Release v8.5.3  
 **运行平台**: Windows (x64)  
 **语言支持**: English / 中文
 
@@ -26,7 +26,7 @@
 
 ### 环境要求
 
-- Python 3.13+
+- Python 3.12+
 - Windows 操作系统
 - （可选）[pandoc](https://pandoc.org/) — 用于 EPUB 生成（推荐）
 - （可选）[calibre](https://calibre-ebook.com/) — 用于 AZW3 生成
@@ -99,9 +99,6 @@ LightND/
 ├── BySide.py               # 自定义 Qt 控件库
 ├── prg_export.py           # RMZ 导出 (阅读数据序列化)
 ├── prg_import.py           # RMZ 导入 (含冲突对比界面)
-├── image_search.py         # 插图搜索 (实验性)
-├── line_fit.py             # 线性回归工具
-├── novelsrh.py             # 小说搜索 (开发中)
 ├── ui/                     # UI 组件
 │   ├── ui_LightNV.py       #   主窗口布局
 │   ├── ui_bookwidget.py    #   书籍卡片组件
@@ -112,8 +109,7 @@ LightND/
 │   ├── ui_tdl.py           #   多任务编辑窗口
 │   └── ui_update.py        #   更新详情窗口
 ├── images/                 # 图标 & 资源文件
-├── requirements.txt        # Python 依赖
-└── samples.json            # 插图搜索样本数据
+└── requirements.txt        # Python 依赖
 ```
 
 更多架构细节见 [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)。
