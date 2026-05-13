@@ -34,6 +34,7 @@ DEFAULT_SETTING = {
     "BANK_RESOLUTION": (1068, 640),
     "SCROLL_POSTION_KEEPER": 2,
     "RESIZE_DELAY": 16,
+    "RENDER_RANGE": 0,
 }
 
 
@@ -123,7 +124,7 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.2"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.3"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
@@ -198,115 +199,120 @@ def translate_to(code: str) -> dict[str, str]:
                 "CFG_ENABLE_PANDOC": {
                     'en-US': 'Enable pandoc for epub conversion, which will greatly boost the speed of generation. '
                              'If the picture in epub has a wrong ratio, please disable it.'
-                             '\nDefault: True.',
-                    'zh-CN': '启用pandoc进行epub转换，将大幅提升生成速度。若epub中图片比例异常，请禁用此选项。\n默认值: True。'
+                             '\nDefault: {}.',
+                    'zh-CN': '启用pandoc进行epub转换，将大幅提升生成速度。若epub中图片比例异常，请禁用此选项。\n默认值: {}。'
                 },
                 "CFG_ENABLE_ISF": {
-                    'en-US': 'Enable Image Search Function. W.I.P.\nDefault: False.',
-                    'zh-CN': '启用图片搜索功能。开发中。\n默认值: False。'
+                    'en-US': 'Enable Image Search Function. W.I.P.\nDefault: {}.',
+                    'zh-CN': '启用图片搜索功能。开发中。\n默认值: {}。'
                 },
                 "CFG_COMPLICATE_SLICE_NAME": {
-                    'en-US': 'Determines if the name of slice docx contains series name.\nDefault: False.',
-                    'zh-CN': '决定分卷文档名称是否包含系列名称。\n默认值: False。'
+                    'en-US': 'Determines if the name of slice docx contains series name.\nDefault: {}.',
+                    'zh-CN': '决定分卷文档名称是否包含系列名称。\n默认值: {}。'
                 },
                 "CFG_MAX_THREAD_WORKER": {
                     'en-US': 'The max threads allowed when downloading illust and text. '
-                             'It\'s recommended that the value should NOT exceed 8.\nDefault: 6.',
-                    'zh-CN': '下载插图和文本时允许的最大线程数。建议值不应超过8。\n默认值: 6。'
+                             'It\'s recommended that the value should NOT exceed 8.\nDefault: {}.',
+                    'zh-CN': '下载插图和文本时允许的最大线程数。建议值不应超过8。\n默认值: {}。'
                 },
                 "CFG_ALWAYS_USE_DEFAULT_DOWNLOAD": {
                     'en-US': 'Always use the default download, even the book is on-shelf and has copyright. '
-                             'If illust download failed, please disable this option.\nDefault: False.',
-                    'zh-CN': '始终使用默认下载方式，即使书籍仍上架且具有版权。若插图下载失败，请禁用此选项。\n默认值: False。'
+                             'If illust download failed, please disable this option.\nDefault: {}.',
+                    'zh-CN': '始终使用默认下载方式，即使书籍仍上架且具有版权。若插图下载失败，请禁用此选项。\n默认值: {}。'
                 },
                 "CFG_ILLUSTRATION_REQUEST_SLEEP_TIME": {
                     'en-US': 'The exact time program waits between illust requests. '
-                             'It\'s recommended that the value should ALWAYS exceed 0.1.\nDefault: 0.1.',
-                    'zh-CN': '程序在插图请求之间的等待时间（秒）。建议值始终不低于0.1。\n默认值: 0.1。'
+                             'It\'s recommended that the value should ALWAYS exceed 0.1.\nDefault: {}.',
+                    'zh-CN': '程序在插图请求之间的等待时间（秒）。建议值始终不低于0.1。\n默认值: {}。'
                 },
                 "CFG_TEXT_REQUEST_SLEEP_TIME": {
                     'en-US': 'The exact time program waits between non-illust requests. '
-                             'It\'s recommended that the value should ALWAYS exceed 0.2.\nDefault: 0.2.',
-                    'zh-CN': '程序在非插图请求之间的等待时间（秒）。建议值始终不低于0.2。\n默认值: 0.2。'
+                             'It\'s recommended that the value should ALWAYS exceed 0.2.\nDefault: {}.',
+                    'zh-CN': '程序在非插图请求之间的等待时间（秒）。建议值始终不低于0.2。\n默认值: {}。'
                 },
                 "CFG_MAX_VOLUME_THREAD_WORKER": {
                     'en-US': 'The max threads allowed when downloading volumes. '
-                             'It\'s recommended that the value should NOT exceed 2.\nDefault: 2.',
-                    'zh-CN': '下载分卷时允许的最大线程数。建议值不应超过2。\n默认值: 2。'
+                             'It\'s recommended that the value should NOT exceed 2.\nDefault: {}.',
+                    'zh-CN': '下载分卷时允许的最大线程数。建议值不应超过2。\n默认值: {}。'
                 },
                 "CFG_ENABLE_BANK": {
                     'en-US': 'Enable the novel bank section. '
                              'Disabling bank will visibly shorten starting time '
                              'but will NOT stop the bank.json I/O process.'
-                             '\nDefault: True.',
-                    'zh-CN': '启用小说库功能。禁用书库将显著缩短启动时间，但不会停止bank.json的I/O过程。\n默认值: True。'
+                             '\nDefault: {}.',
+                    'zh-CN': '启用小说库功能。禁用书库将显著缩短启动时间，但不会停止bank.json的I/O过程。\n默认值: {}。'
                 },
                 "CFG_AUTO_FILL_CONVERTER_INFO": {
-                    'en-US': 'Enable the auto fill function in Converter section.\nDefault: True.',
-                    'zh-CN': '启用转换器的自动填充功能。\n默认值: True。'
+                    'en-US': 'Enable the auto fill function in Converter section.\nDefault: {}.',
+                    'zh-CN': '启用转换器的自动填充功能。\n默认值: {}。'
                 },
                 "CFG_ALLOW_WARNING_WINDOWS": {
                     'en-US': 'Enable all warning window. You may miss some auto export information if you disable it.'
-                             '\nDefault: True.',
-                    'zh-CN': '启用所有警告窗口。禁用后可能会错过一些自动导出信息。\n默认值: True。'
+                             '\nDefault: {}.',
+                    'zh-CN': '启用所有警告窗口。禁用后可能会错过一些自动导出信息。\n默认值: {}。'
                 },
                 "CFG_BANK_PATH": {
-                    'en-US': "The default path your book downloaded to.\nDefault: 'novel'.",
-                    'zh-CN': "书籍下载的默认路径。\n默认值: 'novel'。"
+                    'en-US': "The default path your book downloaded to.\nDefault: '{}'.",
+                    'zh-CN': "书籍下载的默认路径。\n默认值: '{}'。"
                 },
                 "CFG_RMZ_EXPORT_PATH": {
-                    'en-US': "The default path your rmz exported to.\nDefault: 'rmz'.",
-                    'zh-CN': "RMZ文件导出的默认路径。\n默认值: 'rmz'。"
+                    'en-US': "The default path your rmz exported to.\nDefault: '{}'.",
+                    'zh-CN': "RMZ文件导出的默认路径。\n默认值: '{}'。"
                 },
                 "CFG_RMZ_FILENAME_FORMAT": {
-                    'en-US': "The format of rmz filename.\nDefault: %NUMNAME%_%TMSTAMP%",
-                    'zh-CN': "RMZ文件名的格式。\n默认值: %NUMNAME%_%TMSTAMP%"
+                    'en-US': "The format of rmz filename.\nDefault: {}",
+                    'zh-CN': "RMZ文件名的格式。\n默认值: {}"
                 },
                 "CFG_RMZ_FILENAME_SUFFIX": {
-                    'en-US': "The format of rmz filename suffix.\nDefault: (%NUM%)",
-                    'zh-CN': "RMZ文件名后缀的格式。\n默认值: (%NUM%)"
+                    'en-US': "The format of rmz filename suffix.\nDefault: {}",
+                    'zh-CN': "RMZ文件名后缀的格式。\n默认值: {}"
                 },
                 "CFG_DEFAULT_COVER": {
-                    'en-US': "The default cover path for pandoc conversion.\nDefault: 'images/uncovered.jpg'.",
-                    'zh-CN': "pandoc转换的默认封面路径。\n默认值: 'images/uncovered.jpg'。"
+                    'en-US': "The default cover path for pandoc conversion.\nDefault: '{}'.",
+                    'zh-CN': "pandoc转换的默认封面路径。\n默认值: '{}'。"
                 },
                 "CFG_LANGUAGE": {
-                    'en-US': "Language of the app.\nDefault: 'en-US'.",
-                    'zh-CN': "此程序使用的语言。\n默认值: 'en-US'。"
+                    'en-US': "Language of the app.\nDefault: '{}'.",
+                    'zh-CN': "此程序使用的语言。\n默认值: '{}'。"
                 },
                 "CFG_SHOW_FORMATED_FILE": {
                     'en-US': "Mark options in Texter as finished if corresponding formated files exists."
-                             "\nDefault: True.",
-                    'zh-CN': "为已存在对应文件的格式器选项打钩。\n默认值: True。"
+                             "\nDefault: {}.",
+                    'zh-CN': "为已存在对应文件的格式器选项打钩。\n默认值: {}。"
                 },
                 "CFG_AUTO_UNLOCK_TEXTER": {
-                    'en-US': "Auto unlock the option restriction in Texter.\nDefault: False.",
-                    'zh-CN': "自动解锁格式器选项限制。\n默认值: False。"
+                    'en-US': "Auto unlock the option restriction in Texter.\nDefault: {}.",
+                    'zh-CN': "自动解锁格式器选项限制。\n默认值: {}。"
                 },
                 "CFG_SIMPLE_BANK_FILE": {
                     'en-US': "Toggle if the bank.json is more readable(False) or space-efficient(True)."
-                             "\nDefault: False.",
-                    'zh-CN': "切换bank.json存储模式，使之更易读（False）或更省空间（True）。\n默认值: False。"
+                             "\nDefault: {}.",
+                    'zh-CN': "切换bank.json存储模式，使之更易读（False）或更省空间（True）。\n默认值: {}。"
                 },
                 "CFG_PROXY_PORT": {
                     'en-US': "The proxy port of GET requests. -1 for not enabled, 0 for partially enabled."
-                             "\nDefault: -1.",
-                    'zh-CN': "GET请求的代理端口。设置为-1时不起效，0时部分起效。\n默认值: -1。"
+                             "\nDefault: {}.",
+                    'zh-CN': "GET请求的代理端口。设置为-1时不起效，0时部分起效。\n默认值: {}。"
                 },
                 "CFG_BANK_RESOLUTION": {
                     'en-US': "The default resolution of bank page."
-                             "\nDefault: 1068 x 640.",
-                    'zh-CN': "书库页的默认分辨率。\n默认值: 1068 x 640。"
+                             "\nDefault: {} x {}.",
+                    'zh-CN': "书库页的默认分辨率。\n默认值: {} x {}。"
                 },
                 "CFG_SCROLL_POSTION_KEEPER": {
                     'en-US': "The mode how bank page save your scroll progress."
-                             "\nDefault: 2.",
-                    'zh-CN': "书库页存储滚动进度的模式。\n默认值: 2。"
+                             "\nDefault: {}.",
+                    'zh-CN': "书库页存储滚动进度的模式。\n默认值: {}。"
                 },
                 "CFG_RESIZE_DELAY": {
                     'en-US': "Dicide how often the bank page render while resizing."
-                             "\nDefault: 16.",
-                    'zh-CN': "决定拖动书库页大小时的渲染延迟。\n默认值: 16。"
+                             "\nDefault: {}.",
+                    'zh-CN': "决定拖动书库页大小时的渲染延迟。\n默认值: {}。"
+                },
+                "CFG_RENDER_RANGE": {
+                    'en-US': "Dicide how many more rows of book widget should be rendered dynamically."
+                             "\nDefault: {}.",
+                    'zh-CN': "决定额外动态渲染的图书组件行数。\n默认值: {}。"
                 },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
@@ -372,8 +378,12 @@ def translate_to(code: str) -> dict[str, str]:
                                            'zh-CN': "下载的文件不是有效的JSON格式，已中止。"},
                 "CFG_ENABLE_CLOUD_SYNC": {
                     'en-US': "Enable cloud synchronization via FTP. Configure server in the Cloud Sync tab.\nDefault: "
-                             "False.",
-                    'zh-CN': "启用基于远程FTP云同步。请在云同步标签页中配置FTP服务器。\n默认值: False。"
+                             "{}.",
+                    'zh-CN': "启用基于远程FTP云同步。请在云同步标签页中配置FTP服务器。\n默认值: {}。"
+                },
+                "CFG_NONE": {
+                    'en-US': "No Info for {}.",
+                    'zh-CN': "无 {} 信息。"
                 },
                 "": {'en-US': "", 'zh-CN': ""},
                 }
@@ -395,34 +405,4 @@ def succeeded(info=LANG['SUCCEED']):
     PlaySound('dlcp.wav', 1)
 
 
-CONFIG_NOTATION = {
-    "ENABLE_PANDOC": LANG['CFG_ENABLE_PANDOC'],
-    "ENABLE_ISF": LANG['CFG_ENABLE_ISF'],
-    "COMPLICATE_SLICE_NAME": LANG['CFG_COMPLICATE_SLICE_NAME'],
-    "MAX_THREAD_WORKER": LANG['CFG_MAX_THREAD_WORKER'],
-    "ALWAYS_USE_DEFAULT_DOWNLOAD": LANG['CFG_ALWAYS_USE_DEFAULT_DOWNLOAD'],
-    "ILLUSTRATION_REQUEST_SLEEP_TIME": LANG['CFG_ILLUSTRATION_REQUEST_SLEEP_TIME'],
-    "TEXT_REQUEST_SLEEP_TIME": LANG['CFG_TEXT_REQUEST_SLEEP_TIME'],
-    "MAX_VOLUME_THREAD_WORKER": LANG['CFG_MAX_VOLUME_THREAD_WORKER'],
-    "ENABLE_BANK": LANG['CFG_ENABLE_BANK'],
-    "AUTO_FILL_CONVERTER_INFO": LANG['CFG_AUTO_FILL_CONVERTER_INFO'],
-    "ALLOW_WARNING_WINDOWS": LANG['CFG_ALLOW_WARNING_WINDOWS'],
-    "BANK_PATH": LANG['CFG_BANK_PATH'],
-    "RMZ_EXPORT_PATH": LANG['CFG_RMZ_EXPORT_PATH'],
-    "RMZ_FILENAME_FORMAT": LANG['CFG_RMZ_FILENAME_FORMAT'],
-    "RMZ_FILENAME_SUFFIX": LANG['CFG_RMZ_FILENAME_SUFFIX'],
-    "DEFAULT_COVER": LANG['CFG_DEFAULT_COVER'],
-    "LANGUAGE": LANG['CFG_LANGUAGE'],
-    "SHOW_FORMATED_FILE": LANG['CFG_SHOW_FORMATED_FILE'],
-    "AUTO_UNLOCK_TEXTER": LANG['CFG_AUTO_UNLOCK_TEXTER'],
-    "BANK_RESOLUTION": LANG['CFG_BANK_RESOLUTION'],
-    "SCROLL_POSTION_KEEPER": LANG['CFG_SCROLL_POSTION_KEEPER'],
-    "RESIZE_DELAY": LANG['CFG_RESIZE_DELAY'],
-    "SIMPLE_BANK_FILE": LANG['CFG_SIMPLE_BANK_FILE'],
-    "PROXY_PORT": LANG['CFG_PROXY_PORT'],
-    "ENABLE_CLOUD_SYNC": LANG['CFG_ENABLE_CLOUD_SYNC'],
-    "FTP_HOST": LANG['CFG_ENABLE_CLOUD_SYNC'],
-    "FTP_PORT": LANG['CFG_ENABLE_CLOUD_SYNC'],
-    "FTP_USERNAME": LANG['CFG_ENABLE_CLOUD_SYNC'],
-    "FTP_PASSWORD": LANG['CFG_ENABLE_CLOUD_SYNC'],
-}
+CONFIG_NOTATION = {i: LANG.get(f'CFG_{i}', LANG['CFG_NONE']).format(*((DEFAULT_SETTING[i],) if not isinstance(DEFAULT_SETTING[i], tuple) else DEFAULT_SETTING[i])) for i in DEFAULT_SETTING}
