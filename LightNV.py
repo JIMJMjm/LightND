@@ -514,7 +514,7 @@ class MainWindow(QMainWindow):
         print(f'Formats for {self.texter.target.name if self.texter.target else 'Unknown'}')
         print('Docx: Series[{}], Volumes[{}];\n'
               'Epub: Series[{}], Volumes[{}];\n'
-              'Azw3: Series[{}], Volumes[{}];'.format(*indicator), end='\033[4A')
+              'Azw3: Series[{}], Volumes[{}];'.format(*indicator), end='\n')
 
     def unlock_Texter_options(self):
         for i in self.buttonGroup:

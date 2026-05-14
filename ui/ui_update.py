@@ -4,12 +4,9 @@ from PySide6.QtWidgets import QDialog, QWidget, QLabel, QFrame, QCheckBox, QPush
 from BySide import DefaultFont, ScrollField, ClickableLabel
 from config import LANG
 
-font1 = QFont()
+font1 = DefaultFont(11)
 font1.setFamily("宋体")
-font1.setPointSize(11)
-
 font2 = DefaultFont(11)
-
 font3 = DefaultFont(13)
 
 
@@ -56,7 +53,7 @@ class VolumeWidget(QWidget):
         self.line.setFrameShadow(QFrame.Shadow.Sunken)
         self.line.setObjectName("line")
 
-        self.label = QLabel(parent=self.volume)
+        self.label = ClickableLabel(parent=self.volume)
         self.label.setGeometry(58, 0, 390, 40)
         self.label.setText(name)
         self.label.setFont(font1)
@@ -67,12 +64,13 @@ class VolumeWidget(QWidget):
         self.checkBox.setText("")
         self.checkBox.setChecked(False)
         self.checkBox.setObjectName("checkBox")
-        self.checkBox.setGeometry(14, 13, 16, 16)
+        self.checkBox.move(13, 14)
 
         self.checkBox.clicked.connect(self.switchCheckState)
+        self.label.lclicked.connect(self.switchCheckState)
 
     def switchCheckState(self):
-        self.isChecked = not self.isChecked
+        self.setCheckState(not self.isChecked)
 
     def setCheckState(self, isChecked):
         self.isChecked = isChecked
@@ -112,6 +110,7 @@ class MenuWidget(QWidget):
         self.select_all_text.clicked.connect(self.selectAll)
         for i in self.widgets:
             i.checkBox.clicked.connect(self.checkSelectAll)
+            i.label.lclicked.connect(self.checkSelectAll)
 
     def selectAll(self):
         opposite = not self.select_all.isChecked()

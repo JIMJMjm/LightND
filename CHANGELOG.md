@@ -1,3 +1,10 @@
+## LightND - Release v8.5.4
+
+### Improvements:
+ - 现在更新界面的文字标签也适应`ctask`界面，变得可点击。
+ - 回滚了关于`Formats`控制台打印的格式。
+
+
 ## LightND - Release v8.5.3
 
 ### Improvements:

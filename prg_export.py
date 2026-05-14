@@ -78,19 +78,11 @@ def save_as_rmz(_type: Literal[1, 2, 3], _data: BankedBook, path, filename: str 
     filename = parse_rmz_format(filename, _data)
 
     suffix = 0
-
-    perisuffix = RMZ_FILENAME_SUFFIX.split('%NUM%')
-    if not perisuffix[0]:
-        perisuffix = ['(', ')']
-    if len(perisuffix) < 2:
-        perisuffix = perisuffix * 2
-    if len(perisuffix) > 2:
-        perisuffix[1] = '%NUM%'.join(perisuffix[1:])
-
     pfilename = filename
+
     while ext(f'{path}/{pfilename}.rmz'):
         suffix += 1
-        pfilename = f'{filename}{perisuffix[0]}{suffix}{perisuffix[1]}'
+        pfilename = f'{filename}{RMZ_FILENAME_SUFFIX.replace("%NUM%", f'{suffix}')}'
 
     type_byte = None
     if _type == 1:

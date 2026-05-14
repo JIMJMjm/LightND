@@ -124,7 +124,7 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.3"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.4"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
