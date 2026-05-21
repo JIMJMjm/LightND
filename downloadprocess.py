@@ -225,8 +225,8 @@ class DownloadTask(object):
         intervals = []
         for i in self.hmzbook.allname:
             for j in i[1:]:
-                chapname = f'{i[0]} {j}'
-                curind = content.index(chapname + '\n')
+                chapname = f'{i[0]} {j}\n'
+                curind = content.index(chapname)
                 content[curind] = ''
                 intervals.append(curind)
                 if j == '插图':
@@ -247,6 +247,40 @@ class DownloadTask(object):
                           f'{setname}/{filecount}.txt')
                 filecount += 1
                 chapcnt += 1
+
+    def txt_split_1(self):
+        fileplace = f'{self.rname}/{self.hmzbook.name}.txt'
+        with open(fileplace, 'r', encoding='utf-8') as f:
+            content = f.readlines()[2:-2]
+        true_content = [i.strip(' ') for i in content]
+
+        chapnames = []
+        for i in self.hmzbook.allname:
+            chapnames += [f'{i[0]} {j}\n' for j in i[1:]] + [None]
+
+        chapcnt = 1
+        filecnt = 1
+        volcnt = 0
+        chap = [chapnames[0]]
+        for i in true_content:
+            if i == chapnames[chapcnt]:
+                if i.endswith(' 插图'):
+                    chapcnt += 2
+                    save_file(''.join(chap), f'{self.hmzbook.allname[volcnt][0]}/{filecnt}.txt')
+                    chap = [chapnames[chapcnt-1]]
+                    continue
+                chapcnt += 1
+                save_file(''.join(chap), f'{self.hmzbook.allname[volcnt][0]}/{filecnt}.txt')
+                filecnt += 1
+                chap = [i]
+                continue
+            if chapnames[chapcnt] is None:
+                save_file(''.join(chap), f'{self.hmzbook.allname[volcnt][0]}/{filecnt}.txt')
+                chapcnt += 1
+                volcnt += 1
+                filecnt = 1
+                continue
+            chap.append(i)
 
     def pre_download(self):
         if not ext(fn := f'images/thumbnails/{self.numname}.jpg'):
