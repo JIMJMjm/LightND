@@ -15,6 +15,7 @@ from prg_export import save_as_rmz as savermz
 BANK_PATH = CONFIG['BANK_PATH']
 RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 SIMPLE_BANK_FILE = CONFIG['SIMPLE_BANK_FILE']
+ADVANCED_SEARCH_TRIGGER = CONFIG['ADVANCED_SEARCH_TRIGGER']
 
 
 def getCreateTime(file: str, return_type: Literal[0, 1] = 1):
@@ -250,7 +251,11 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
 
 
 def parse_srh_unit(unit_str: str) -> tuple | str:
-    if '=' in unit_str:
+    if '>=' in unit_str:
+        cons_pair = unit_str.split('>=')[:2] + ['>=']
+    elif '<=' in unit_str:
+        cons_pair = unit_str.split('<=')[:2] + ['<=']
+    elif '=' in unit_str:
         cons_pair = unit_str.split('=')[:2] + ['==']
     elif '>' in unit_str:
         cons_pair = unit_str.split('>')[:2] + ['>']
@@ -308,8 +313,11 @@ def search_bank(keyword: str = '', bank=None):
 def search_bw(keyword: str = '', bw_list=None):
     if not bw_list:
         return []
-    if ' ' not in keyword:
+
+    if not keyword.startswith(ADVANCED_SEARCH_TRIGGER):
         return [i for i in bw_list if keyword in i.search_str]
+
+    keyword = keyword[len(ADVANCED_SEARCH_TRIGGER):]
 
     units = keyword.split(' ')
     params_ = []

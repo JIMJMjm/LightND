@@ -35,6 +35,7 @@ DEFAULT_SETTING = {
     "SCROLL_POSTION_KEEPER": 2,
     "RESIZE_DELAY": 16,
     "RENDER_RANGE": 0,
+    "ADVANCED_SEARCH_TRIGGER": ''
 }
 
 
@@ -313,6 +314,11 @@ def translate_to(code: str) -> dict[str, str]:
                     'en-US': "Dicide how many more rows of book widget should be rendered dynamically."
                              "\nDefault: {}.",
                     'zh-CN': "决定额外动态渲染的图书组件行数。\n默认值: {}。"
+                },
+                "CFG_ADVANCED_SEARCH_TRIGGER": {
+                    'en-US': "Use Advanced Search if the search text begin with this string."
+                             "\nDefault: {}.",
+                    'zh-CN': "如果搜索文本以该字符串开头，触发高级搜索。\n默认值: {}。"
                 },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
