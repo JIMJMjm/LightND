@@ -1,14 +1,14 @@
-from time import sleep
 from concurrent.futures import ThreadPoolExecutor
+from time import sleep
 from typing import Literal, overload
-
 from urllib.parse import quote
-import requests as rq
-from bs4 import BeautifulSoup as bs
-import urllib3
 
-from config import CONFIG
+import requests as rq
+import urllib3
+from bs4 import BeautifulSoup as bs
+
 from book_struct import HmzedBook
+from config import CONFIG, save_json, read_json
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                         'Chrome/138.0.0.0 Safari/537.36'}
@@ -260,3 +260,34 @@ def get_fullinfo(numname: str, return_type: Literal[0, 1]):
 
     return HmzedBook(numname=numname, name=name, writer=writer,
                      allnet=allnet, allname=allname, description=descrp)
+
+
+def get_sample_spots(numname):
+    r1 = rq.get(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/index.htm', headers=HEADER)
+    soup = bs(r1.content, 'html.parser')
+    chaps = soup.find_all('td', class_='ccss')
+    base_url = f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/'
+    spots = []
+    for i in chaps:
+        a = i.find('a')
+        if not a:
+            continue
+        chap_name = a.text
+        if chap_name != '插图':
+            continue
+        chap_href = a.get('href')
+        heml_num = int(chap_href.split('.')[0])
+        if not chap_href:
+            continue
+        r2 = rq.get(base_url + chap_href, headers=HEADER)
+        s2 = [i.find('a').get('href') for i in bs(r2.content, 'html.parser').find_all('div', class_='divimage')]
+        res = [int(i.split('/')[-1].split('.')[0]) for i in s2]
+        spots.append((heml_num, round(sum(res) / len(res), 1)))
+
+    return spots
+
+
+def save_samples(sample_list: list):
+    cur_sam = read_json('NEW_samples.json')
+    sample_list += cur_sam
+    save_json('NEW_samples.json', sample_list)
