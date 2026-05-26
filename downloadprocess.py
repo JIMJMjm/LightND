@@ -8,7 +8,7 @@ from winsound import PlaySound
 from book_struct import HmzedBook, BankedBook, BookLuxury
 from netwk import GetRq, get_fullinfo
 from bookbank import add_to_bank
-from config import CONFIG, confirm_name, LANG, ordered_ldr, makedir
+from config import CONFIG, confirm_name, LANG, ordered_ldr, makedir, TProgressBar
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                         'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -158,16 +158,10 @@ class DownloadTask(object):
         self.hmzbook.save_at(f'{self.rname}/{self.numname}.hmz')
 
         start = self.check_current_folder(self.rname) - 1 if self.mode == 0 else 0
+        prgBar = TProgressBar(len(self.hmzbook.allnet) - start, 30, 'DL')
         for i in range(start, len(self.hmzbook.allnet)):
+            prgBar.next()
             dirname = self.download_volume(i)
-
-            current_progress = i + 1 - start
-            total_tasks = len(self.hmzbook.allnet) - start
-            filled_length = int(30 * current_progress // total_tasks)
-            bar = '=' * filled_length + ' ' * (30 - filled_length)
-            print(f"DL: [{bar}] {(current_progress / total_tasks) * 100:.2f}% ({current_progress}/{total_tasks})",
-                  end='\r')
-
             if self.merging:
                 self.mergeToVol(dirname, self.hmzbook.allnet[i][0])
         if self.merging == 2:
@@ -335,33 +329,24 @@ class DownloadTask(object):
         for i in range(len(ind)):
             if ind[i]:
                 partial_allnet.append(i)
-        for y, i in enumerate(partial_allnet):
-            current_progress = y + 1
-            total_tasks = len(partial_allnet)
-            filled_length = int(30 * current_progress // total_tasks)
-            bar = '=' * filled_length + ' ' * (30 - filled_length)
-            print(f"DL: [{bar}] {(current_progress / total_tasks) * 100:.2f}% ({current_progress}/{total_tasks})",
-                  end='\r')
-
+        prgb = TProgressBar(len(partial_allnet), 30, 'DL')
+        for i in partial_allnet:
+            prgb.next()
             self.download_volume(i)
         print(LANG['DL_Finished'])
         return None
 
     def download_volumes_from_allnet(self, volnets, volnames):
-        for y, vol in enumerate(volnets):
-            curprogress = y + 1
-            totaltasks = len(volnets)
-            filled_length = int(30 * curprogress // totaltasks)
-            bar = '=' * filled_length + ' ' * (30 - filled_length)
-            print(f"DL: [{bar}] {(curprogress / totaltasks) * 100:.2f}% ({curprogress}/{totaltasks})", end='\r')
-
+        prg = TProgressBar(len(volnets), 30, 'DL')
+        for vol in volnets:
+            prg.next()
             dirname = f'{self.rname}/{vol[0]}'
             makedir(dirname)
 
             with ThreadPoolExecutor(max_workers=MAX_WAORKERS) as executor:
                 futures = []
                 for j in range(1, len(vol)):
-                    future = executor.submit(self.process_page, y, j, (volnets, volnames))
+                    future = executor.submit(self.process_page, prg.iteration-1, j, (volnets, volnames))
                     futures.append(future)
 
                 for future in futures:

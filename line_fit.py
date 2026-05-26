@@ -1,6 +1,8 @@
 import statsmodels.api as sm
 
-from config import read_json
+from config import read_json, CONFIG
+
+RLM_NEIGHBOR_RANGE = CONFIG['RLM_NEIGHBOR_RANGE']
 
 
 def curve(x, y):
@@ -11,7 +13,7 @@ def curve(x, y):
     return slope, intercept
 
 
-def fillter(pots, barrier, loose=2000):
+def fillter(pots, barrier, loose=RLM_NEIGHBOR_RANGE):
     re = []
     le, ri = barrier - loose, barrier + loose
     for i in INTERVAL:
@@ -28,8 +30,8 @@ def fillter(pots, barrier, loose=2000):
 
 def packed(num):
     dd = curve(*zip(*fillter(pos, num)))
-    print([float(i) for i in dd])
     evaluation = num * dd[0] + dd[1]
+    print([float(i) for i in dd], '\n', f'Anticipation: {evaluation}')
     return evaluation
 
 

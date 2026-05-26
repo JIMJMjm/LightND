@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtCore import QRect as rct, Qt
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout
 
 from BySide import ClickableLabel, ScrollField, ExitButton, DefaultFont, AdvButtonGroup
 from config import CONFIG, translate_to as tsl
@@ -404,18 +404,25 @@ class Ui_MainWindow(object):
         self.ImageSearcher = QtWidgets.QWidget()
 
         self.sr_hm_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_hm_input.setGeometry(100, 30, 230, 24)
+        self.sr_hm_input.setGeometry(100, 30, 270, 30)
         self.sr_hm_input.setPlaceholderText('Select a volume or Type in html_num')
 
         self.get_goal = QtWidgets.QPushButton('Select Volume', parent=self.ImageSearcher)
-        self.get_goal.setGeometry(350, 30, 90, 24)
+        self.get_goal.setGeometry(390, 30, 90, 30)
 
         self.sr_numname_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_numname_input.setGeometry(100, 80, 230, 24)
+        self.sr_numname_input.setGeometry(100, 80, 270, 30)
         self.sr_numname_input.setPlaceholderText('Numname')
 
+        self.sr_dir_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
+        self.sr_dir_input.setGeometry(100, 130, 270, 30)
+        self.sr_dir_input.setPlaceholderText('Directory')
+
+        self.get_dir = QtWidgets.QPushButton('Select Directory', parent=self.ImageSearcher)
+        self.get_dir.setGeometry(390, 130, 90, 30)
+
         self.sr_start = QtWidgets.QPushButton(parent=self.ImageSearcher)
-        self.sr_start.setGeometry(100, 130, 70, 24)
+        self.sr_start.setGeometry(100, 200, 70, 30)
         self.sr_start.setText('Search')
 
         if ENABLE_ISF:

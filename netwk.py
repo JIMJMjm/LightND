@@ -8,7 +8,7 @@ import urllib3
 from bs4 import BeautifulSoup as bs
 
 from book_struct import HmzedBook
-from config import CONFIG, save_json, read_json
+from config import CONFIG, save_json, read_json, TProgressBar
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                         'Chrome/138.0.0.0 Safari/537.36'}
@@ -115,18 +115,25 @@ class GetRq:
         self.numname = self.url.strip('/').split('/')[-2]
         return self.image_page_parser()
 
-    def image_folder_page_parser(self) -> list[bytes]:
+    def image_folder_page_parser(self, search=False) -> list[bytes] | int:
         self.soup = bs(self.response.text, 'html.parser')
         bs_allimg = self.soup.find_all('div', class_='divimage')
         img_net_list: list[str] = [i.find('a').get('href') for i in bs_allimg]
+        if not img_net_list:
+            if not search:
+                print('No available images found!')
+            return 42
+        if search:
+            print('Reachable picture exist, downloading...')
+            prg = TProgressBar(len(img_net_list), 30, 'IG')
         with ThreadPoolExecutor(max_workers=MAX_WAORKERS) as executor:
-            futures = []
-            for i in img_net_list:
-                future = executor.submit(GetRq(i).run)
-                futures.append(future)
-            for future in futures:
-                future.result()
-        return [i.result() for i in futures]
+            futures = [executor.submit(GetRq(i).run) for i in img_net_list]
+            for i in futures:
+                if search:
+                    prg.next()
+                i.result()
+
+            return [i.result() for i in futures]
 
     def image_page_parser(self) -> bytes:
         return self.response.content
@@ -182,7 +189,11 @@ class GetRq:
     def run(self, _type: Literal['test']) -> bs:
         ...
 
-    def run(self, _type: Literal['i', 'b', 'f', 't', 'p', 'm', 'w', 'o', 'test'] = 'p'):
+    @overload
+    def run(self, _type: Literal['r']) -> bs:
+        ...
+
+    def run(self, _type: Literal['i', 'b', 'f', 't', 'p', 'm', 'w', 'o', 'r', 'test'] = 'p'):
         """
         Run the GetRq object, return the data as the type requests.
         """
@@ -222,6 +233,9 @@ class GetRq:
         if _type == 'test':
             sleep(TRST)
             return self.test_parser()
+        if _type == 'r':
+            sleep(TRST)
+            return self.image_folder_page_parser(search=True)
         return None
 
 

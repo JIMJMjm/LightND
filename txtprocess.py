@@ -13,7 +13,7 @@ from docx import Document
 import yaml
 
 from bookbank import read_hmz_par, getBookFromNumname
-from config import CONFIG, LANG, ordered_ldr, makedir, find_hmz
+from config import CONFIG, LANG, ordered_ldr, makedir, find_hmz, TProgressBar
 
 FONT_SIZE = [18, 16, 15, 14]
 
@@ -276,12 +276,9 @@ class HFolder(object):
                 partial_allnet.append(self.allnet[i])
 
         put_title_page(goal_doc, self.name, self.writer)
-        l_p_a = len(partial_allnet)
-        for i in range(l_p_a):
-            progress = (i + 1) / l_p_a * 100
-            filled_length = int(30 * (i + 1) // l_p_a)
-            bar = '=' * filled_length + ' ' * (30 - filled_length)
-            print(f"FM: [{bar}] {progress:.2f}% ({i + 1}/{l_p_a})", end='\r')
+        prg = TProgressBar(len(partial_allnet), 30, 'FM')
+        for i in range(len(partial_allnet)):
+            prg.next()
 
             vol_name = partial_allnet[i][0]
             i_vol = len(vol_name.split(' '))

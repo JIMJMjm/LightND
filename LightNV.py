@@ -1,33 +1,33 @@
+import json
+from concurrent.futures import ThreadPoolExecutor
 from os import listdir as ldr
 from os.path import exists as ext
-import json
 from shutil import copy2
 from sys import exit, argv
 from time import perf_counter as pfc
-from concurrent.futures import ThreadPoolExecutor
 
-from PySide6.QtGui import QPixmap
-from typing_extensions import Literal
 from PySide6.QtCore import QRunnable, QThreadPool, QPoint, Signal, QObject, QThread, QTimer
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QWidget, QMessageBox
+from typing_extensions import Literal
 
+from BySide import WidgetGrid
 from book_struct import BankedBook
+from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
+                      filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
+                      compare_banks, save_as_bank, delete_book_files, remove_from_bank)
+from config import CONFIG, succeeded, find_hmz, confirm_name
+from config import modify_global_settings as mgs, TProgressBar
 from downloadprocess import DownloadTask, get_img
+from ftpsync import FtpSyncManager
 from netwk import get_alllist
 from prg_export import save_as_rmz, read_from_rmz
 from prg_import import RmzImportWindow
 from txtprocess import HFolder as HFd, convert_to_epub, NotAHFolderError, get_cover_from, convert2epub_pandoc
-from BySide import WidgetGrid
-from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
-                      filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
-                      compare_banks, save_as_bank, delete_book_files, remove_from_bank)
-from ftpsync import FtpSyncManager
-from config import modify_global_settings as mgs
 from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
 from ui.ui_config import Ui_Config
 from ui.ui_ctask import DetailedWindow, get_default_name, restore_from_default_name
-from config import CONFIG, succeeded, find_hmz, confirm_name, translate_to as tsl
 from ui.ui_missions import MissionWindow
 from ui.ui_tdl import EditableTableWindow
 from ui.ui_update import UpdateWindow
@@ -206,7 +206,7 @@ class ISFer:
 
         if not directory:
             return
-        self.goal = directory
+        self.goal = directory + '/插图'
         vol_name = directory.split('/')[-1]
         rname = '/'.join(directory.split('/')[:-1])
         hmz = find_hmz(rname)
@@ -224,7 +224,18 @@ class ISFer:
                 return
             self.html_num = hmzbook.allnet[hmzbook.allname.index(i)][i.index('插图')][:-4]
             print(f'Auto filling in {self.html_num} and {self.numname}.')
-            return 
+            return
+
+    def select_dl_directory(self):
+        directory = QFileDialog.getExistingDirectory(
+            None,
+            'Select Directory',
+            BANK_PATH,
+        )
+
+        if not directory:
+            return
+        self.goal = directory
 
 
 class Todolist(QObject):
@@ -325,7 +336,8 @@ class MainWindow(QMainWindow):
         old_rx = RENDER_X
         total_bws = len(self.bw_list)
 
-        self.render_book_bank(self.process_bw_list(), render_param=((self.width()-20) // 347, self.height() // 170 + 1))
+        self.render_book_bank(self.process_bw_list(),
+                              render_param=((self.width() - 20) // 347, self.height() // 170 + 1))
         self.ui.tabWidget.resize(self.width(), self.height())
         self.ui.BBScroll.resize(self.width() - 6, self.height() - 58)
 
@@ -690,8 +702,11 @@ class MainWindow(QMainWindow):
 
         if ENABLE_ISF:
             ui.sr_start.clicked.connect(
-                lambda: self.start_task(searchimg(int(ui.sr_hm_input.text()), ui.sr_numname_input.text())))
+                lambda: self.start_task(searchimg, int(ui.sr_hm_input.text()),
+                                        ui.sr_numname_input.text(),
+                                        self.isfer.goal))
             ui.get_goal.clicked.connect(self.auto_fill_isfer)
+            ui.get_dir.clicked.connect(lambda: self.auto_fill_isfer(True))
 
         if AWW:
             self.showWarning.connect(lambda warning: self.showWarningWindow(warning))
@@ -1000,7 +1015,7 @@ class MainWindow(QMainWindow):
         bookgrid.setChildSize((347, 170))
         ht = (len(bw_list) + rx - 1) // rx
         bookgrid.setGridSize((rx, ht))
-        bookgrid.setFixedSize(347*rx, 170 * ht)
+        bookgrid.setFixedSize(347 * rx, 170 * ht)
 
         for i in bw_list:
             bookgrid.addWidget(i)
@@ -1265,13 +1280,9 @@ class MainWindow(QMainWindow):
         )
 
         if files:
-            l_p_a = len(files)
+            prg = TProgressBar(len(files), 30, 'FM')
             for y, filename in enumerate(files, 1):
-                progress = y / l_p_a * 100
-                filled_length = int(30 * y // l_p_a)
-                bar = '=' * filled_length + ' ' * (30 - filled_length)
-                print(f"FM: [{bar}] {progress:.2f}% ({y}/{l_p_a})", end='\r')
-
+                prg.next()
                 self.import_window = RmzImportWindow()
                 self.handleSingleImport(filename)
 
@@ -1303,12 +1314,16 @@ class MainWindow(QMainWindow):
         self.task_window.refresh_list()
         self.task_window.show()
 
-    def auto_fill_isfer(self):
+    def auto_fill_isfer(self, only_dir=False):
         if not ENABLE_ISF:
             return
+        if only_dir:
+            self.isfer.select_dl_directory()
+            self.ui.sr_dir_input.setText(self.isfer.goal)
         self.isfer.select_goal_directory()
         self.ui.sr_hm_input.setText(self.isfer.html_num)
         self.ui.sr_numname_input.setText(self.isfer.numname)
+        self.ui.sr_dir_input.setText(self.isfer.goal)
 
 
 def timetest(func, *args, **kwargs):

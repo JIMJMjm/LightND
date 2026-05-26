@@ -38,8 +38,26 @@ DEFAULT_SETTING = {
     "ADVANCED_SEARCH_TRIGGER": '',
     "BORDER_TOLERANCE": 3,
     "RLM_NEIGHBOR_RANGE": 1800,
-
+    "SEARCH_RANGE": 2000
 }
+
+
+class TProgressBar:
+    def __init__(self, total, length, text):
+        self.total = total
+        self.length = length
+        self.text = text
+        self.iteration = 0
+
+    def next(self):
+        self.iteration += 1
+        filled_length = int(30 * self.iteration / self.total + 0.5)
+        bar = '=' * filled_length + ' ' * (self.length - filled_length)
+        print(f"{self.text}: [{bar}] {(self.iteration / self.total) * 100:.2f}% ({self.iteration}/{self.total})",
+              end='\r')
+        if self.iteration == self.total:
+            print('\n')
+            del self
 
 
 def ordered_ldr(path, typ='.txt'):
@@ -128,7 +146,7 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.5.4"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.6"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
@@ -414,4 +432,4 @@ def succeeded(info=LANG['SUCCEED']):
     PlaySound('dlcp.wav', 1)
 
 
-CONFIG_NOTATION = {i: LANG.get(f'CFG_{i}', LANG['CFG_NONE']).format(*((DEFAULT_SETTING[i],) if not isinstance(DEFAULT_SETTING[i], tuple) else DEFAULT_SETTING[i])) for i in DEFAULT_SETTING}
+CONFIG_NOTATION = {i: LANG.get(f'CFG_{i}', LANG['CFG_NONE']).format(*((DEFAULT_SETTING[i],) if not isinstance(DEFAULT_SETTING[i], tuple) else DEFAULT_SETTING[i])) for i in DEFAULT_SETTING}  # NOQA
