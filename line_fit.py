@@ -11,29 +11,6 @@ def curve(x, y):
     return slope, intercept
 
 
-def classify(match):
-    L1 = []
-    L2 = []
-    L3 = []
-    L4 = []
-    for i in match:
-        if i[0] < 27476:
-            L1.append(i)
-        elif i[0] < 103972:
-            L2.append(i)
-        elif i[0] < 105781:
-            L3.append(i)
-        else:
-            L4.append(i)
-    return L1, L2, L3, L4
-
-
-def unzip(mat):
-    x = [i[0] for i in mat]
-    y = [i[1] for i in mat]
-    return x, y
-
-
 def fillter(pots, barrier, loose=2000):
     re = []
     le, ri = barrier - loose, barrier + loose
@@ -50,10 +27,9 @@ def fillter(pots, barrier, loose=2000):
 
 
 def packed(num):
-    dd = curve(*unzip(fillter(pos, num)))
-    print(dd)
+    dd = curve(*zip(*fillter(pos, num)))
+    print([float(i) for i in dd])
     evaluation = num * dd[0] + dd[1]
-    print(evaluation)
     return evaluation
 
 

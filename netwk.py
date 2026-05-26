@@ -222,6 +222,7 @@ class GetRq:
         if _type == 'test':
             sleep(TRST)
             return self.test_parser()
+        return None
 
 
 def get_alllist(numname: str, typ: str = 'allnet'):

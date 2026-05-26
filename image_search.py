@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from time import sleep
 
 import requests as rq
 
@@ -6,7 +7,6 @@ from line_fit import packed as fitting
 from config import CONFIG
 
 BORDER_TOLERANCE = CONFIG['BORDER_TOLERANCE']
-LINE_PARAMS = [[], [], [], [1.203194070190115, 3822.3160083094017]]
 
 header = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 '
@@ -22,14 +22,14 @@ def check_crite(inpu, numname: str, html_num: int):
     print(inpu)
     url = f'https://pic.777743.xyz/{module}/{numname}/{html_num}/{inpu}.jpg'
     r1 = rq.head(url, headers=header)
+    sleep(0.05)
     if r1:
         DONE = True
     return bool(r1)
 
 
 def download_t(inpu, numname: str, html_num: int, adr):
-    module = int(numname)//1000
-    url = f'https://pic.777743.xyz/{module}/{numname}/{html_num}/{inpu}.jpg'
+    url = f'https://pic.777743.xyz/{int(numname)//1000}/{numname}/{html_num}/{inpu}.jpg'
     r1 = rq.get(url, headers=header)
     cont = r1.content
     if r1:
@@ -71,24 +71,25 @@ def generate_sequence(depth):
     return res
 
 
-def search_for(htm_num: int, numname: str):
+def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
+
     eva_num = fitting(htm_num)
     result = process_srh(int(round(eva_num, 0)), numname, htm_num)
     if result == -1:
         return 'Failed'
 
-    print(result)
-    download_t(result, numname, htm_num, f'images/dt/{result}.jpg')
+    print(result, end=' ')
+    download_t(result, numname, htm_num, f'{gaol_folder}/{result}.jpg')
     imglist = [result]
 
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        print(cur)
-        if not download_t(cur-1, numname, htm_num, f'images/dt/{cur-1}.jpg'):
+        print(cur,  end=' ')
+        if not download_t(cur-1, numname, htm_num, f'{gaol_folder}/{cur-1}.jpg'):
             tolerance -= 1
             continue
-        tolerance = 3
+        tolerance = BORDER_TOLERANCE
         imglist.append(cur-1)
         cur -= 1
 
@@ -96,14 +97,15 @@ def search_for(htm_num: int, numname: str):
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
         print(cur)
-        if not download_t(cur + 1, numname, htm_num, f'images/dt/{cur+1}.jpg'):
+        if not download_t(cur + 1, numname, htm_num, f'{gaol_folder}/{cur+1}.jpg'):
             tolerance -= 1
             continue
-        tolerance = 3
+        tolerance = BORDER_TOLERANCE
         imglist.append(cur + 1)
         cur += 1
 
     imglist.sort()
+    print('\n', imglist)
     return imglist
 
 

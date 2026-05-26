@@ -27,7 +27,7 @@ from ui.ui_LightNV import Ui_MainWindow
 from ui.ui_bookwidget import BookWidget as BkWt
 from ui.ui_config import Ui_Config
 from ui.ui_ctask import DetailedWindow, get_default_name, restore_from_default_name
-from config import CONFIG, succeeded, find_hmz, confirm_name
+from config import CONFIG, succeeded, find_hmz, confirm_name, translate_to as tsl
 from ui.ui_missions import MissionWindow
 from ui.ui_tdl import EditableTableWindow
 from ui.ui_update import UpdateWindow
@@ -143,7 +143,7 @@ class Downloader:
     def select_global_directory(self):
         directory = QFileDialog.getExistingDirectory(
             None,
-            LANGUAGE['SELECT_DIRECTORY'],
+            'Select Directory',
             BANK_PATH,
         )
 
@@ -189,6 +189,42 @@ class Texter:
 
 class Converter:
     pass
+
+
+class ISFer:
+    def __init__(self):
+        self.goal = ''
+        self.numname = ''
+        self.html_num = ''
+
+    def select_goal_directory(self):
+        directory = QFileDialog.getExistingDirectory(
+            None,
+            'Select Directory',
+            BANK_PATH,
+        )
+
+        if not directory:
+            return
+        self.goal = directory
+        vol_name = directory.split('/')[-1]
+        rname = '/'.join(directory.split('/')[:-1])
+        hmz = find_hmz(rname)
+        if not hmz:
+            print('Address invaild!')
+            return
+        hmzfile = f'{rname}/{hmz}'
+        hmzbook = read_hmz_par(hmzfile)
+        self.numname = hmzbook.numname
+        for i in hmzbook.allname:
+            if i[0] != vol_name:
+                continue
+            if '插图' not in i:
+                print('No illustration available!')
+                return
+            self.html_num = hmzbook.allnet[hmzbook.allname.index(i)][i.index('插图')][:-4]
+            print(f'Auto filling in {self.html_num} and {self.numname}.')
+            return 
 
 
 class Todolist(QObject):
@@ -254,15 +290,18 @@ class MainWindow(QMainWindow):
 
             self.export_mode = False
 
-            self.bw_list: list[BkWt] = odb((1, '+'), bll)
+            self.bw_list: list[BkWt] = odb((1, 1), bll)
 
-            self.bb_param = ['', '', [1, '+'], '']
+            self.bb_param = ['', '', [1, 1], '']
             self.bb_liked: int = 0  # 0 for Nono, 1 for liked, 2 for not liked
             self._delete_pending = False
 
             self.banktimer = QTimer()
             self.banktimer.setSingleShot(True)
             self.banktimer.timeout.connect(self.render_bank_page)
+
+        if ENABLE_ISF:
+            self.isfer = ISFer()
 
         self.warningWindow = QMessageBox()
         self.uiConfig = Ui_Config()
@@ -651,7 +690,8 @@ class MainWindow(QMainWindow):
 
         if ENABLE_ISF:
             ui.sr_start.clicked.connect(
-                lambda: self.start_task(searchimg(int(ui.sr_input1.text()), ui.sr_input2.text())))
+                lambda: self.start_task(searchimg(int(ui.sr_hm_input.text()), ui.sr_numname_input.text())))
+            ui.get_goal.clicked.connect(self.auto_fill_isfer)
 
         if AWW:
             self.showWarning.connect(lambda warning: self.showWarningWindow(warning))
@@ -762,7 +802,7 @@ class MainWindow(QMainWindow):
         self._sync_thread.finished.connect(self._sync_thread.deleteLater)
         self._sync_thread.start()
 
-    def _on_ftp_upload_done(self, msg: str):
+    def _on_ftp_upload_done(self):
         self.ui.cs_status.setText(self.lang['CLOUD_STATUS_UPLOADED'])
         self.ui.cs_upload_btn.setEnabled(True)
         self.ui.cs_download_btn.setEnabled(True)
@@ -985,7 +1025,7 @@ class MainWindow(QMainWindow):
     def init_bankFrame(self):
         if not ENABLE_BANK:
             return
-        self.bb_param = ['', '', [1, '+'], '']
+        self.bb_param = ['', '', [1, 1], '']
         self.bb_liked = 0
         self.ui.flt_liked.setPixmap(QPixmap("images/heart_h.png").scaled(28, 28))
         self.ui.order_arrow.setPixmap(self.DAR)
@@ -1237,11 +1277,8 @@ class MainWindow(QMainWindow):
 
     def handleODArrow(self):
         arrow = self.ui.order_arrow
-        if self.bb_param[2][1] == '+':
-            self.bb_param[2][1] = '-'
-        else:
-            self.bb_param[2][1] = '+'
-        arrow.setPixmap(self.UAR if self.bb_param[2][1] == '-' else self.DAR)
+        self.bb_param[2][1] = 1 - self.bb_param[2][1]
+        arrow.setPixmap(self.DAR if self.bb_param[2][1] else self.UAR)
 
         self.render_book_bank(self.process_bw_list())
 
@@ -1265,6 +1302,13 @@ class MainWindow(QMainWindow):
         self.task_window.form_task_widget(self.task_list)
         self.task_window.refresh_list()
         self.task_window.show()
+
+    def auto_fill_isfer(self):
+        if not ENABLE_ISF:
+            return
+        self.isfer.select_goal_directory()
+        self.ui.sr_hm_input.setText(self.isfer.html_num)
+        self.ui.sr_numname_input.setText(self.isfer.numname)
 
 
 def timetest(func, *args, **kwargs):

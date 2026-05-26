@@ -403,16 +403,19 @@ class Ui_MainWindow(object):
 
         self.ImageSearcher = QtWidgets.QWidget()
 
-        self.sr_input1 = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_input1.setGeometry(100, 30, 171, 21)
-        self.sr_input1.setPlaceholderText('Html num')
+        self.sr_hm_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
+        self.sr_hm_input.setGeometry(100, 30, 230, 24)
+        self.sr_hm_input.setPlaceholderText('Select a volume or Type in html_num')
 
-        self.sr_input2 = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_input2.setGeometry(100, 80, 171, 21)
-        self.sr_input2.setPlaceholderText('Numname')
+        self.get_goal = QtWidgets.QPushButton('Select Volume', parent=self.ImageSearcher)
+        self.get_goal.setGeometry(350, 30, 90, 24)
+
+        self.sr_numname_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
+        self.sr_numname_input.setGeometry(100, 80, 230, 24)
+        self.sr_numname_input.setPlaceholderText('Numname')
 
         self.sr_start = QtWidgets.QPushButton(parent=self.ImageSearcher)
-        self.sr_start.setGeometry(100, 130, 40, 21)
+        self.sr_start.setGeometry(100, 130, 70, 24)
         self.sr_start.setText('Search')
 
         if ENABLE_ISF:

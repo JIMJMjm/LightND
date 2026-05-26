@@ -235,7 +235,7 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
         return sum(rtg.values()) / len(rtg)
 
     order = constraint[0]
-    sgn = True if constraint[1] == '-' else False
+    sgn = not constraint[1]
 
     if order == 0:
         return sorted(bw_list, key=lambda bk: (int(bk.bankinfo.numname), bk.bankinfo.name), reverse=sgn)

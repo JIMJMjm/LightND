@@ -324,7 +324,7 @@ LightND/
 关键实例变量：
 
 ```python
-bb_param = ['', '', [1, '+'], '']  # [genre, bunko, [order, sign], search_key]
+bb_param = ['', '', [1, 1], '']  # [genre, bunko, [order, sign], search_key]
 bb_liked = 0                        # 0=全部, 1=收藏, 2=未收藏
 bw_list: list[BookWidget]                # 全部书籍卡片列表
 ```
