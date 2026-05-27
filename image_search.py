@@ -1,33 +1,78 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import sleep
+from os.path import exists as ext
 
 import requests as rq
+import statsmodels.api as sm
 
-from line_fit import packed as fitting
-from config import CONFIG, makedir, succeeded
+from config import makedir, succeeded, read_json, CONFIG, save_json
 from netwk import GetRq
 
 BORDER_TOLERANCE = CONFIG['BORDER_TOLERANCE']
 SEARCH_RANGE = CONFIG['SEARCH_RANGE']
+RLM_NEIGHBOR_RANGE = CONFIG['RLM_NEIGHBOR_RANGE']
 
 header = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 '
                   'Safari/537.36'}
 DONE = False
+BREAKPOINT = 0
+INTERVAL = (22284, 27476, 103972, 105781)
+pos = []
+if not ext('srhistory.json'):
+    save_json('srhistory.json', {}, 0)
+history = read_json('srhistory.json')
 
 
-def check_crite(inpu, numname: str, html_num: int):
-    global DONE
+def curve(x, y):
+    X = sm.add_constant(x)
+    model = sm.RLM(y, X).fit()
+    slope = model.params[1]
+    intercept = model.params[0]
+    return slope, intercept
+
+
+def fillter(pots, barrier, loose=RLM_NEIGHBOR_RANGE):
+    re = []
+    le, ri = barrier - loose, barrier + loose
+    for i in INTERVAL:
+        if le < i < barrier:
+            le = i
+        if barrier < i < ri:
+            ri = i
+
+    for pot in pots:
+        if le <= pot[0] <= ri:
+            re.append(pot)
+    return re
+
+
+def fitting(num):
+    global pos, history
+    if not pos:
+        pos = read_json('samples.json')
+    dd = curve(*zip(*fillter(pos, num)))
+    evaluation = num * dd[0] + dd[1]
+    print([float(i) for i in dd], '\n', f'Anticipation: {evaluation}')
+    return evaluation
+
+
+def check_crite(inpu, numname: str, html_num: int, bpoint=0):
+    global DONE, BREAKPOINT
     if DONE:
         return False
-    module = int(numname)//1000
-    print(inpu, end='/')
-    url = f'https://pic.777743.xyz/{module}/{numname}/{html_num}/{inpu}.jpg'
-    r1 = rq.head(url, headers=header)
-    sleep(0.05)
-    if r1:
-        DONE = True
-    return bool(r1)
+    try:
+        print(inpu, end='/')
+        url = f'https://pic.777743.xyz/{int(numname)//1000}/{numname}/{html_num}/{inpu}.jpg'
+        r1 = rq.head(url, headers=header)
+        sleep(0.05)
+        BREAKPOINT += 1
+        if r1:
+            DONE = True
+            return bool(r1)
+    except Exception as e:
+        history[f'{html_num}'] = BREAKPOINT
+        save_json('srhistory.json', history, 0)
 
 
 def download_t(inpu, numname: str, html_num: int, adr):
@@ -41,22 +86,26 @@ def download_t(inpu, numname: str, html_num: int, adr):
     return False
 
 
-def process_srh(anchor, numname, html_num, /, limits=SEARCH_RANGE, bpoint: int = 0):
+def process_srh(anchor, numname, html_num, /, limits=SEARCH_RANGE):
+    global history, BREAKPOINT
     depth = 0
     for i in range(1, 12):
         if 2**i * 2 >= 2*limits + 1:
             depth = i
             break
 
+    BREAKPOINT = history.get(f'{html_num}', 0)
+    if BREAKPOINT:
+        print(f'Continue the search for {html_num} at the {BREAKPOINT}th attempt.')
     c = generate_sequence(depth)
-    sequence = [int(round(anchor+(2*limits+1)*(i-0.5), 0)) for i in c][bpoint:]
+    sequence = [int(round(anchor+(2*limits+1)*(i-0.5), 0)) for i in c][max(0, BREAKPOINT-10):]
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_i = {executor.submit(check_crite, i, numname, html_num): i for i in sequence}
 
         for future in as_completed(future_to_i):
             if future.result():
-                executor.shutdown(wait=False)
+                executor.shutdown(wait=False, cancel_futures=True)
                 return future_to_i[future]
 
     return -1
@@ -75,6 +124,7 @@ def generate_sequence(depth: int):
 
 
 def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
+    global DONE, history, BREAKPOINT
     trial = GetRq(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/{htm_num}.htm').run('r')
     if not isinstance(trial, int):
         makedir(gaol_folder)
@@ -85,7 +135,12 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
 
     eva_num = fitting(htm_num)
     result = process_srh(int(round(eva_num, 0)), numname, htm_num)
+
+    history[f'{htm_num}'] = BREAKPOINT
+    save_json('srhistory.json', history, 0)
+    DONE = False
     if result == -1:
+        print(1)
         return 'Failed'
 
     makedir(gaol_folder)
@@ -96,10 +151,11 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        print(cur,  end=' ')
         if not download_t(cur-1, numname, htm_num, f'{gaol_folder}/{cur-1}.jpg'):
             tolerance -= 1
+            cur -= 1
             continue
+        print(cur, end=' ')
         tolerance = BORDER_TOLERANCE
         imglist.append(cur-1)
         cur -= 1
@@ -107,10 +163,11 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        print(cur, end=' ')
         if not download_t(cur + 1, numname, htm_num, f'{gaol_folder}/{cur+1}.jpg'):
             tolerance -= 1
+            cur += 1
             continue
+        print(cur, end=' ')
         tolerance = BORDER_TOLERANCE
         imglist.append(cur + 1)
         cur += 1

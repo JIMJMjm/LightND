@@ -1,20 +1,23 @@
 *test*
 *.exe
 *.bat
-*t.txt
+*.txt
+
 images/thumbnails
 novel
 images/dt
+rmz
+
 .venv
 __pycache__
 .idea
+
 bank.json
+*.backup
 config.json
-rmz
+srhistory.json
 
 uploader.py
 novelsrh.py
 Todolist.md
 checklist.json
-
-*.backup

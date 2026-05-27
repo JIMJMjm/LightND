@@ -16,8 +16,7 @@ from book_struct import BankedBook
 from bookbank import (read_bank_file, get_all_info, order_bw as odb, filter_bw as ftb, search_bw as srb,
                       filter_liked_bw as flb, generate_book_bank, read_hmz_par, update_hmzfiles,
                       compare_banks, save_as_bank, delete_book_files, remove_from_bank)
-from config import CONFIG, succeeded, find_hmz, confirm_name
-from config import modify_global_settings as mgs, TProgressBar
+from config import modify_global_settings as mgs, TProgressBar, CONFIG, succeeded, find_hmz, confirm_name
 from downloadprocess import DownloadTask, get_img
 from ftpsync import FtpSyncManager
 from netwk import get_alllist
