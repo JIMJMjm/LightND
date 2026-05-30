@@ -24,6 +24,21 @@ if not ext('srhistory.json'):
 history = read_json('srhistory.json')
 
 
+def save_history(html_num: int):
+    global history, BREAKPOINT
+    history[f'{html_num}'] = BREAKPOINT
+    save_json('srhistory.json', history, 0)
+
+
+def save_history_on_exception(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            save_history(kwargs['html_num'])
+    return wrapper
+
+
 def curve(x, y):
     X = sm.add_constant(x)
     model = sm.RLM(y, X).fit()
@@ -57,24 +72,23 @@ def fitting(num):
     return evaluation
 
 
-def check_crite(inpu, numname: str, html_num: int, bpoint=0):
+@save_history_on_exception
+def check_crite(inpu, numname: str, html_num: int):
     global DONE, BREAKPOINT
     if DONE:
         return False
-    try:
-        print(inpu, end='/')
-        url = f'https://pic.777743.xyz/{int(numname)//1000}/{numname}/{html_num}/{inpu}.jpg'
-        r1 = rq.head(url, headers=header)
-        sleep(0.05)
-        BREAKPOINT += 1
-        if r1:
-            DONE = True
-            return bool(r1)
-    except Exception as e:
-        history[f'{html_num}'] = BREAKPOINT
-        save_json('srhistory.json', history, 0)
+    print(inpu, end='/')
+    url = f'https://pic.777743.xyz/{int(numname)//1000}/{numname}/{html_num}/{inpu}.jpg'
+    r1 = rq.head(url, headers=header)
+    sleep(0.05)
+    BREAKPOINT += 1
+    if r1:
+        DONE = True
+        return bool(r1)
+    return False
 
 
+@save_history_on_exception
 def download_t(inpu, numname: str, html_num: int, adr):
     url = f'https://pic.777743.xyz/{int(numname)//1000}/{numname}/{html_num}/{inpu}.jpg'
     r1 = rq.get(url, headers=header)
@@ -86,7 +100,8 @@ def download_t(inpu, numname: str, html_num: int, adr):
     return False
 
 
-def process_srh(anchor, numname, html_num, /, limits=SEARCH_RANGE):
+@save_history_on_exception
+def process_srh(anchor, numname: str, html_num: int, /, limits=SEARCH_RANGE):
     global history, BREAKPOINT
     depth = 0
     for i in range(1, 12):
@@ -123,9 +138,10 @@ def generate_sequence(depth: int):
     return seq
 
 
-def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
+@save_history_on_exception
+def search_for(html_num: int, numname: str, gaol_folder='images/dt'):
     global DONE, history, BREAKPOINT
-    trial = GetRq(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/{htm_num}.htm').run('r')
+    trial = GetRq(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/{html_num}.htm').run('r')
     if not isinstance(trial, int):
         makedir(gaol_folder)
         for y, i in enumerate(trial):
@@ -133,10 +149,10 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
                 f.write(i)
         return True
 
-    eva_num = fitting(htm_num)
-    result = process_srh(int(round(eva_num, 0)), numname, htm_num)
+    eva_num = fitting(html_num)
+    result = process_srh(int(round(eva_num, 0)), numname, html_num)
 
-    history[f'{htm_num}'] = BREAKPOINT
+    history[f'{html_num}'] = BREAKPOINT
     save_json('srhistory.json', history, 0)
     DONE = False
     if result == -1:
@@ -145,13 +161,13 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
 
     makedir(gaol_folder)
     print('\nFirst Image Found!', result)
-    download_t(result, numname, htm_num, f'{gaol_folder}/{result}.jpg')
+    download_t(result, numname, html_num, f'{gaol_folder}/{result}.jpg')
     imglist = [result]
 
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        if not download_t(cur-1, numname, htm_num, f'{gaol_folder}/{cur-1}.jpg'):
+        if not download_t(cur-1, numname, html_num, f'{gaol_folder}/{cur - 1}.jpg'):
             tolerance -= 1
             cur -= 1
             continue
@@ -163,7 +179,7 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        if not download_t(cur + 1, numname, htm_num, f'{gaol_folder}/{cur+1}.jpg'):
+        if not download_t(cur + 1, numname, html_num, f'{gaol_folder}/{cur + 1}.jpg'):
             tolerance -= 1
             cur += 1
             continue
@@ -176,7 +192,3 @@ def search_for(htm_num: int, numname: str, gaol_folder='images/dt'):
     print('\n', imglist)
     succeeded()
     return imglist
-
-
-if __name__ == '__main__':
-    print(search_for(65640, '1861'))
