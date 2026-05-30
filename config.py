@@ -225,8 +225,8 @@ def translate_to(code: str) -> dict[str, str]:
                     'zh-CN': '启用pandoc进行epub转换，将大幅提升生成速度。若epub中图片比例异常，请禁用此选项。\n默认值: {}。'
                 },
                 "CFG_ENABLE_ISF": {
-                    'en-US': 'Enable Image Search Function. W.I.P.\nDefault: {}.',
-                    'zh-CN': '启用图片搜索功能。开发中。\n默认值: {}。'
+                    'en-US': 'Enable Image Search Function. BETA.\nDefault: {}.',
+                    'zh-CN': '启用图片搜索功能。测试中。\n默认值: {}。'
                 },
                 "CFG_COMPLICATE_SLICE_NAME": {
                     'en-US': 'Determines if the name of slice docx contains series name.\nDefault: {}.',
@@ -337,9 +337,9 @@ def translate_to(code: str) -> dict[str, str]:
                     'zh-CN': "决定额外动态渲染的图书组件行数。\n默认值: {}。"
                 },
                 "CFG_ADVANCED_SEARCH_TRIGGER": {
-                    'en-US': "Use Advanced Search if the search text begin with this string."
+                    'en-US': "Force use Advanced Search if the search text begin with this string."
                              "\nDefault: {}.",
-                    'zh-CN': "如果搜索文本以该字符串开头，触发高级搜索。\n默认值: {}。"
+                    'zh-CN': "如果搜索文本以该字符串开头，强制触发高级搜索。\n默认值: {}。"
                 },
                 "CFG_window": {'en-US': "Config", 'zh-CN': "配置文件"},
                 "CFG_save": {'en-US': "Save", 'zh-CN': "保存"},
@@ -370,6 +370,11 @@ def translate_to(code: str) -> dict[str, str]:
                 "MIS_button": {'en-US': "Tasks", 'zh-CN': "任务视窗"},
                 "TX_Unlock": {'en-US': "Unlock", 'zh-CN': "解锁"},
                 "TODOLIST_window": {'en-US': "To-do List", 'zh-CN': "任务清单"},
+                "SR_select_volume": {'en-US': "Select Volume", 'zh-CN': "选择卷"},
+                "SR_Start": {'en-US': "Search", 'zh-CN': "搜索"},
+                "SR_numname": {'en-US': "Numname", 'zh-CN': " 数字编码"},
+                "SR_htmlname": {'en-US': "Htmlnum", 'zh-CN': " 网页编码"},
+                "SR_DIRECTORY": {'en-US': "Directory", 'zh-CN': " 文件夹"},
                 "CLOUD_TABNAME": {'en-US': "Cloud Sync", 'zh-CN': "云同步"},
                 "CLOUD_ENABLE": {'en-US': "Enable Cloud Sync", 'zh-CN': "启用云同步"},
                 "CLOUD_HOST": {'en-US': "FTP Host:", 'zh-CN': "FTP主机:"},

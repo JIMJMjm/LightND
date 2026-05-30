@@ -678,7 +678,7 @@ class MainWindow(QMainWindow):
 
         ui.CoverChoose_c.clicked.connect(self.select_cover_c)
         ui.FileChoose_c.clicked.connect(self.select_file_c)
-        ui.Start_c.clicked.connect(lambda: self.start_task(self.convert_start))
+        ui.startbutton_c.clicked.connect(lambda: self.start_task(self.convert_start))
 
         ui.tabWidget.currentChanged.connect(self.tab_change_event)
         if ENABLE_BANK:

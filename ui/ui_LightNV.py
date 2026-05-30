@@ -153,6 +153,12 @@ class Ui_MainWindow(object):
         self.GLB_setting.setFont(Sfont)
         self.GLB_setting.setText('△')
 
+        self.DC_3.setChecked(True)
+        self.DM_2.setChecked(True)
+        self.TF_1.setChecked(True)
+        self.OU_2.setChecked(True)
+        self.OU_5.setEnabled(False)
+
         self.tabWidget.addTab(self.Downloader, "")
         self.tabList.append('Downloader')
 
@@ -167,40 +173,39 @@ class Ui_MainWindow(object):
         self.AZW2 = QtWidgets.QCheckBox(parent=self.Texter)
         self.AZW2.setGeometry(rct(330, 170, 105, 19))
         self.AZW2.setObjectName("AZW2")
+
         self.DOCX1 = QtWidgets.QCheckBox(parent=self.Texter)
         self.DOCX1.setGeometry(rct(100, 100, 106, 19))
         self.DOCX1.setObjectName("DOCX1")
+
         self.HFolderInput = QtWidgets.QLineEdit(parent=self.Texter)
         self.HFolderInput.setGeometry(rct(100, 30, 291, 21))
         self.HFolderInput.setObjectName("HFolderInput")
-        self.StartB_2 = QtWidgets.QPushButton(parent=self.Texter)
-        self.StartB_2.setGeometry(rct(500, 288, 120, 28))
 
+        self.StartB_2 = QtWidgets.QPushButton(parent=self.Texter)
+        self.StartB_2.setGeometry(500, 288, 120, 28)
         self.StartB_2.setFont(Dfont)
         self.StartB_2.setObjectName("StartB_2")
+
         self.EPUB2 = QtWidgets.QCheckBox(parent=self.Texter)
         self.EPUB2.setGeometry(rct(220, 170, 102, 19))
         self.EPUB2.setObjectName("EPUB2")
+
         self.AZW1 = QtWidgets.QCheckBox(parent=self.Texter)
         self.AZW1.setGeometry(rct(330, 100, 105, 19))
         self.AZW1.setObjectName("AZW1")
+
         self.EPUB1 = QtWidgets.QCheckBox(parent=self.Texter)
         self.EPUB1.setGeometry(rct(220, 100, 102, 19))
         self.EPUB1.setObjectName("EPUB1")
+
         self.label_2 = QtWidgets.QLabel(parent=self.Texter)
         self.label_2.setGeometry(rct(30, 30, 51, 21))
         self.label_2.setObjectName("label_2")
+
         self.DOCX2 = QtWidgets.QCheckBox(parent=self.Texter)
         self.DOCX2.setGeometry(rct(100, 170, 106, 19))
         self.DOCX2.setObjectName("DOCX2")
-        self.tabWidget.addTab(self.Texter, "")
-        self.tabList.append('Texter')
-
-        self.DC_3.setChecked(True)
-        self.DM_2.setChecked(True)
-        self.TF_1.setChecked(True)
-        self.OU_2.setChecked(True)
-        self.OU_5.setEnabled(False)
 
         self.NumnameInput.setValidator(QtGui.QIntValidator(1, 9999))
         self.NumnameInput.setPlaceholderText('3057')
@@ -216,11 +221,14 @@ class Ui_MainWindow(object):
         self.unlock_button.move(30, 102)
         self.unlock_button.setEnabled(not AUTO_UNLOCK_TEXTER)
 
+        self.tabWidget.addTab(self.Texter, "")
+        self.tabList.append('Texter')
+
         self.Converter = QtWidgets.QWidget()
         self.Converter.setObjectName('converter')
 
         self.FileChoose_c = QtWidgets.QPushButton(parent=self.Converter)
-        self.FileChoose_c.setGeometry(rct(485, 26, 125, 28))
+        self.FileChoose_c.setGeometry(rct(500, 26, 120, 28))
         self.FileChoose_c.setFont(Dfont)
         self.FileChoose_c.setObjectName("FileChoose")
 
@@ -249,30 +257,24 @@ class Ui_MainWindow(object):
         self.label_5.setObjectName("label_5")
 
         self.CoverChoose_c = QtWidgets.QPushButton(parent=self.Converter)
-        self.CoverChoose_c.setGeometry(rct(485, 116, 125, 28))
+        self.CoverChoose_c.setGeometry(rct(500, 116, 120, 28))
         self.CoverChoose_c.setFont(Dfont)
-        self.CoverChoose_c.setObjectName("CoverChoose")
 
         self.label_6 = QtWidgets.QLabel(parent=self.Converter)
-        self.label_6.setGeometry(rct(30, 165, 95, 21))
-        self.label_6.setObjectName("label_6")
+        self.label_6.setGeometry(30, 165, 95, 21)
 
         self.label_7 = QtWidgets.QLabel(parent=self.Converter)
-        self.label_7.setGeometry(rct(30, 210, 96, 21))
-        self.label_7.setObjectName("label_7")
+        self.label_7.setGeometry(30, 210, 96, 21)
 
         self.CTitle = QtWidgets.QLineEdit(parent=self.Converter)
-        self.CTitle.setGeometry(rct(132, 165, 320, 21))
-        self.CTitle.setObjectName("CTitle")
+        self.CTitle.setGeometry(132, 165, 320, 21)
 
         self.CWriter = QtWidgets.QLineEdit(parent=self.Converter)
-        self.CWriter.setGeometry(rct(132, 210, 320, 21))
-        self.CWriter.setObjectName("CWriter")
+        self.CWriter.setGeometry(132, 210, 320, 21)
 
-        self.Start_c = QtWidgets.QPushButton(parent=self.Converter)
-        self.Start_c.setGeometry(rct(485, 288, 125, 28))
-        self.Start_c.setFont(Dfont)
-        self.Start_c.setObjectName("Start_c")
+        self.startbutton_c = QtWidgets.QPushButton(parent=self.Converter)
+        self.startbutton_c.setGeometry(500, 288, 120, 28)
+        self.startbutton_c.setFont(Dfont)
 
         self.tabWidget.addTab(self.Converter, '')
         self.tabList.append('Converter')
@@ -404,28 +406,32 @@ class Ui_MainWindow(object):
         self.ImageSearcher = QtWidgets.QWidget()
 
         self.sr_hm_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_hm_input.setGeometry(100, 30, 270, 30)
-        self.sr_hm_input.setPlaceholderText('Select a volume or Type in html_num')
+        self.sr_hm_input.setGeometry(50, 30, 300, 24)
+        self.sr_hm_input.setPlaceholderText(self.lang['SR_htmlname'])
 
-        self.get_goal = QtWidgets.QPushButton('Select Volume', parent=self.ImageSearcher)
-        self.get_goal.setGeometry(390, 30, 90, 30)
+        self.get_goal = QtWidgets.QPushButton(self.lang['SR_select_volume'], parent=self.ImageSearcher)
+        self.get_goal.setGeometry(390, 27, 100, 30)
 
         self.sr_numname_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_numname_input.setGeometry(100, 80, 270, 30)
-        self.sr_numname_input.setPlaceholderText('Numname')
+        self.sr_numname_input.setGeometry(50, 80, 300, 24)
+        self.sr_numname_input.setPlaceholderText(self.lang['SR_numname'])
 
         self.sr_dir_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
-        self.sr_dir_input.setGeometry(100, 130, 270, 30)
-        self.sr_dir_input.setPlaceholderText('Directory')
+        self.sr_dir_input.setGeometry(50, 130, 300, 24)
+        self.sr_dir_input.setPlaceholderText(self.lang['SR_DIRECTORY'])
 
-        self.get_dir = QtWidgets.QPushButton('Select Directory', parent=self.ImageSearcher)
-        self.get_dir.setGeometry(390, 130, 90, 30)
+        self.get_dir = QtWidgets.QPushButton('...', parent=self.ImageSearcher)
+        self.get_dir.setGeometry(325, 130, 25, 24)
 
         self.sr_start = QtWidgets.QPushButton(parent=self.ImageSearcher)
-        self.sr_start.setGeometry(100, 200, 70, 30)
-        self.sr_start.setText('Search')
+        self.sr_start.setGeometry(500, 288, 120, 28)
+        self.sr_start.setText(self.lang['SR_Start'])
 
         if ENABLE_ISF:
+            self.ImageSearcher.setFont(Dfont)
+            self.sr_hm_input.setFont(SSfont)
+            self.sr_numname_input.setFont(SSfont)
+            self.sr_dir_input.setFont(SSfont)
             self.tabWidget.addTab(self.ImageSearcher, 'ISF')
             self.tabList.append('ImageSearcher')
 
@@ -566,7 +572,7 @@ class Ui_MainWindow(object):
                                   _translate("MainWindow", self.lang['TX_TABNAME']))
         self.FileChoose_c.setText(_translate("MainWindow", self.lang['CV_FileChoose_c']))
         self.CoverChoose_c.setText(_translate("MainWindow", self.lang['CV_CoverChoose_c']))
-        self.Start_c.setText(_translate("MainWindow", self.lang['CV_Start_c']))
+        self.startbutton_c.setText(_translate("MainWindow", self.lang['CV_Start_c']))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Converter),
                                   _translate("MainWindow", self.lang['CV_Tab_Converter']))
         self.label_3.setText(_translate("MainWindow", self.lang['CV_DOCX_input']))
