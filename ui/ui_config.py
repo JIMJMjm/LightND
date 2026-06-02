@@ -3,12 +3,12 @@ from typing import Literal, overload
 from os.path import exists as ext
 
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QDoubleValidator, QIntValidator, QIcon
-from PySide6.QtWidgets import QDialog, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QFrame
+from PySide6.QtGui import QDoubleValidator, QIntValidator, QIcon, Qt
+from PySide6.QtWidgets import QDialog, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QFrame, QHBoxLayout
 
-from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid, LineEditPair
+from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid, LineEditPair, BLayOut
 from config import (CONFIG, CONFIG_NOTATION, DEFAULT_SETTING,
-                    modify_global_settings as mgs, get_global_settings as ggs, translate_to as tsl)
+                    modify_global_settings as mgs, get_global_settings as ggs, translate_to as tsl, ConfigInterval)
 
 BYPASS_RENDER_CONFIG = {'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME',
                         'FTP_PASSWORD', 'MAX_VOLUME_THREAD_WORKER'}
@@ -35,25 +35,28 @@ class Ui_Config(QDialog):
         self.save_button = ClickableLabel(parent=self)
         self.save_button.setText(LANG['CFG_save'])
         self.save_button.setFont(df15)
-        self.save_button.setGeometry(780, 509, 50, 32)
         self.save_button.lclicked.connect(lambda: self.handleSaveAll(q=True))
 
         self.apply_button = ClickableLabel(parent=self)
         self.apply_button.setText(LANG['CFG_apply'])
         self.apply_button.setFont(df15)
-        self.apply_button.setGeometry(930, 509, 50, 32)
         self.apply_button.lclicked.connect(lambda: self.handleSaveAll(q=False))
 
         self.Cancel_button = ClickableLabel(parent=self)
         self.Cancel_button.setText(LANG['CFG_cancel'])
         self.Cancel_button.setFont(df15)
-        self.Cancel_button.setGeometry(848, 509, 55, 32)
         self.Cancel_button.lclicked.connect(self.accept)
+
+        self.lot = BLayOut(self)
+        self.lot.setLayout(QHBoxLayout())
+        self.lot.addWidget(self.save_button, self.Cancel_button, self.apply_button)
+        self.lot.setGeometry(780, 500, 200, 48)
+        self.lot.setSpacing(15)
 
         self.reset_button = ClickableLabel(parent=self)
         self.reset_button.setText(LANG['CFG_reset'])
         self.reset_button.setFont(df15)
-        self.reset_button.setGeometry(15, 509, 50, 32)
+        self.reset_button.move(22, 514)
         self.reset_button.lclicked.connect(lambda: self.handleResetAll(q=False))
 
         entry_number = len(CONFIG) - len(BYPASS_RENDER_CONFIG)
@@ -61,7 +64,7 @@ class Ui_Config(QDialog):
         self.entry_content_grid.move(0, 0)
         self.entry_content_grid.setGridSize((1, entry_number))
         self.entry_content_grid.setChildSize((980, 65))
-        self.entry_content_grid.resize(980, 65 * entry_number)
+        self.entry_content_grid.resize(980, 65 * entry_number - 25 * (list(CONFIG.values()).count(CONFIG['General'])))
 
         for i, j in zip(CONFIG.keys(), CONFIG.values()):
             if i in BYPASS_RENDER_CONFIG:
@@ -79,6 +82,13 @@ class Ui_Config(QDialog):
                     _type = 'directory'
             elif isinstance(j, list):
                 _type = 'intpair'
+            elif isinstance(j, ConfigInterval):
+                interv = QLabel(i, parent=self.entry_content_grid)
+                interv.setFont(df14)
+                interv.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                interv.setFixedSize(980, 40)
+                self.entry_content_grid.addWidget(interv, spec_size=40)
+                continue
             # noinspection PyTypeChecker
             self.entry_content_grid.addWidget(ConfigEntry(_type=_type, entry_name=i, entry_content=j,
                                                           parent=self.entry_content_grid))
@@ -227,7 +237,6 @@ class ConfigEntry(QWidget):
             self.e_content.setValidator(QIntValidator())
             self.e_content.textChanged.connect(self.handleIntpairChange)
 
-        # self.save_data.connect(lambda data: print(data))
     def handleIntpairChange(self):
         self.entry_content = tuple([max(-65536, min(65536, int(p))) for p in self.e_content.text()])
         self.testifyChange()

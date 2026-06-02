@@ -16,6 +16,7 @@ BANK_PATH = CONFIG['BANK_PATH']
 RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 SIMPLE_BANK_FILE = CONFIG['SIMPLE_BANK_FILE']
 ADVANCED_SEARCH_TRIGGER = CONFIG['ADVANCED_SEARCH_TRIGGER']
+ENABLE_BANK = CONFIG['ENABLE_BANK']
 
 
 def getCreateTime(file: str, return_type: Literal[0, 1] = 1):
@@ -43,6 +44,8 @@ def getTimeStringFromStamp(timestamp: int | float) -> str:
 
 
 def read_hmz_par(hmzpath: str, force_refresh=False) -> HmzedBook:
+    if not ENABLE_BANK:
+        return
     if not force_refresh and HMZFILES.get(hmzpath) is not None:
         return HMZFILES[hmzpath]
 
@@ -400,7 +403,8 @@ def update():
     refresh_hmz()
 
 
-HMZFILES = get_global_hmzfiles()
+if ENABLE_BANK:
+    HMZFILES = get_global_hmzfiles()
 
 
 def update_hmzfiles():

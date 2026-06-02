@@ -1,3 +1,21 @@
+## LightND - Release v8.6.2
+
+### What's New:
+ - `Config`页面被重新排列，相关的配置项被重新归类，用类别分隔。
+
+### Improvements:
+ - `ENABLE_BANK`配置项现在更彻底地控制书库相关功能。这将略微加速启动。
+ - 部分ui被使用`LayOut`重排。这包括`Downloader`中的各个选项组、`Config`界面的按钮、`ISF`的按钮等。
+ - 存储和读取配置项(`config.json`)的逻辑被优化。
+ - 现在只有在`ENABLE_CLOUD_SYNC`为`true`时才会完成对应槽函数的绑定。
+ - 优化了部分ui的定义方式。
+
+### Bug Fixes:
+ - 修复了`Converter`中自动填充有时会发生找不到对应图书的问题。
+ - 修正了`txtprocess`中的某些typo。
+ - 修复了某些其他问题。
+
+
 ## LightND - Release v8.6.1
 
 ### What's New:

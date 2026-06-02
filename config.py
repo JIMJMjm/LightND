@@ -4,41 +4,54 @@ from os import listdir as ldr, makedirs as mkd
 
 from winsound import PlaySound
 
+
+class ConfigInterval:
+    pass
+
+
+CONFIGINTERVAL = ConfigInterval()
 DEFAULT_SETTING = {
+    "General": CONFIGINTERVAL,
     "ENABLE_PANDOC": True,
+    "ENABLE_BANK": True,
     "ENABLE_ISF": False,
-    "COMPLICATE_SLICE_NAME": False,
-    "MAX_THREAD_WORKER": 6,
+    "ENABLE_CLOUD_SYNC": False,
+    "ALLOW_WARNING_WINDOWS": True,
+    "LANGUAGE": "en-US",
+    "Downloader": CONFIGINTERVAL,
     "ALWAYS_USE_DEFAULT_DOWNLOAD": False,
+    "MAX_THREAD_WORKER": 6,
+    "MAX_VOLUME_THREAD_WORKER": 2,
     "ILLUSTRATION_REQUEST_SLEEP_TIME": 0.1,
     "TEXT_REQUEST_SLEEP_TIME": 0.2,
-    "MAX_VOLUME_THREAD_WORKER": 2,
-    "ENABLE_BANK": True,
-    "AUTO_FILL_CONVERTER_INFO": True,
-    "ALLOW_WARNING_WINDOWS": True,
-    "BANK_PATH": "novel",
-    "RMZ_EXPORT_PATH": "rmz",
-    "RMZ_FILENAME_FORMAT": "%NUMNAME%_%TMSTAMP%",
-    "RMZ_FILENAME_SUFFIX": "(%NUM%)",
-    "DEFAULT_COVER": "images/uncovered.jpg",
-    "LANGUAGE": "en-US",
+    "PROXY_PORT": -1,
+    "Texter": CONFIGINTERVAL,
     "SHOW_FORMATED_FILE": True,
     "AUTO_UNLOCK_TEXTER": False,
+    "COMPLICATE_SLICE_NAME": False,
+    'Converter': CONFIGINTERVAL,
+    "AUTO_FILL_CONVERTER_INFO": True,
+    "DEFAULT_COVER": "images/dft.png",
+    "Bank": CONFIGINTERVAL,
+    "BANK_PATH": "novel",
     "SIMPLE_BANK_FILE": False,
-    "PROXY_PORT": -1,
-    "ENABLE_CLOUD_SYNC": False,
-    "FTP_HOST": "",
-    "FTP_PORT": 21,
-    "FTP_USERNAME": "",
-    "FTP_PASSWORD": "",
     "BANK_RESOLUTION": (1068, 640),
     "SCROLL_POSTION_KEEPER": 2,
     "RESIZE_DELAY": 16,
     "RENDER_RANGE": 0,
+    "RMZ Saving": CONFIGINTERVAL,
+    "RMZ_EXPORT_PATH": "rmz",
+    "RMZ_FILENAME_FORMAT": "%NUMNAME%_%TMSTAMP%",
+    "RMZ_FILENAME_SUFFIX": "(%NUM%)",
+    "Image Search Function": CONFIGINTERVAL,
     "ADVANCED_SEARCH_TRIGGER": '',
     "BORDER_TOLERANCE": 3,
     "RLM_NEIGHBOR_RANGE": 1800,
-    "SEARCH_RANGE": 2000
+    "SEARCH_RANGE": 2000,
+    "FTP_HOST": "",
+    "FTP_PORT": 21,
+    "FTP_USERNAME": "",
+    "FTP_PASSWORD": "",
 }
 
 
@@ -115,11 +128,18 @@ def get_global_settings(reset: bool = False) -> dict:
         config = read_json('config.json')
     sh_config = {i: config[i] if config.get(i, None) is not None else DEFAULT_SETTING[i] for i in DEFAULT_SETTING}
 
-    save_json('config.json', sh_config)
-    return read_json('config.json')
+    modify_global_settings(sh_config)
+    return sh_config
 
 
 def modify_global_settings(global_settings):
+    """
+    Accept CONFIG with or without ConfigInterval.
+    :param global_settings:
+    :return:
+    """
+    global_settings = {i: global_settings[i]
+                       for i in global_settings if not isinstance(global_settings[i], ConfigInterval)}
     save_json('config.json', global_settings)
 
 
@@ -146,13 +166,13 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.6.1"},
+    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.6.2"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},
                 "DL_TF_2": {"en-US": "+ Volumes", "zh-CN": "+分卷"},
                 "DL_TF_3": {"en-US": "+ Series", "zh-CN": "+系列整合"},
-                "DL_DM_1": {"en-US": "Re-Down", "zh-CN": "重新下载"},
+                "DL_DM_1": {"en-US": "Refresh", "zh-CN": "重新下载"},
                 "DL_DM_2": {"en-US": "Continue", "zh-CN": "继续下载"},
                 "DL_OU_1": {"en-US": "TXT", "zh-CN": "仅TXT"},
                 "DL_OU_2": {"en-US": "+ Series DOCX", "zh-CN": "+系列DOCX"},
@@ -437,4 +457,4 @@ def succeeded(info=LANG['SUCCEED']):
     PlaySound('dlcp.wav', 1)
 
 
-CONFIG_NOTATION = {i: LANG.get(f'CFG_{i}', LANG['CFG_NONE']).format(*((DEFAULT_SETTING[i],) if not isinstance(DEFAULT_SETTING[i], tuple) else DEFAULT_SETTING[i])) for i in DEFAULT_SETTING}  # NOQA
+CONFIG_NOTATION = {i: LANG.get(f'CFG_{i}', LANG['CFG_NONE']).format(*((DEFAULT_SETTING[i],) if not isinstance(DEFAULT_SETTING[i], tuple) else DEFAULT_SETTING[i])) for i in DEFAULT_SETTING if not isinstance(DEFAULT_SETTING[i], ConfigInterval)}  # NOQA

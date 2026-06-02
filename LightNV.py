@@ -152,7 +152,7 @@ class Downloader:
 
 class Texter:
     def __init__(self):
-        self.target: HFd = None
+        self.target: HFd = HFd(None)
         self.formets = [0, 0, 0, 0, 0, 0]
         self.indicator = [0, 0, 0, 0, 0, 0]
         self.child_detail = None
@@ -284,14 +284,14 @@ class MainWindow(QMainWindow):
         self.hidden_veil = QWidget(parent=self.ui.BBScroll)
         self.hidden_veil.setHidden(True)
 
-        bank = read_bank_file()
-        self.g_opt = [self.ui.g_menu.addAction(self.lang['BB_MenuAll'])]
-        self.b_opt = [self.ui.b_menu.addAction(self.lang['BB_MenuAll'])]
-
         if ENABLE_BANK:
+            self.g_opt = [self.ui.g_menu.addAction(self.lang['BB_MenuAll'])]
+            self.b_opt = [self.ui.b_menu.addAction(self.lang['BB_MenuAll'])]
+
             self.UAR = QPixmap("images/dorder.png").scaled(26, 26)
             self.DAR = QPixmap("images/uorder.png").scaled(26, 26)
 
+            bank = read_bank_file()
             bll = [BkWt(bankinfo=i) for i in bank]
 
             bb_info = get_all_info()
@@ -406,9 +406,10 @@ class MainWindow(QMainWindow):
                                 UI.CTitle.text(),
                                 UI.CWriter.text(),
                                 numname=-1,
-                                cover=UI.CCover.text())
+                                cover=UI.CCover.text(),
+                                description='')
             succeeded()
-            return
+            return 
         convert_to_epub(self.converter_goal, *converter_paras)
         succeeded()
 
@@ -477,12 +478,13 @@ class MainWindow(QMainWindow):
         paras[1] = filename
         if dirs[-2] == 'Slices' and (hmzfile := find_hmz('/'.join(dirs[:-2]))):
             vol = restore_from_default_name(path)
-            _, writer, _, allname = read_hmz_par('/'.join(dirs[:-2]) + '/' + hmzfile)
+            hmzbook = read_hmz_par('/'.join(dirs[:-2]) + '/' + hmzfile)
+            writer, allname = hmzbook.writer, hmzbook.allname
             paras[2] = writer
             if vol == 0:
                 return paras
             else:
-                vol = vol - 1
+                vol -= 1
             paras[3] = get_cover_from('/'.join(dirs[:-2]) + '/' + allname[vol][0])
             if paras[3] == '':
                 numname = hmzfile.split('.')[0]
@@ -491,7 +493,8 @@ class MainWindow(QMainWindow):
         if filename != dirs[-2]:
             return paras
         if hmzfile := find_hmz('/'.join(dirs[:-1])):
-            _, writer, _, allname = read_hmz_par('/'.join(dirs[:-1]) + '/' + hmzfile)
+            hmzbook = read_hmz_par('/'.join(dirs[:-1]) + '/' + hmzfile)
+            writer, allname = hmzbook.writer, hmzbook.allname
             paras[2] = writer
             paras[3] = get_cover_from('/'.join(dirs[:-1]) + '/' + allname[0][0])
             if paras[3] == '':
@@ -723,7 +726,26 @@ class MainWindow(QMainWindow):
 
         ui.unlock_button.clicked.connect(self.unlock_Texter_options)
 
-        self.set_cloud_cnct()
+        if ENABLE_CLOUD_SYNC:
+            self.set_cloud_cnct()
+
+    def set_bw_connection(self, init=True, new_bw: list = None):
+        if not ENABLE_BANK:
+            return
+        for i in self.g_opt[1:]:
+            i.triggered.connect(lambda checked, action=i: self.GoptionControl(action.text()))
+        for i in self.b_opt[1:]:
+            i.triggered.connect(lambda checked, action=i: self.BoptionControl(action.text()))
+
+        self.g_opt[0].triggered.connect(lambda: self.GoptionControl(0))
+        self.b_opt[0].triggered.connect(lambda: self.BoptionControl(0))
+        for i in self.bw_list if new_bw is None else new_bw:
+            i.detailmd.lclicked.connect(lambda bookwidget=i: self.jump_to_texter(bookwidget))
+            i.updatebt.lclicked.connect(lambda bk=i: self.check_update_as(bk))
+        if init:
+            self.ui.order_arrow.clicked.connect(self.handleODArrow)
+            for i in self.ui.o_actions:
+                i.triggered.connect(lambda checked, action=i: self.OoptionControl(action.text()))
 
     def set_cloud_cnct(self):
         ui = self.ui
@@ -896,22 +918,6 @@ class MainWindow(QMainWindow):
         self.ui.cs_upload_btn.setEnabled(True)
         self.ui.cs_download_btn.setEnabled(True)
         self.ui.cs_status.setText(self.lang['CLOUD_STATUS_DOWNLOADED'])
-
-    def set_bw_connection(self, init=True, new_bw: list = None):
-        for i in self.g_opt[1:]:
-            i.triggered.connect(lambda checked, action=i: self.GoptionControl(action.text()))
-        for i in self.b_opt[1:]:
-            i.triggered.connect(lambda checked, action=i: self.BoptionControl(action.text()))
-
-        self.g_opt[0].triggered.connect(lambda: self.GoptionControl(0))
-        self.b_opt[0].triggered.connect(lambda: self.BoptionControl(0))
-        for i in self.bw_list if new_bw is None else new_bw:
-            i.detailmd.lclicked.connect(lambda bookwidget=i: self.jump_to_texter(bookwidget))
-            i.updatebt.lclicked.connect(lambda bk=i: self.check_update_as(bk))
-        if init:
-            self.ui.order_arrow.clicked.connect(self.handleODArrow)
-            for i in self.ui.o_actions:
-                i.triggered.connect(lambda checked, action=i: self.OoptionControl(action.text()))
 
     @staticmethod
     def check_update(bankinfo: BankedBook):

@@ -138,6 +138,8 @@ class NotAHFolderError(Exception):
 
 class HFolder(object):
     def __init__(self, folder_adr):
+        if folder_adr is None:
+            return
         self.folder = folder_adr
 
         adr_slice = folder_adr.split('/')
@@ -232,7 +234,7 @@ class HFolder(object):
             oupu = f'{self.folder}/{self.name}.epub'
             if ENABLE_PANDOC:
                 convert2epub_pandoc(inpu, oupu, self.name, self.writer, self.numname, self.bunko,
-                                    cover=self.cover, discription=self.description)
+                                    cover=self.cover, description=self.description)
                 return 0
             convert_to_epub(inpu, oupu, self.name, writer=self.writer, cover=self.cover)
             return 0
@@ -332,13 +334,13 @@ def generate_yaml(name, writer, bunko, cover=None, description=None):
 
 def convert2epub_pandoc(input_, output_, name, writer, numname, *args, cover: str = None, **kwargs):
     bunko = args[0] if args else None
-    discription = kwargs.get('discription', None)
+    description = kwargs.get('description', None)
     if cover is None:
         cover = f'images/thumbnails/{numname}.jpg'
     if cover == '':
         cover = 'images/thumbnails/uncovered.jpg'
-    print(name, writer, bunko, cover, discription, sep='\n-')
-    y = generate_yaml(name, writer, bunko, cover, discription)
+    print(name, writer, bunko, cover, description, sep='\n-')
+    y = generate_yaml(name, writer, bunko, cover, description)
     command = ['pandoc', input_, '-o', output_, '--epub-title-page=false',
                f'--metadata-file={y}', f'--css={'appending.css'}']
     runcommand(command)

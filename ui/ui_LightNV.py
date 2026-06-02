@@ -1,8 +1,8 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtCore import QRect as rct, Qt
-from PySide6.QtWidgets import QHBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
 
-from BySide import ClickableLabel, ScrollField, ExitButton, DefaultFont, AdvButtonGroup
+from BySide import ClickableLabel, ScrollField, ExitButton, DefaultFont, AdvButtonGroup, BLayOut
 from config import CONFIG, translate_to as tsl
 
 ENABLE_BANK = CONFIG['ENABLE_BANK']
@@ -19,123 +19,83 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         self.lang = tsl(LANGUAGE)
         self.MainWindow = MainWindow
-        MainWindow.setObjectName("LightND")
         MainWindow.resize(660, 380)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("images/icon.ico"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
-
-        self.tabList: list[str] = []
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.tabWidget = QtWidgets.QTabWidget(parent=self.centralwidget)
-        self.tabWidget.setGeometry(rct(0, 0, 661, 381))
-        self.tabWidget.setObjectName("tabWidget")
-        self.Downloader = QtWidgets.QWidget()
-        self.Downloader.setObjectName("Downloader")
 
         Dfont = DefaultFont()
         Sfont = DefaultFont(11)
         SSfont = DefaultFont(10)
 
         self.Exit = ExitButton(parent=MainWindow)
-        self.Exit.setGeometry(rct(52, 312, 90, 28))
+        self.Exit.setGeometry(52, 312, 90, 28)
 
+        self.GLB_setting = QtWidgets.QPushButton(parent=self.MainWindow)
+        self.GLB_setting.setGeometry(636, 23, 23, 23)
+        self.GLB_setting.setFont(Sfont)
+        self.GLB_setting.setText('△')
+
+        self.tabList: list[str] = []
+        self.tabWidget = QtWidgets.QTabWidget(parent=self.centralwidget)
+        self.tabWidget.setGeometry(rct(0, 0, 661, 381))
+
+        self.Downloader = QtWidgets.QWidget()
         self.DirectoryCh = QtWidgets.QPushButton(parent=self.Downloader)
         self.DirectoryCh.setGeometry(rct(222, 288, 130, 28))
-
         self.DirectoryCh.setFont(Dfont)
-        self.DirectoryCh.setObjectName("DirectoryCh")
+
         self.NumnameInput = QtWidgets.QLineEdit(parent=self.Downloader)
         self.NumnameInput.setGeometry(rct(100, 30, 171, 21))
-        self.NumnameInput.setObjectName("NumnameInput")
-        self.verticalLayoutWidget_4 = QtWidgets.QWidget(parent=self.Downloader)
-        self.verticalLayoutWidget_4.setGeometry(rct(230, 88, 101, 91))
-        self.verticalLayoutWidget_4.setObjectName("verticalLayoutWidget_4")
-        self.TextFormula_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_4)
-        self.TextFormula_2.setContentsMargins(0, 0, 0, 0)
-        self.TextFormula_2.setObjectName("TextFormula_2")
-        self.TF_1 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_4)
-        self.TF_1.setObjectName("TF_4")
-        self.TextFormula_2.addWidget(self.TF_1)
-        self.TF_2 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_4)
-        self.TF_2.setObjectName("TF_5")
-        self.TextFormula_2.addWidget(self.TF_2)
-        self.TF_3 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_4)
-        self.TF_3.setObjectName("TF_6")
-        self.TextFormula_2.addWidget(self.TF_3)
-        self.verticalLayoutWidget_3 = QtWidgets.QWidget(parent=self.Downloader)
-        self.verticalLayoutWidget_3.setGeometry(rct(120, 88, 73, 61))
-        self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
-        self.DownloadMode_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
-        self.DownloadMode_2.setContentsMargins(0, 0, 0, 0)
-        self.DownloadMode_2.setObjectName("DownloadMode_2")
-        self.DM_1 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_3)
-        self.DM_1.setObjectName("DM_3")
-        self.DownloadMode_2.addWidget(self.DM_1)
-        self.DM_2 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_3)
-        self.DM_2.setObjectName("DM_4")
-        self.DownloadMode_2.addWidget(self.DM_2)
-        self.layoutWidget = QtWidgets.QWidget(parent=self.Downloader)
-        self.layoutWidget.setGeometry(350, 88, 131, 151)
-        self.layoutWidget.setObjectName("layoutWidget")
-        self.Output_2 = QtWidgets.QVBoxLayout(self.layoutWidget)
-        self.Output_2.setContentsMargins(3, 0, 0, 0)
-        self.Output_2.setObjectName("Output_2")
-        self.OU_1 = QtWidgets.QRadioButton(parent=self.layoutWidget)
-        self.OU_1.setObjectName("OU_6")
-        self.Output_2.addWidget(self.OU_1)
-        self.OU_2 = QtWidgets.QRadioButton(parent=self.layoutWidget)
-        self.OU_2.setObjectName("OU_7")
-        self.Output_2.addWidget(self.OU_2)
-        self.OU_3 = QtWidgets.QCheckBox(parent=self.layoutWidget)
-        self.OU_3.setObjectName("OU_8")
-        self.Output_2.addWidget(self.OU_3)
-        self.OU_4 = QtWidgets.QCheckBox(parent=self.layoutWidget)
-        self.OU_4.setObjectName("OU_9")
-        self.Output_2.addWidget(self.OU_4)
-        self.OU_5 = QtWidgets.QCheckBox(parent=self.layoutWidget)
-        self.OU_5.setObjectName("OU_10")
-        self.Output_2.addWidget(self.OU_5)
 
-        self.verticalLayoutWidget_2 = QtWidgets.QWidget(parent=self.Downloader)
-        self.verticalLayoutWidget_2.setGeometry(30, 88, 71, 91)
-        self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
+        self.dc_vL = BLayOut(parent=self.Downloader)
+        self.dc_vL.setGeometry(30, 88, 75, 91)
+        self.dc_vL.setLayout(QVBoxLayout())
+        self.dc_vL.setContentsMargins(0, 0, 0, 0)
+        self.DC_1 = QtWidgets.QRadioButton(parent=self.dc_vL)
+        self.DC_2 = QtWidgets.QRadioButton(parent=self.dc_vL)
+        self.DC_3 = QtWidgets.QRadioButton(parent=self.dc_vL)
+        self.dc_vL.addWidget(self.DC_1, self.DC_2, self.DC_3)
 
-        self.DownloadContent_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
-        self.DownloadContent_2.setContentsMargins(0, 0, 0, 0)
-        self.DownloadContent_2.setObjectName("DownloadContent_2")
+        self.dl_vL = BLayOut(parent=self.Downloader)
+        self.dl_vL.setGeometry(133, 88, 75, 60)
+        self.dl_vL.setLayout(QVBoxLayout())
+        self.dl_vL.setContentsMargins(0, 0, 0, 0)
+        self.DM_1 = QtWidgets.QRadioButton(parent=self.dl_vL)
+        self.DM_2 = QtWidgets.QRadioButton(parent=self.dl_vL)
+        self.dl_vL.addWidget(self.DM_1, self.DM_2)
 
-        self.DC_1 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_2)
-        self.DC_1.setObjectName("DC_4")
+        self.tf_vL = BLayOut(parent=self.Downloader)
+        self.tf_vL.setGeometry(237, 88, 97, 90)
+        self.tf_vL.setLayout(QVBoxLayout())
+        self.tf_vL.setContentsMargins(0, 0, 0, 0)
+        self.TF_1 = QtWidgets.QRadioButton(parent=self.tf_vL)
+        self.TF_2 = QtWidgets.QRadioButton(parent=self.tf_vL)
+        self.TF_3 = QtWidgets.QRadioButton(parent=self.tf_vL)
+        self.tf_vL.addWidget(self.TF_1, self.TF_2, self.TF_3)
 
-        self.DownloadContent_2.addWidget(self.DC_1)
-        self.DC_2 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_2)
-        self.DC_2.setObjectName("DC_5")
+        self.ou_vL = BLayOut(parent=self.Downloader)
+        self.ou_vL.setGeometry(350, 88, 131, 151)
+        self.ou_vL.setLayout(QVBoxLayout())
+        self.ou_vL.setContentsMargins(0, 0, 0, 0)
+        self.OU_1 = QtWidgets.QRadioButton(parent=self.ou_vL)
+        self.OU_2 = QtWidgets.QRadioButton(parent=self.ou_vL)
+        self.OU_3 = QtWidgets.QCheckBox(parent=self.ou_vL)
+        self.OU_4 = QtWidgets.QCheckBox(parent=self.ou_vL)
+        self.OU_5 = QtWidgets.QCheckBox(parent=self.ou_vL)
+        self.ou_vL.addWidget(self.OU_1, self.OU_2, self.OU_3, self.OU_4, self.OU_5)
 
-        self.DownloadContent_2.addWidget(self.DC_2)
-        self.DC_3 = QtWidgets.QRadioButton(parent=self.verticalLayoutWidget_2)
-        self.DC_3.setObjectName("DC_6")
-
-        self.DownloadContent_2.addWidget(self.DC_3)
         self.StartB = QtWidgets.QPushButton(parent=self.Downloader)
         self.StartB.setGeometry(rct(500, 288, 120, 28))
         self.StartB.setFont(Dfont)
-        self.StartB.setObjectName("StartB")
 
         self.TDList = QtWidgets.QPushButton(parent=self.Downloader)
         self.TDList.setGeometry(rct(505, 26, 110, 28))
         self.TDList.setFont(Dfont)
-        self.TDList.setObjectName("TDList")
 
         self.label = QtWidgets.QLabel(parent=self.Downloader)
         self.label.setGeometry(rct(30, 30, 71, 21))
-        self.label.setObjectName("label")
-
-        # self.CheckUPD = QtWidgets.QPushButton(parent=self.Downloader)
-        # self.CheckUPD.setGeometry(RCT(505, 138, 110, 28))
-        # self.CheckUPD.setFont(Dfont)
-        # self.CheckUPD.setObjectName("CheckUPD")
 
         self.TaskUPD = QtWidgets.QPushButton(parent=self.Downloader)
         self.TaskUPD.setGeometry(rct(505, 178, 110, 28))
@@ -146,12 +106,6 @@ class Ui_MainWindow(object):
         self.detailBT.setGeometry(rct(505, 78, 110, 28))
         self.detailBT.setFont(Dfont)
         self.detailBT.setText(self.lang['DL_DetailMode'])
-        self.detailBT.setObjectName("DetailBT")
-
-        self.GLB_setting = QtWidgets.QPushButton(parent=self.MainWindow)
-        self.GLB_setting.setGeometry(636, 23, 23, 23)
-        self.GLB_setting.setFont(Sfont)
-        self.GLB_setting.setText('△')
 
         self.DC_3.setChecked(True)
         self.DM_2.setChecked(True)
@@ -163,49 +117,38 @@ class Ui_MainWindow(object):
         self.tabList.append('Downloader')
 
         self.Texter = QtWidgets.QWidget()
-        self.Texter.setObjectName("Texter")
 
         self.DirectoryChoose = QtWidgets.QPushButton(parent=self.Texter)
         self.DirectoryChoose.setGeometry(rct(480, 26, 140, 28))
         self.DirectoryChoose.setFont(Dfont)
-        self.DirectoryChoose.setObjectName("DirectoryChoose")
 
         self.AZW2 = QtWidgets.QCheckBox(parent=self.Texter)
         self.AZW2.setGeometry(rct(330, 170, 105, 19))
-        self.AZW2.setObjectName("AZW2")
 
         self.DOCX1 = QtWidgets.QCheckBox(parent=self.Texter)
         self.DOCX1.setGeometry(rct(100, 100, 106, 19))
-        self.DOCX1.setObjectName("DOCX1")
 
         self.HFolderInput = QtWidgets.QLineEdit(parent=self.Texter)
         self.HFolderInput.setGeometry(rct(100, 30, 291, 21))
-        self.HFolderInput.setObjectName("HFolderInput")
 
         self.StartB_2 = QtWidgets.QPushButton(parent=self.Texter)
         self.StartB_2.setGeometry(500, 288, 120, 28)
         self.StartB_2.setFont(Dfont)
-        self.StartB_2.setObjectName("StartB_2")
 
         self.EPUB2 = QtWidgets.QCheckBox(parent=self.Texter)
         self.EPUB2.setGeometry(rct(220, 170, 102, 19))
-        self.EPUB2.setObjectName("EPUB2")
 
         self.AZW1 = QtWidgets.QCheckBox(parent=self.Texter)
         self.AZW1.setGeometry(rct(330, 100, 105, 19))
-        self.AZW1.setObjectName("AZW1")
 
         self.EPUB1 = QtWidgets.QCheckBox(parent=self.Texter)
         self.EPUB1.setGeometry(rct(220, 100, 102, 19))
-        self.EPUB1.setObjectName("EPUB1")
 
         self.label_2 = QtWidgets.QLabel(parent=self.Texter)
         self.label_2.setGeometry(rct(30, 30, 51, 21))
-        self.label_2.setObjectName("label_2")
 
         self.DOCX2 = QtWidgets.QCheckBox(parent=self.Texter)
         self.DOCX2.setGeometry(rct(100, 170, 106, 19))
-        self.DOCX2.setObjectName("DOCX2")
 
         self.NumnameInput.setValidator(QtGui.QIntValidator(1, 9999))
         self.NumnameInput.setPlaceholderText('3057')
@@ -225,36 +168,28 @@ class Ui_MainWindow(object):
         self.tabList.append('Texter')
 
         self.Converter = QtWidgets.QWidget()
-        self.Converter.setObjectName('converter')
 
         self.FileChoose_c = QtWidgets.QPushButton(parent=self.Converter)
         self.FileChoose_c.setGeometry(rct(500, 26, 120, 28))
         self.FileChoose_c.setFont(Dfont)
-        self.FileChoose_c.setObjectName("FileChoose")
 
         self.CInput = QtWidgets.QLineEdit(parent=self.Converter)
-        self.CInput.setGeometry(rct(132, 30, 320, 21))
-        self.CInput.setObjectName("CInput")
+        self.CInput.setGeometry(132, 30, 320, 21)
 
         self.label_3 = QtWidgets.QLabel(parent=self.Converter)
         self.label_3.setGeometry(rct(30, 30, 90, 21))
-        self.label_3.setObjectName("label_3")
 
         self.COutput = QtWidgets.QLineEdit(parent=self.Converter)
         self.COutput.setGeometry(rct(132, 75, 320, 21))
-        self.COutput.setObjectName("COutput")
 
         self.label_4 = QtWidgets.QLabel(parent=self.Converter)
         self.label_4.setGeometry(rct(30, 75, 90, 21))
-        self.label_4.setObjectName("label_4")
 
         self.CCover = QtWidgets.QLineEdit(parent=self.Converter)
         self.CCover.setGeometry(rct(132, 120, 320, 21))
-        self.CCover.setObjectName("CCover")
 
         self.label_5 = QtWidgets.QLabel(parent=self.Converter)
         self.label_5.setGeometry(rct(30, 120, 95, 21))
-        self.label_5.setObjectName("label_5")
 
         self.CoverChoose_c = QtWidgets.QPushButton(parent=self.Converter)
         self.CoverChoose_c.setGeometry(rct(500, 116, 120, 28))
@@ -287,7 +222,6 @@ class Ui_MainWindow(object):
         self.od_bank.setFixedSize(70, 30)
         self.od_bank.move(5, 0)
         self.od_bank.setFont(Sfont)
-        self.od_bank.setObjectName("od_bank")
         self.od_bank.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.o_menu = QtWidgets.QMenu(self.MainWindow)
@@ -300,26 +234,21 @@ class Ui_MainWindow(object):
         self.order_arrow.setFixedSize(30, 30)
         self.order_arrow.move(80, 0)
         self.order_arrow.setPixmap(QtGui.QPixmap("images/uorder.png").scaled(26, 26))
-        self.order_arrow.setObjectName("uar")
 
         self.flt_bunko = ClickableLabel(parent=self.BookBank)
         self.flt_bunko.setGeometry(138, 0, 80, 30)
         self.flt_bunko.setFont(Sfont)
-        self.flt_bunko.setObjectName("flt_bunko")
-
         self.b_menu = QtWidgets.QMenu(parent=self.MainWindow)
 
         self.flt_genre = ClickableLabel(parent=self.BookBank)
         self.flt_genre.setGeometry(228, 0, 80, 30)
         self.flt_genre.setFont(Sfont)
-        self.flt_genre.setObjectName("flt_genre")
 
         self.g_menu = QtWidgets.QMenu(parent=self.MainWindow)
 
         self.flt_search = QtWidgets.QLineEdit(parent=self.BookBank)
         self.flt_search.setGeometry(320, 1, 250, 28)
         self.flt_search.setFont(Sfont)
-        self.flt_search.setObjectName("flt_search")
         self.flt_search.setPlaceholderText(self.lang['BB_TextPlaceholder'])
 
         self.none_sr = ClickableLabel(parent=self.BookBank)
@@ -410,7 +339,7 @@ class Ui_MainWindow(object):
         self.sr_hm_input.setPlaceholderText(self.lang['SR_htmlname'])
 
         self.get_goal = QtWidgets.QPushButton(self.lang['SR_select_volume'], parent=self.ImageSearcher)
-        self.get_goal.setGeometry(390, 27, 100, 30)
+        self.get_goal.setGeometry(390, 26, 100, 28)
 
         self.sr_numname_input = QtWidgets.QLineEdit(parent=self.ImageSearcher)
         self.sr_numname_input.setGeometry(50, 80, 300, 24)
@@ -421,14 +350,17 @@ class Ui_MainWindow(object):
         self.sr_dir_input.setPlaceholderText(self.lang['SR_DIRECTORY'])
 
         self.get_dir = QtWidgets.QPushButton('...', parent=self.ImageSearcher)
-        self.get_dir.setGeometry(325, 130, 25, 24)
+        self.get_dir.setGeometry(325, 130, 25, 25)
 
         self.sr_start = QtWidgets.QPushButton(parent=self.ImageSearcher)
         self.sr_start.setGeometry(500, 288, 120, 28)
         self.sr_start.setText(self.lang['SR_Start'])
 
+        self.sr_select_book = QtWidgets.QPushButton('Select HmzBook', parent=self.ImageSearcher)
+        self.sr_select_book.setGeometry(500, 26, 120, 28)
+
         if ENABLE_ISF:
-            self.ImageSearcher.setFont(Dfont)
+            self.ImageSearcher.setFont(Sfont)
             self.sr_hm_input.setFont(SSfont)
             self.sr_numname_input.setFont(SSfont)
             self.sr_dir_input.setFont(SSfont)
@@ -438,50 +370,40 @@ class Ui_MainWindow(object):
         self.NovelSearcher = QtWidgets.QWidget()
 
         self.CloudSync = QtWidgets.QWidget()
-        self.CloudSync.setObjectName("CloudSync")
 
         self.cs_host_label = QtWidgets.QLabel(parent=self.CloudSync)
         self.cs_host_label.setGeometry(rct(30, 20, 80, 21))
-        self.cs_host_label.setObjectName("cs_host_label")
 
         self.cs_host_input = QtWidgets.QLineEdit(parent=self.CloudSync)
         self.cs_host_input.setGeometry(rct(120, 18, 250, 24))
         self.cs_host_input.setPlaceholderText("ftp.example.com")
-        self.cs_host_input.setObjectName("cs_host_input")
 
         self.cs_port_label = QtWidgets.QLabel(parent=self.CloudSync)
         self.cs_port_label.setGeometry(rct(390, 20, 40, 21))
-        self.cs_port_label.setObjectName("cs_port_label")
 
         self.cs_port_input = QtWidgets.QLineEdit(parent=self.CloudSync)
         self.cs_port_input.setGeometry(rct(435, 18, 60, 24))
         self.cs_port_input.setText("21")
         self.cs_port_input.setValidator(QtGui.QIntValidator(1, 65535))
-        self.cs_port_input.setObjectName("cs_port_input")
 
         self.cs_user_label = QtWidgets.QLabel(parent=self.CloudSync)
         self.cs_user_label.setGeometry(rct(30, 55, 80, 21))
-        self.cs_user_label.setObjectName("cs_user_label")
 
         self.cs_user_input = QtWidgets.QLineEdit(parent=self.CloudSync)
         self.cs_user_input.setGeometry(rct(120, 53, 250, 24))
         self.cs_user_input.setPlaceholderText("username")
-        self.cs_user_input.setObjectName("cs_user_input")
 
         self.cs_pass_label = QtWidgets.QLabel(parent=self.CloudSync)
         self.cs_pass_label.setGeometry(rct(30, 90, 80, 21))
-        self.cs_pass_label.setObjectName("cs_pass_label")
 
         self.cs_pass_input = QtWidgets.QLineEdit(parent=self.CloudSync)
         self.cs_pass_input.setGeometry(rct(120, 88, 250, 24))
         self.cs_pass_input.setPlaceholderText("password")
         self.cs_pass_input.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
-        self.cs_pass_input.setObjectName("cs_pass_input")
 
         self.cs_test_btn = QtWidgets.QPushButton(parent=self.CloudSync)
         self.cs_test_btn.setGeometry(rct(200, 130, 200, 28))
         self.cs_test_btn.setFont(Dfont)
-        self.cs_test_btn.setObjectName("cs_test_btn")
 
         self.cs_separator = QtWidgets.QFrame(parent=self.CloudSync)
         self.cs_separator.setGeometry(rct(30, 175, 600, 2))
@@ -491,27 +413,22 @@ class Ui_MainWindow(object):
         self.cs_upload_btn = QtWidgets.QPushButton(parent=self.CloudSync)
         self.cs_upload_btn.setGeometry(rct(100, 195, 180, 28))
         self.cs_upload_btn.setFont(Dfont)
-        self.cs_upload_btn.setObjectName("cs_upload_btn")
 
         self.cs_download_btn = QtWidgets.QPushButton(parent=self.CloudSync)
         self.cs_download_btn.setGeometry(rct(350, 195, 180, 28))
         self.cs_download_btn.setFont(Dfont)
-        self.cs_download_btn.setObjectName("cs_download_btn")
 
         self.cs_status = QtWidgets.QLabel(parent=self.CloudSync)
         self.cs_status.setGeometry(rct(30, 240, 600, 60))
         self.cs_status.setWordWrap(True)
-        self.cs_status.setObjectName("cs_status")
 
         self.cs_backup_cb = QtWidgets.QCheckBox(parent=self.CloudSync)
         self.cs_backup_cb.setGeometry(rct(30, 230, 250, 24))
         self.cs_backup_cb.setChecked(True)
-        self.cs_backup_cb.setObjectName("cs_backup_cb")
 
         self.cs_delete_cb = QtWidgets.QCheckBox(parent=self.CloudSync)
         self.cs_delete_cb.setGeometry(rct(220, 230, 250, 24))
         self.cs_delete_cb.setChecked(False)
-        self.cs_delete_cb.setObjectName("cs_delete_cb")
 
         self.cs_host_input.setText(CONFIG.get('FTP_HOST', ''))
         self.cs_port_input.setText(str(CONFIG.get('FTP_PORT', 21)))

@@ -3,7 +3,7 @@ from typing import Callable, overload
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QMouseEvent, QFont, QIntValidator
-from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox, QLineEdit
+from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox, QLineEdit, QLayout
 
 
 def extand_list_to(lis, a, b):
@@ -57,6 +57,12 @@ class ClickableLabel(QLabel):
 
     def setEnabled(self, arg__1: bool, /):
         self.isEnabled = arg__1
+
+    def resizeAsText(self):
+        self.resize(self.sizeHint())
+
+    def textSize(self) -> tuple[int]:
+        return self.sizeHint().toTuple()
 
 
 class DPushButton(QPushButton):
@@ -232,6 +238,7 @@ class WidgetGrid(QWidget):
         self.rendersize = [0, 0]
         self.grid = [[None]]
         self.widget_list = []
+        self.differ = [0, 0]
 
     def __getitem__(self, item):
         a = []
@@ -271,15 +278,28 @@ class WidgetGrid(QWidget):
         self.childsize = csize
         self.rendersize = [self.gridsize[0] * csize[0], self.gridsize[1] * csize[1]]
 
-    def addWidget(self, widget):
+    def addWidget(self, widget, spec_size: int = None):
+        if (self.gridsize[0] != 1 and self.gridsize[1] != 1) and spec_size:
+            print('SpecSize is not available if grid is not single dimension')
+            return
+
         for i in range(self.gridsize[0] * self.gridsize[1]):
             x = i // self.gridsize[0]
             y = i % self.gridsize[0]
-            if not self.grid[x][y]:
-                self.grid[x][y] = widget
-                widget.setParent(self)
-                widget.move(y * self.childsize[0], x * self.childsize[1])
+            if self.grid[x][y]:
+                continue
+            self.grid[x][y] = widget
+            widget.setParent(self)
+            widget.move(y * self.childsize[0] + self.differ[0], x * self.childsize[1] + self.differ[1])
+
+            if not spec_size:
                 return
+
+            if self.gridsize[0] != 1:
+                self.differ[0] += spec_size - self.childsize[0]
+            else:
+                self.differ[1] += spec_size - self.childsize[1]
+            return
 
     def setGridSize(self, gsize: tuple):
         if not gsize:
@@ -424,3 +444,33 @@ class LineEditPair(QWidget):
 
     def text(self):
         return self.lineEdit1.text(), self.lineEdit2.text()
+
+
+class BLayOut(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.layout = None
+        self.widget_list = []
+
+    def setLayout(self, layout: QLayout):
+        self.layout = layout
+        for i in self.widget_list:
+            self.layout.addWidget(i)
+        super().setLayout(layout)
+
+    def addWidget(self, widget: QWidget, *args):
+        widgets = [widget] + list(args)
+        for widget in widgets[:]:
+            if not isinstance(widget, QWidget):
+                widgets.remove(widget)
+            self.widget_list.append(widget)
+        if not self.layout:
+            return
+        for i in widgets:
+            self.layout.addWidget(i)
+
+    def setSpacing(self, spacing: int):
+        self.layout.setSpacing(spacing)
+
+    def setContentsMargins(self, *args):
+        self.layout.setContentsMargins(*args)
