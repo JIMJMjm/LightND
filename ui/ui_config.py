@@ -97,6 +97,8 @@ class Ui_Config(QDialog):
     def handleSaveAll(self, q: bool = False):
         new_config = CONFIG
         for i in self.entry_content_grid:
+            if isinstance(i, QLabel):
+                continue
             i.handleSave()
             new_config[i.entry_name] = i.entry_content
         mgs(new_config)

@@ -19,6 +19,7 @@ FONT_SIZE = [18, 16, 15, 14]
 
 ENABLE_PANDOC: bool = CONFIG['ENABLE_PANDOC']
 COMPLICATE_SLICE_NAME: bool = CONFIG["COMPLICATE_SLICE_NAME"]
+BANK_PATH = CONFIG['BANK_PATH']
 
 
 # noinspection PyProtectedMember
@@ -39,6 +40,11 @@ def put_headings(document, content, lev):
     heading_format = heading.paragraph_format
     heading_format.space_before = Pt(fs / 2)
     heading_format.space_after = Pt(fs / 2)
+
+
+def put_headings_md(content, lev):
+    content = content.strip()
+    return f'{(lev+1) * '#'} {content}\n\n'
 
 
 # noinspection PyProtectedMember
@@ -79,6 +85,15 @@ def put_title_page(docx, title, author, description=None):
         description_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
 
     docx.add_page_break()
+
+
+def put_title_page_md(title, author, description=None):
+    md = (f'<h1 style="page-break-before: avoid; page-break-after: avoid; text-align: center; margin-top: 30%; '
+          f'text-indent: 0;">{title}</h1>\n\n<div style="text-align: center; font-size: 1.2em; font-weight: normal; '
+          f'margin-top: 15%; text-indent: 0;">{author}</div>\n\n')
+    if description:
+        md += f'<div style="margin-top: 25%;">简介：{description}</div>\n\n'
+    return md
 
 
 def get_size(picture):
@@ -131,13 +146,26 @@ def get_cover_from(volume):
     return f'{volume}/插图/' + ordered_ldr(f'{volume}/插图', '.jpg')[0][0]
 
 
+def format_pic_fdr(path):
+    for i in ldr(path):
+        imgg = img.open(path + f'/{i}')
+        imgg.save(path + f'/{i}', "JPEG", quality=100, optimize=True)
+        imgg.close()
+
+
 class NotAHFolderError(Exception):
     def __init__(self):
         print('Not A HFolder')
 
 
-class HFolder(object):
-    def __init__(self, folder_adr):
+class Volume:
+    def __init__(self, name, url):
+        self.name = name
+        self.url = url
+
+
+class HFolder:
+    def __init__(self, folder_adr, force_update=False):
         if folder_adr is None:
             return
         self.folder = folder_adr
@@ -149,7 +177,7 @@ class HFolder(object):
         self.hmz = find_hmz(folder_adr)
         self.numname = self.hmz.split('.')[0] if self.hmz else ''
 
-        hmzfile = read_hmz_par(f'{self.folder}/{self.hmz}')
+        hmzfile = read_hmz_par(f'{self.folder}/{self.hmz}', force_refresh=force_update)
         _, self.name, self.writer, self.allnet, self.allname, self.description = hmzfile.toDict().values()
         self.bunko = ''
         if ENABLE_PANDOC:
@@ -160,13 +188,6 @@ class HFolder(object):
 
     def __getitem__(self, item):
         return self.volumes[item]
-
-    @staticmethod
-    def format_pic_fdr(path):
-        for i in ldr(path):
-            imgg = img.open(path + f'/{i}')
-            imgg.save(path + f'/{i}', "JPEG", quality=100, optimize=True)
-            imgg.close()
 
     @staticmethod
     def form_text(lines, docx):
@@ -182,7 +203,7 @@ class HFolder(object):
             try:
                 put_pict(docx, path + '/' + i)
             except UnrecognizedImageError:
-                HFolder.format_pic_fdr(path)
+                format_pic_fdr(path)
                 put_pict(docx, path + '/' + i)
         return path_file
 
@@ -193,7 +214,7 @@ class HFolder(object):
         vname = chapdir.split('/')[-1]
         put_headings(doc_each, vname, 0)
 
-        for i in range(len(ldr(chapdir))):
+        for i in range(1, len(ldr(chapdir))+1):
             try:
                 f = open(f'{chapdir}/{i}.txt', 'r', encoding='utf-8')
                 fl = f.readlines()
@@ -208,7 +229,7 @@ class HFolder(object):
 
         return cover, doc_each
 
-    def formfd(self, mode=1, complicate_name: bool = COMPLICATE_SLICE_NAME):
+    def formfd(self, mode=1):
         if mode == 1:
             self.formslice([], self.name, False)
             return 0
@@ -219,7 +240,7 @@ class HFolder(object):
             try:
                 cov, d = self.form_each_volume(self.folder + '/' + i[0])
                 dname = f'{self.folder}/Volume_docx/{i[0]}.docx'
-                if complicate_name:
+                if COMPLICATE_SLICE_NAME:
                     dname = f'{self.folder}/Volume_docx/{self.name}_{i[0]}.docx'
                 cov_mat.append((dname, cov))
                 d.save(dname)
@@ -281,7 +302,6 @@ class HFolder(object):
         prg = TProgressBar(len(partial_allnet), 30, 'FM')
         for i in range(len(partial_allnet)):
             prg.next()
-
             vol_name = partial_allnet[i][0]
             i_vol = len(vol_name.split(' '))
             put_headings(goal_doc, vol_name, 0)
@@ -301,6 +321,132 @@ class HFolder(object):
         print(LANG['TX_Finished'])
         goal_doc.save(goalname + '.docx')
         return 1
+
+
+class HFolderMD(HFolder):
+    def __init__(self, folder, force_update=False):
+        super().__init__(folder_adr=folder, force_update=force_update)
+
+    @staticmethod
+    def save_md(name, content):
+        if not name.endswith('.md'):
+            name = name + '.md'
+        with open(name, 'w', encoding='utf-8') as fmd:
+            fmd.write(content)
+
+    @staticmethod
+    def form_pict_fdr(path, *args):
+        path_file = ordered_ldr(path, '.jpg')[0]
+        rele_path = path.split('/')[-2:]
+        folderstr = '\n\n'.join([f'![]({rele_path[0]}/{rele_path[1]}/{i})' for i in path_file])
+        return folderstr + '\n\n'
+
+    def formfd(self, series=1):
+        if series == 1:
+            self.formslice([], self.name, False)
+            return 0
+
+        cov_mat = []
+        makedir(self.folder + '/Volume_md')
+        for i in self.allnet:
+            try:
+                cov, d = self.form_each_volume(self.folder + '/' + i[0])
+                dname = f'{self.folder}/Volume_md/{f'{self.name}_' if COMPLICATE_SLICE_NAME else ''}{i[0]}.md'
+                cov_mat.append((dname, cov))
+                self.save_md(dname, d)
+            except NotADirectoryError or FileNotFoundError:
+                continue
+        self.cover = cov_mat
+        return 0
+
+    @staticmethod
+    def form_text(chapfile, vollen, *arg):
+        chapstr = ''
+        with open(chapfile, 'r', encoding='utf-8') as fchap:
+            lines = fchap.readlines()
+        lines = [i.strip() for i in lines]
+        lines[0] = lines[0][vollen+1:]
+        chapstr += put_headings_md(lines[0], 1)
+        chapstr += '\n\n'.join(lines[1:]) + '\n\n'
+
+        return chapstr
+
+    def form_each_volume(self, chapdir):
+        cover = None
+        finalstr = put_title_page_md(self.name, self.writer)
+        vname = chapdir.split('/')[-1]
+        finalstr += put_headings_md(vname, 0)
+
+        for i in range(1, len(ldr(chapdir))+1):
+            try:
+                finalstr += self.form_text(f'{chapdir}/{i}.txt', len(vname))
+            except FileNotFoundError:
+                continue
+
+        if '插图' in ldr(chapdir):
+            firstp = ordered_ldr(chapdir, '.jpg')[0][0]
+            finalstr += put_headings_md('插图', 1)
+            finalstr += self.form_pict_fdr(chapdir + '/插图')
+            cover = f'{chapdir}/插图/{firstp}'
+
+        return cover, finalstr
+
+    def formslice(self, slice_ind, filename, slice_=True):
+        finalstr = ''
+        goalname = self.folder + '/' + filename
+        if slice_:
+            makedir(self.folder + '/Slices')
+            goalname = self.folder + '/Slices/' + filename
+
+        partial_allnet = []
+        for i in range(len(self.allnet)):
+            if not slice_ind:
+                partial_allnet = self.allnet
+                break
+            if slice_ind[i]:
+                partial_allnet.append(self.allnet[i])
+
+        finalstr += put_title_page_md(self.name, self.writer)
+        prg = TProgressBar(len(partial_allnet), 30, 'FM')
+        for i in range(len(partial_allnet)):
+            prg.next()
+            vol_name = partial_allnet[i][0]
+            finalstr += put_headings_md(vol_name, 0)
+            curdir = f'{self.folder}/{vol_name}'
+            curcontent, b_ill = ordered_ldr(curdir)
+            for j in curcontent:
+                chappath = f'{curdir}/{j}'
+                finalstr += self.form_text(chappath, len(vol_name))
+
+            if not b_ill:
+                continue
+            finalstr += put_headings_md(f'插图', 1)
+            finalstr += self.form_pict_fdr(curdir + '/插图')
+        self.save_md(goalname, finalstr)
+        print(LANG['TX_Finished'])
+        return 1
+
+    def formepub(self, series=1, force_cali=False):
+        if series == 1:
+            inpu = f'{self.folder}/{self.name}.md'
+            oupu = f'{self.folder}/{self.name}.epub'
+            if ENABLE_PANDOC and not force_cali:
+                convert2epub_pandoc(inpu, oupu, self.name, self.writer, self.numname, self.bunko,
+                                    cover=self.cover, description=self.description, resouce_path=self.folder)
+                return 0
+            convert_to_epub(inpu, oupu, self.name, writer=self.writer, cover=self.cover)
+            return 0
+
+        makedir(self.folder + '/Volume_epub')
+        for i, cov in self.cover:
+            fname = i.split('/')[-1][:-3]
+            oupu = f'{self.folder}/Volume_epub/{fname}.epub'
+            if ENABLE_PANDOC and not force_cali:
+                convert2epub_pandoc(i, oupu, fname, writer=self.writer,
+                                    cover=cov, numname=self.numname, resouce_path=self.folder)
+                continue
+            convert_to_epub(i, oupu, fname, writer=self.writer, cover=cov)
+        return None
 
 
 def convert_to_epub(pt, final_pt, title, writer, cover=''):
@@ -335,6 +481,7 @@ def generate_yaml(name, writer, bunko, cover=None, description=None):
 def convert2epub_pandoc(input_, output_, name, writer, numname, *args, cover: str = None, **kwargs):
     bunko = args[0] if args else None
     description = kwargs.get('description', None)
+    resouce_path = kwargs.get('resouce_path', f'{BANK_PATH}/{name}')
     if cover is None:
         cover = f'images/thumbnails/{numname}.jpg'
     if cover == '':
@@ -342,7 +489,7 @@ def convert2epub_pandoc(input_, output_, name, writer, numname, *args, cover: st
     print(name, writer, bunko, cover, description, sep='\n-')
     y = generate_yaml(name, writer, bunko, cover, description)
     command = ['pandoc', input_, '-o', output_, '--epub-title-page=false',
-               f'--metadata-file={y}', f'--css={'appending.css'}']
+               f'--metadata-file={y}', f'--css={'appending.css'}', f'--resource-path={resouce_path}']
     runcommand(command)
     try:
         unlink(y)
@@ -356,4 +503,6 @@ def ui_2_py(ui, py):
 
 
 if __name__ == '__main__':
-    pass
+    a = put_title_page_md('MyyyBook', 'Meee', 'A Booook!')
+    with open('text.md', 'w', encoding='utf-8') as f:
+        f.write(a)

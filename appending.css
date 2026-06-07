@@ -1,3 +1,21 @@
+h1 {
+    font-family: "Times New Roman", "宋体", "Yu Gothic", "DejaVu Sans Mono", sans-serif;
+    page-break-before: always;
+}
+
+h2 {
+    font-family: "Times New Roman", "宋体", "Yu Gothic", "DejaVu Sans Mono", sans-serif;
+}
+
 p {
-  text-indent: 2em; 
+    font-family: "Times New Roman", "宋体", "Yu Gothic", "DejaVu Sans Mono", sans-serif;
+    text-indent: 2em;
+}
+
+img {
+    max-height: 90%;
+    max-width: 90%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }

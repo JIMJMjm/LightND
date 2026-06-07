@@ -43,34 +43,6 @@ def getTimeStringFromStamp(timestamp: int | float) -> str:
     return datetime.fromtimestamp(timestamp).strftime("%Y/%m/%d %H:%M:%S")
 
 
-def read_hmz_par(hmzpath: str, force_refresh=False) -> HmzedBook:
-    if not ENABLE_BANK:
-        return
-    if not force_refresh and HMZFILES.get(hmzpath) is not None:
-        return HMZFILES[hmzpath]
-
-    def update_hmz():
-        numname = hmzpath[:-4].split('/')[-1]
-        print(f"Update Required! Auto updating {numname}...")
-        hmzbook = get_fullinfo(numname, return_type=1)
-        hmzbook.save_at(hmzpath)
-        print("Updated!")
-        sleep(0.2)
-        return hmzbook
-
-    if not ext(hmzpath):
-        return update_hmz()
-
-    hmzedfile = read_json(hmzpath)
-    try:
-        hmzedbook = HmzedBook(**hmzedfile)
-    except Exception as e:
-        print(e)
-        return update_hmz()
-
-    return hmzedbook
-
-
 def generate_book_bank():
     folders = [item for item in ldr(BANK_PATH) if '.' not in item]
     pre_books = []
@@ -82,17 +54,51 @@ def generate_book_bank():
     save_as_bank(pre_books)
 
 
-def save_as_bank(bank: list[BankedBook]):
-    bank_dict = [i.toDict() for i in bank]
-    return save_json('bank.json', bank_dict, format_=1 - SIMPLE_BANK_FILE)
-
-
 def read_bank_file():
     if not ext('bank.json'):
         generate_book_bank()
     bookbank = read_json('bank.json')
     newbookbank = [BankedBook(**i) for i in bookbank]
     return newbookbank
+
+
+def update_hmz(hmzpath):
+    numname = hmzpath[:-4].split('/')[-1]
+    print(f"Update Required! Auto updating {numname}...")
+    hmzbook = get_fullinfo(numname, return_type=1)
+    hmzbook.save_at(hmzpath)
+    print("Updated!")
+    sleep(0.2)
+    return hmzbook
+
+
+def read_hmz_par(hmzpath: str, force_refresh=False, init=False) -> HmzedBook:
+    if not ENABLE_BANK:
+        return
+    if not force_refresh and HMZFILES.get(hmzpath) is not None:
+        return HMZFILES[hmzpath]
+
+    if not ext(hmzpath):
+        hmzbook = update_hmz(hmzpath)
+        update_hmzfiles(hmzpath, hmzbook)
+        return hmzbook
+
+    hmzedfile = read_json(hmzpath)
+    try:
+        hmzedbook = HmzedBook(**hmzedfile)
+    except Exception as e:
+        print(e)
+        hmzedbook = update_hmz(hmzpath)
+        return hmzedbook
+
+    if not init:
+        update_hmzfiles(hmzpath, hmzedbook)
+    return hmzedbook
+
+
+def save_as_bank(bank: list[BankedBook]):
+    bank_dict = [i.toDict() for i in bank]
+    return save_json('bank.json', bank_dict, format_=1 - SIMPLE_BANK_FILE)
 
 
 def read_file_as_bank(filename):
@@ -109,7 +115,7 @@ def get_global_hmzfiles():
         futures = []
         for b in bank:
             path = f'{b.directory}/{b.name}/{b.numname}.hmz'
-            ft = executor.submit(read_hmz_par, path, force_refresh=True)
+            ft = executor.submit(read_hmz_par, path, force_refresh=True, init=True)
             futures.append((path, ft))
     return {i[0]: i[1].result() for i in futures}
 
@@ -407,8 +413,10 @@ if ENABLE_BANK:
     HMZFILES = get_global_hmzfiles()
 
 
-def update_hmzfiles():
+def update_hmzfiles(path=None, hmzbook=None):
     global HMZFILES
+    if path:
+        HMZFILES[path] = hmzbook
     HMZFILES = get_global_hmzfiles()
 
 

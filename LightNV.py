@@ -37,6 +37,7 @@ ORDER_BB, FILTER_BB = 0, 1
 ENABLE_PANDOC = CONFIG['ENABLE_PANDOC']
 ENABLE_BANK = CONFIG['ENABLE_BANK']
 ENABLE_ISF = CONFIG['ENABLE_ISF']
+FORCE_DOCX = CONFIG['FORCE_DOCX']
 AFCI = CONFIG['AUTO_FILL_CONVERTER_INFO']
 AWW = CONFIG['ALLOW_WARNING_WINDOWS']
 BANK_PATH = CONFIG['BANK_PATH']
@@ -56,6 +57,9 @@ RENDER_X, RENDER_Y = BANK_X // 347, BANK_Y // 170 + 1
 
 if ENABLE_ISF:
     from image_search import search_for as searchimg
+
+if not FORCE_DOCX:
+    from txtprocess import HFolderMD as HFd
 
 
 class WorkerRunnable(QRunnable):
@@ -414,7 +418,7 @@ class MainWindow(QMainWindow):
         succeeded()
 
     def textformer(self, taskname):
-        target = HFd(self.downloader.global_directory + '/' + taskname)
+        target = HFd(self.downloader.global_directory + '/' + taskname, force_update=True)
         if not self.downloader.docx_control:
             return 0
 
