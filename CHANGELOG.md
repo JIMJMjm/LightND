@@ -1,3 +1,14 @@
+## LightND - Release v8.7.1
+
+### What's New:
+ - `ISF`现在可以可视化选取已下载的图书的某卷，并自动填充相关信息。
+
+### Improvements:
+ - 增加了`HFolder`对象的`__bool__`。
+
+### Bug Fixes:
+ - 修复了特定情况下格式器可能触发内存溢出的问题
+
 ## LightND - Release v8.7
 
 ### What's New:

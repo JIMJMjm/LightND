@@ -356,6 +356,11 @@ class Ui_MainWindow(object):
         self.sr_start.setGeometry(500, 288, 120, 28)
         self.sr_start.setText(self.lang['SR_Start'])
 
+        self.sr_hmzvol = QtWidgets.QPushButton(parent=self.ImageSearcher)
+        self.sr_hmzvol.setGeometry(500, 80, 120, 28)
+        self.sr_hmzvol.setText('Select Hmzvolume')
+        self.sr_hmzvol.setHidden(True)
+
         self.sr_select_book = QtWidgets.QPushButton('Select HmzBook', parent=self.ImageSearcher)
         self.sr_select_book.setGeometry(500, 26, 120, 28)
 
@@ -364,6 +369,7 @@ class Ui_MainWindow(object):
             self.sr_hm_input.setFont(SSfont)
             self.sr_numname_input.setFont(SSfont)
             self.sr_dir_input.setFont(SSfont)
+            self.sr_start.setFont(Dfont)
             self.tabWidget.addTab(self.ImageSearcher, 'ISF')
             self.tabList.append('ImageSearcher')
 

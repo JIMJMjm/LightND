@@ -205,8 +205,11 @@ class VolumeWidget(QWidget):
         self.checkBox.clicked.connect(self.handle_volume_checkbox)
 
     def update_state(self):
-        self.isChecked = not self.isChecked
-        self.checkBox.setChecked(self.isChecked)
+        self.set_state(not self.isChecked)
+
+    def set_state(self, checked):
+        self.isChecked = checked
+        self.checkBox.setChecked(checked)
 
     def generate_chaps(self):
         for i in self._text:
@@ -324,7 +327,8 @@ class VolumeWidget_R(QWidget):
 class DetailedWindow(QDialog):
     Close_as_dia = Signal()
 
-    def __init__(self, volume_details, bankinfo: BankedBook | None, chapters: bool = False, ratings: bool = False):
+    def __init__(self, volume_details, bankinfo: BankedBook | None,
+                 chapters: bool = False, ratings: bool = False, isf: bool = False):
         """
 
         :param volume_details: [title, img_path, *volinfo]
@@ -366,6 +370,12 @@ class DetailedWindow(QDialog):
 
             self.nameIP = QtWidgets.QLineEdit(parent=self)
             self.nameIP.setGeometry(170, 662, 210, 25)
+
+            if isf:
+                self.startFBT.setText('Confirm')
+                self.startFBT.clicked.connect(self.returnOnlyTrue)
+                self.generate_Iwidget()
+                return
 
             self.startFBT.setText(LANG['CTASK_form'])
             self.startFBT.clicked.connect(self.get_novel_state)
@@ -430,6 +440,18 @@ class DetailedWindow(QDialog):
             prgi = self._get_prgi(i, prg)
             self.scroll_area.addWidget(VolumeWidget(i, None, self.renderChapters, ext_chaps=prgi))
 
+    def generate_Iwidget(self):
+        for i in self.volumes:
+            cur_wid = VolumeWidget(i, None, False)
+            cur_wid.checkBox.clicked.disconnect(cur_wid.update_state)
+            cur_wid.label.clicked.disconnect(cur_wid.update_state)
+            cur_wid.checkBox.clicked.connect(self.setExclusiveButton)
+            cur_wid.label.lclicked.connect(self.setExclusiveButton)
+            cur_wid.checkBox.clicked.connect(cur_wid.update_state)
+            cur_wid.label.clicked.connect(cur_wid.update_state)
+
+            self.scroll_area.addWidget(cur_wid)
+
     def get_novel_state(self):
         return [i.isChecked for i in self.scroll_area]
 
@@ -458,6 +480,14 @@ class DetailedWindow(QDialog):
         else:
             self.SelectAll.setChecked(False)
 
+    def setExclusiveButton(self):
+        for i in self.scroll_area:
+            if i.isChecked:
+                i.update_state()
+
+    def returnOnlyTrue(self) -> int:
+        self.int_emission = [i for i in range(len(self.scroll_area.widgets)) if self.scroll_area[i].isChecked][0]
+        return self.int_emission
 
 if __name__ == "__main__":
     pass

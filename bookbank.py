@@ -73,8 +73,6 @@ def update_hmz(hmzpath):
 
 
 def read_hmz_par(hmzpath: str, force_refresh=False, init=False) -> HmzedBook:
-    if not ENABLE_BANK:
-        return
     if not force_refresh and HMZFILES.get(hmzpath) is not None:
         return HMZFILES[hmzpath]
 
@@ -409,14 +407,14 @@ def update():
     refresh_hmz()
 
 
-if ENABLE_BANK:
-    HMZFILES = get_global_hmzfiles()
+HMZFILES = get_global_hmzfiles()
 
 
 def update_hmzfiles(path=None, hmzbook=None):
     global HMZFILES
     if path:
         HMZFILES[path] = hmzbook
+        return
     HMZFILES = get_global_hmzfiles()
 
 

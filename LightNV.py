@@ -57,7 +57,6 @@ RENDER_X, RENDER_Y = BANK_X // 347, BANK_Y // 170 + 1
 
 if ENABLE_ISF:
     from image_search import search_for as searchimg
-
 if not FORCE_DOCX:
     from txtprocess import HFolderMD as HFd
 
@@ -199,16 +198,19 @@ class ISFer:
         self.goal = ''
         self.numname = ''
         self.html_num = ''
+        self.target_hf = HFd(None)
+        self.child = None
 
-    def select_goal_directory(self):
+    def select_goal_directory(self, drct: bool | str = False):
         directory = QFileDialog.getExistingDirectory(
             None,
             'Select Directory',
             BANK_PATH,
-        )
+        ) if not drct else drct
 
         if not directory:
             return
+
         self.goal = directory + '/插图'
         vol_name = directory.split('/')[-1]
         rname = '/'.join(directory.split('/')[:-1])
@@ -229,16 +231,35 @@ class ISFer:
             print(f'Auto filling in {self.html_num} and {self.numname}.')
             return
 
-    def select_dl_directory(self):
+    def select_dl_directory(self, drct=False):
         directory = QFileDialog.getExistingDirectory(
             None,
             'Select Directory',
             BANK_PATH,
-        )
+        ) if not drct else drct
 
         if not directory:
             return
         self.goal = directory
+
+    def set_target(self, hfd: HFd):
+        self.target_hf = hfd
+
+    def setchild(self, child: DetailedWindow):
+        self.child = child
+
+    def isf_hmzvol_selectr(self):
+        isftarget = self.target_hf
+        vol = [isftarget.name, f'images/thumbnails/{isftarget.numname}.jpg'] + [i[0] for i in isftarget.allname]
+        isfchild = DetailedWindow(volume_details=vol, bankinfo=None, isf=True)
+        isfchild.SelectAll.setHidden(True)
+        isfchild.text1.setHidden(True)
+        isfchild.nameIP.setHidden(True)
+        self.setchild(isfchild)
+
+    def show_child(self):
+        self.child.show()
+        self.child.startFBT.clicked.connect(self.child.close)
 
 
 class Todolist(QObject):
@@ -713,6 +734,8 @@ class MainWindow(QMainWindow):
                                         self.isfer.goal))
             ui.get_goal.clicked.connect(self.auto_fill_isfer)
             ui.get_dir.clicked.connect(lambda: self.auto_fill_isfer(True))
+            ui.sr_select_book.clicked.connect(self.isf_book_select)
+            ui.sr_hmzvol.clicked.connect(self.isfer.show_child)
 
         if AWW:
             self.showWarning.connect(lambda warning: self.showWarningWindow(warning))
@@ -1106,6 +1129,7 @@ class MainWindow(QMainWindow):
         self.select_directory_t(ask=False, directory=bookWidget.getAddress())
         self.ui.tabWidget.setCurrentIndex(1)
 
+    # noinspection PyUnresolvedReferences
     def check_update_as(self, bookWidget: BkWt):
         num_name = bookWidget.bankinfo.numname, bookWidget.bankinfo.name
         result = self.check_update(bookWidget.bankinfo)
@@ -1257,6 +1281,7 @@ class MainWindow(QMainWindow):
         self.ui.export_btn.setChecked(False)
         self.setExportMode()
 
+    # noinspection PyUnresolvedReferences
     def handleSingleImport(self, filename):
         rmzfile, _type = read_from_rmz(filename)
         if _type == 1:
@@ -1323,16 +1348,30 @@ class MainWindow(QMainWindow):
         self.task_window.refresh_list()
         self.task_window.show()
 
-    def auto_fill_isfer(self, only_dir=False):
+    def auto_fill_isfer(self, only_dir=False, offer_path: str | bool = False):
         if not ENABLE_ISF:
             return
         if only_dir:
             self.isfer.select_dl_directory()
             self.ui.sr_dir_input.setText(self.isfer.goal)
-        self.isfer.select_goal_directory()
+        self.isfer.select_goal_directory(offer_path)
         self.ui.sr_hm_input.setText(self.isfer.html_num)
         self.ui.sr_numname_input.setText(self.isfer.numname)
         self.ui.sr_dir_input.setText(self.isfer.goal)
+
+    def isf_book_select(self):
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            self.lang['SELECT_DIRECTORY'],
+            BANK_PATH,
+        )
+        if directory:
+            self.isfer.set_target(HFd(directory))
+        self.ui.sr_hmzvol.setHidden(not bool(self.isfer.target_hf))
+        self.isfer.isf_hmzvol_selectr()
+        isftarget = self.isfer.target_hf
+        self.isfer.child.startFBT.clicked.connect(lambda: self.auto_fill_isfer(
+            offer_path=f'{isftarget.folder}/{isftarget.allname[self.isfer.child.int_emission][0]}'))
 
 
 def timetest(func, *args, **kwargs):

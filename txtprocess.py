@@ -167,6 +167,7 @@ class Volume:
 class HFolder:
     def __init__(self, folder_adr, force_update=False):
         if folder_adr is None:
+            self.folder = ''
             return
         self.folder = folder_adr
 
@@ -175,6 +176,10 @@ class HFolder:
         self.globa = '/'.join(adr_slice[:-1]) + '/'
 
         self.hmz = find_hmz(folder_adr)
+        if self.hmz is None:
+            self.folder = False
+            print('No available hmzfile.')
+            return
         self.numname = self.hmz.split('.')[0] if self.hmz else ''
 
         hmzfile = read_hmz_par(f'{self.folder}/{self.hmz}', force_refresh=force_update)
@@ -188,6 +193,9 @@ class HFolder:
 
     def __getitem__(self, item):
         return self.volumes[item]
+
+    def __bool__(self):
+        return bool(self.folder)
 
     @staticmethod
     def form_text(lines, docx):
@@ -216,8 +224,8 @@ class HFolder:
 
         for i in range(1, len(ldr(chapdir))+1):
             try:
-                f = open(f'{chapdir}/{i}.txt', 'r', encoding='utf-8')
-                fl = f.readlines()
+                with open(f'{chapdir}/{i}.txt', 'r', encoding='utf-8') as file1:
+                    fl = file1.readlines()
                 self.form_text(fl, doc_each)
             except FileNotFoundError:
                 continue
