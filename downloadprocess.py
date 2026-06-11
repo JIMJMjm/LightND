@@ -3,12 +3,10 @@ from os.path import exists as ext
 from os import listdir as ldr, remove
 from concurrent.futures import ThreadPoolExecutor
 
-from winsound import PlaySound
-
 from book_struct import HmzedBook, BankedBook, BookLuxury
 from netwk import GetRq, get_fullinfo
 from bookbank import add_to_bank
-from config import CONFIG, confirm_name, LANG, ordered_ldr, makedir, TProgressBar
+from config import CONFIG, confirm_name, LANG, ordered_ldr, makedir, TProgressBar, succeeded
 
 HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                         'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -33,11 +31,6 @@ def get_img(numname, iis=False):
     if iis:
         return f'images/thumbnails/{numname}.jpg'
     return m
-
-
-def succeeded(info='Successful!'):
-    print(info)
-    PlaySound('dlcp.wav', 1)
 
 
 def save_file(content, path):

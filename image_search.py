@@ -3,7 +3,6 @@ from time import sleep
 from os.path import exists as ext
 
 import requests as rq
-import statsmodels.api as sm
 
 from config import makedir, succeeded, read_json, CONFIG, save_json
 from netwk import GetRq
@@ -24,6 +23,94 @@ if not ext('srhistory.json'):
 history = read_json('srhistory.json')
 
 
+def rlm_line_fit(x, y, max_iter=50, tol=1e-8):
+    n = len(x)
+
+    def median(arr):
+        sorted_arr = sorted(arr)
+        m = len(sorted_arr)
+        if m % 2 == 1:
+            return sorted_arr[m // 2]
+        else:
+            return (sorted_arr[m // 2 - 1] + sorted_arr[m // 2]) / 2.0
+
+    def mad_scale(residuals_):
+        """中位数绝对偏差 * 1.4826"""
+        med = median(residuals_)
+        abs_dev = [abs(r - med) for r in residuals_]
+        mad_val = median(abs_dev)
+        if mad_val == 0:
+            return 1e-10
+        return mad_val * 1.4826
+
+    def huber_weights(resid_std_, c=1.345):
+        weights_ = []
+        for r in resid_std_:
+            r_abs = abs(r)
+            weights_.append(1.0 if r_abs <= c else c / (r_abs * r_abs))
+        return weights_
+
+    def weighted_line_fit(x_, y_, weights_):
+        n_ = len(x_)
+        sum_w = sum(weights_)
+        sum_wx = 0.0
+        sum_wy = 0.0
+        sum_wx2 = 0.0
+        sum_wxy = 0.0
+
+        for i in range(n_):
+            w = weights_[i]
+            xi = x_[i]
+            yi = y_[i]
+            sum_wx += w * xi
+            sum_wy += w * yi
+            sum_wx2 += w * xi * xi
+            sum_wxy += w * xi * yi
+
+        denom = sum_w * sum_wx2 - sum_wx * sum_wx
+
+        if abs(denom) < 1e-15:
+            b = 0.0
+            a = sum_wy / sum_w if sum_w != 0 else 0.0
+            return a, b
+
+        b = (sum_w * sum_wxy - sum_wx * sum_wy) / denom
+        a = (sum_wy - b * sum_wx) / sum_w
+        return a, b
+
+    def calc_residuals(x_, y_, slope_, intercept_):
+        residuals_ = []
+        for i in range(len(x_)):
+            residuals_.append(y_[i] - (intercept_ + slope_ * x_[i]))
+        return residuals_
+
+    init_weights = [1.0] * n
+    intercept, slope = weighted_line_fit(x, y, init_weights)
+    residuals = calc_residuals(x, y, slope, intercept)
+    scale = mad_scale(residuals)
+
+    for iteration in range(max_iter):
+        resid_std = [r / scale for r in residuals]
+
+        weights = huber_weights(resid_std)
+
+        new_intercept, new_slope = weighted_line_fit(x, y, weights)
+
+        param_change = max(abs(new_intercept - intercept), abs(new_slope - slope))
+
+        intercept, slope = new_intercept, new_slope
+        residuals = calc_residuals(x, y, slope, intercept)
+        scale = mad_scale(residuals)
+
+        if param_change < tol:
+            break
+
+    return {
+        'slope': slope,
+        'intercept': intercept
+    }
+
+
 def save_history(html_num: int):
     global history, BREAKPOINT
     history[f'{html_num}'] = BREAKPOINT
@@ -34,17 +121,9 @@ def save_history_on_exception(func):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
-        except Exception as e:
+        except Exception as e:  # NOQA
             save_history(kwargs['html_num'])
     return wrapper
-
-
-def curve(x, y):
-    X = sm.add_constant(x)
-    model = sm.RLM(y, X).fit()
-    slope = model.params[1]
-    intercept = model.params[0]
-    return slope, intercept
 
 
 def fillter(pots, barrier, loose=RLM_NEIGHBOR_RANGE):
@@ -66,9 +145,9 @@ def fitting(num):
     global pos, history
     if not pos:
         pos = read_json('samples.json')
-    dd = curve(*zip(*fillter(pos, num)))
-    evaluation = num * dd[0] + dd[1]
-    print([float(i) for i in dd], '\n', f'Anticipation: {evaluation}')
+    dd = rlm_line_fit(*zip(*fillter(pos, num)))
+    evaluation = num * dd['slope'] + dd['intercept']
+    print([dd['slope'], dd['intercept']], '\n', f'Anticipation: {evaluation}')
     return evaluation
 
 
@@ -127,7 +206,7 @@ def process_srh(anchor, numname: str, html_num: int, /, limits=SEARCH_RANGE):
 
 
 def generate_sequence(depth: int):
-    seq = [0, 1]
+    seq = [0, 1] + [i*0.003 for i in range(-3, 4) if i]
 
     for d in range(1, depth + 1):
         denominator = 2 ** d
@@ -192,3 +271,7 @@ def search_for(html_num: int, numname: str, gaol_folder='images/dt'):
     print('\n', imglist)
     succeeded()
     return imglist
+
+
+if __name__ == '__main__':
+    fitting(84933)
