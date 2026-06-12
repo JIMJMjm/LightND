@@ -206,7 +206,7 @@ def process_srh(anchor, numname: str, html_num: int, /, limits=SEARCH_RANGE):
 
 
 def generate_sequence(depth: int):
-    seq = [0, 1] + [i*0.003 for i in range(-3, 4) if i]
+    seq = [0, 1] + [i*0.003 for i in range(-5, 6) if i]
 
     for d in range(1, depth + 1):
         denominator = 2 ** d

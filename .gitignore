@@ -8,9 +8,13 @@ novel
 images/dt
 rmz
 
+build
+dist
+
 .venv
 __pycache__
 .idea
+*.spec
 
 bank.json
 *.backup

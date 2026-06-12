@@ -8,7 +8,7 @@ from typing import Literal
 from pypinyin import slug
 
 from book_struct import BankedBook, BookLuxury, HmzedBook
-from config import CONFIG, confirm_name, read_json, find_hmz, save_json
+from config import CONFIG, confirm_name, read_json, find_hmz, save_json, makedir
 from netwk import get_fullinfo
 from prg_export import save_as_rmz as savermz
 
@@ -17,6 +17,7 @@ RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 SIMPLE_BANK_FILE = CONFIG['SIMPLE_BANK_FILE']
 ADVANCED_SEARCH_TRIGGER = CONFIG['ADVANCED_SEARCH_TRIGGER']
 ENABLE_BANK = CONFIG['ENABLE_BANK']
+makedir('novel')
 
 
 def getCreateTime(file: str, return_type: Literal[0, 1] = 1):
