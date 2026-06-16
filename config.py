@@ -163,6 +163,8 @@ def confirm_name(name_c) -> str:
         name_c = name_c.replace('*', '✱')
     if '\"' in name_c:
         name_c = name_c.replace('\"', '\'')
+    if '~' in name_c:
+        name_c = name_c.replace('~', '～')
     return name_c
 
 

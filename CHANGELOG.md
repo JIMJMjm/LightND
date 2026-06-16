@@ -1,3 +1,12 @@
+## LightND - Release v8.7.2
+
+### Improvements:
+ - 现在`ISF`中用于拟合直线的函数不再使用`statsmodels.RLM`。这使局部直线拟合的速度提升了约100%，并使其精度可自定义。在打包可执行文件时，不再引入`statsmodels`一定幅度减小了包体大小。
+ - 其余代码优化。
+
+### Bug Fixes:
+ - 修复了含有某些字符时，`pandoc`不能正确找到封面的问题。
+
 ## LightND - Release v8.7.1
 
 ### What's New:

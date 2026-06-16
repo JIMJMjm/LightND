@@ -492,13 +492,13 @@ def convert2epub_pandoc(input_, output_, name, writer, numname, *args, cover: st
     resouce_path = kwargs.get('resouce_path', f'{BANK_PATH}/{name}')
     if cover is None:
         cover = f'images/thumbnails/{numname}.jpg'
-    if cover == '':
+    elif cover == '':
         cover = 'images/thumbnails/uncovered.jpg'
-    print(name, writer, bunko, cover, description, sep='\n-')
+    print(name, writer, bunko, cover, description, sep='\n - ')
     y = generate_yaml(name, writer, bunko, cover, description)
     command = ['pandoc', input_, '-o', output_, '--epub-title-page=false',
                f'--metadata-file={y}', f'--css={'appending.css'}', f'--resource-path={resouce_path}']
-    runcommand(command)
+    runcommand(command, encoding='utf-8')
     try:
         unlink(y)
     finally:
