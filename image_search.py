@@ -120,7 +120,7 @@ def save_history(html_num: int):
 def save_history_on_exception(func):
     def wrapper(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except Exception as e:  # NOQA
             save_history(kwargs['html_num'])
     return wrapper
@@ -218,7 +218,7 @@ def generate_sequence(depth: int):
 
 
 @save_history_on_exception
-def search_for(html_num: int, numname: str, gaol_folder='images/dt'):
+def search_for(html_num: int, numname: str, gaol_folder='images/dt', results=0):
     global DONE, history, BREAKPOINT
     trial = GetRq(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/{html_num}.htm').run('r')
     if not isinstance(trial, int):
@@ -229,7 +229,9 @@ def search_for(html_num: int, numname: str, gaol_folder='images/dt'):
         return True
 
     eva_num = fitting(html_num)
-    result = process_srh(int(round(eva_num, 0)), numname, html_num)
+    result = results
+    if not results:
+        result = process_srh(int(round(eva_num, 0)), numname, html_num)
 
     history[f'{html_num}'] = BREAKPOINT
     save_json('srhistory.json', history, 0)
