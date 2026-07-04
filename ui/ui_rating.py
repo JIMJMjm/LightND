@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QWidget, QLabel
+from PySide6.QtWidgets import QWidget, QLabel, QDialog
 
 
 class StarRatingWidget(QWidget):
@@ -38,16 +38,18 @@ class StarRatingWidget(QWidget):
 
     def _update_display(self):
         rating = self.rating
+        r_rating = self.r_rating
         if self.hover_widget is not None:
-            self.hover_widget.setText(f'{rating:.2f}')
+            self.hover_widget.setText(f'{r_rating:.2f}')
         for i in range(5):
             star_value = int(min(max(rating - i * 2, 0), 2))
             self._stars[i].setPixmap(self._sstate[star_value])
 
-    def set_rating(self, rating: int):
-        if self.rating == rating:
+    def set_rating(self, Rrating: float):
+        if self.r_rating == Rrating:
             return
-        self.rating = rating
+        self.rating = int(Rrating + 0.5)
+        self.r_rating = Rrating
         self._update_display()
         self.rating_changed.emit()
 
@@ -60,6 +62,10 @@ class StarRatingWidget(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             pos = event.position().toPoint()
             self._handle_click(pos)
+        if event.button() == Qt.MouseButton.RightButton:
+            weight_count = QDialog(self)
+            weight_count.setFixedSize(320, 120)
+            weight_count.show()
 
     def enterEvent(self, event, /):
         if self.hover_widget is None:

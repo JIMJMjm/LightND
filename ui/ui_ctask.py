@@ -405,7 +405,7 @@ class DetailedWindow(QDialog):
                 i.handle_save_bt()
                 if i.rating != 0:
                     rtg[i.label.text()] = i.rating
-            self.emission = rtg
+            self.emission = [rtg, 1]
         if self.renderChapters:
             self.emission = [i.handle_save_bt() for i in self.scroll_area if i.handle_save_bt() is not None]
         self.Close_as_dia.emit()
@@ -413,7 +413,7 @@ class DetailedWindow(QDialog):
     def generate_Rwidget(self):
         rts = self.bankinfo.lux.rtg
         for i in self.volumes:
-            rti = 0 if rts == 0 else rts.get(i, 0)
+            rti = 0 if rts == 0 else rts.get(i, 0)[0]
             self.scroll_area.addWidget(VolumeWidget_R(i, parent=None, ratings=rti))
 
     def generate_widget(self):

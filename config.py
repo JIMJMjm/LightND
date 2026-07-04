@@ -11,6 +11,9 @@ class ConfigInterval:
 
 CONFIGINTERVAL = ConfigInterval()
 DEFAULT_SETTING = {
+    'VERSION': [0, 8, 7, 1],
+    'BANK_UPDATE': False,
+    'HMZ_UPDATE': False,
     "General": CONFIGINTERVAL,
     "ENABLE_PANDOC": True,
     "ENABLE_BANK": True,
@@ -169,7 +172,10 @@ def confirm_name(name_c) -> str:
 
 
 def translate_to(code: str) -> dict[str, str]:
-    ALL_TEXT = {"VERSION": {'en-US': "LightND - Release_v8.7.1"},
+    ALL_TEXT = {"VERSION": {'en-US': f"LightND - {'Release' if DEFAULT_SETTING['VERSION'][0] == 1 else 'Alpha'}_"
+                                     f"v{DEFAULT_SETTING['VERSION'][1]}."
+                                     f"{DEFAULT_SETTING['VERSION'][2]}."
+                                     f"{DEFAULT_SETTING['VERSION'][3]}"},
                 "exit": {'en-US': "Exit", 'zh-CN': "退出"},
                 "DL_Directory": {'en-US': "Save to...", 'zh-CN': "下载至..."},
                 "DL_TF_1": {'en-US': "Chapters", 'zh-CN': "仅章节"},

@@ -10,7 +10,7 @@ from BySide import ScrollField, DefaultFont, ClickableLabel, WidgetGrid, LineEdi
 from config import (CONFIG, CONFIG_NOTATION, DEFAULT_SETTING,
                     modify_global_settings as mgs, get_global_settings as ggs, translate_to as tsl, ConfigInterval)
 
-BYPASS_RENDER_CONFIG = {'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME',
+BYPASS_RENDER_CONFIG = {'FTP_HOST', 'FTP_PORT', 'FTP_USERNAME', 'VERSION', 'BANK_UPDATE', 'HMZ_UPDATE',
                         'FTP_PASSWORD', 'MAX_VOLUME_THREAD_WORKER'}
 
 df15 = DefaultFont(15, underline=True)

@@ -3,7 +3,8 @@ from typing import Callable, overload
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QMouseEvent, QFont, QIntValidator
-from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox, QLineEdit, QLayout
+from PySide6.QtWidgets import QLabel, QButtonGroup, QScrollArea, QWidget, QPushButton, QCheckBox, QLineEdit, QLayout, \
+    QVBoxLayout
 
 
 def extand_list_to(lis, a, b):
@@ -117,6 +118,7 @@ class ScrollField(QScrollArea):
         self.setGeometry(*Geometry)  # NOQA
         self.Geometry = Geometry
         self.setWidget(self.mainwidget)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.widget_size = [0, 0]
         for y, i in enumerate(self.widgets):

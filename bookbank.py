@@ -8,7 +8,7 @@ from typing import Literal
 from pypinyin import slug
 
 from book_struct import BankedBook, BookLuxury, HmzedBook
-from config import CONFIG, confirm_name, read_json, find_hmz, save_json, makedir
+from config import CONFIG, confirm_name, read_json, find_hmz, save_json, makedir, modify_global_settings
 from netwk import get_fullinfo
 from prg_export import save_as_rmz as savermz
 
@@ -17,6 +17,8 @@ RMZ_EXPORT_PATH = CONFIG['RMZ_EXPORT_PATH']
 SIMPLE_BANK_FILE = CONFIG['SIMPLE_BANK_FILE']
 ADVANCED_SEARCH_TRIGGER = CONFIG['ADVANCED_SEARCH_TRIGGER']
 ENABLE_BANK = CONFIG['ENABLE_BANK']
+BANK_UPDATE = CONFIG['BANK_UPDATE']
+HMZ_UPDATE = CONFIG['HMZ_UPDATE']
 makedir('novel')
 
 
@@ -240,7 +242,8 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
         rtg = bw.bankinfo.lux.rtg
         if not rtg:
             return 0.0
-        return sum(rtg.values()) / len(rtg)
+        avg_w = sum(i[1] for i in rtg.values()) / len(rtg)
+        return sum(i[0] * i[1] / avg_w for i in rtg) / len(rtg)
 
     order = constraint[0]
     sgn = not constraint[1]
@@ -366,48 +369,117 @@ def get_all_info():
     return sorted(list(set(pre_g))), sorted(list(set(pre_b)))
 
 
-def update_to_date():
-    bank = read_json('bank.json')
-    new_bank = []
-    for i in bank:
-        if len(i) < 6:
-            new_lux = BookLuxury()
-        else:
-            new_lux = i[5]
-            new_lux['lck'] = getTimeStampFromString(new_lux['lck']) if new_lux['lck'] else None
-            new_lux = BookLuxury(**new_lux)
-
-        new_book = BankedBook(numname=i[0], name=i[1], writer=i[2], genre=i[3], bunko=i[4], lux=new_lux,
-                              addtime=getCreateTime(f'D:/ACGN/Novel/{confirm_name(i[1])}/{i[0]}.hmz'),
-                              directory="D:/ACGN/Novel")
-        new_bank.append(new_book)
-    save_as_bank(new_bank)
-
-
-def post_process():
-    bank = read_bank_file()
-    for i in bank:
-        if i.directory == BANK_PATH:
-            i.directory = ''
-    save_as_bank(bank)
-
-
 def refresh_hmz():
     bank = read_bank_file()
     for i in bank:
         hmzpath = f'{i.directory}/{i.name}/{i.numname}.hmz'
-        old_hmz = read_json(hmzpath)
-        new_hmz = HmzedBook(numname=old_hmz['numname'], name=old_hmz['name'], writer=old_hmz['writer'],
-                            allname=old_hmz['allname'], allnet=old_hmz['allnet'], description=old_hmz['discription'])
-        new_hmz.save_at(hmzpath)
+        hmzinfo = read_json(hmzpath)
+        HMZ_parser(hmzinfo, save=hmzpath)
+
+
+class HMZ_parser:
+    def __init__(self, hmzinfo: dict, save: str | Literal[False] = False):
+        self.hmzinfo = hmzinfo
+        if hmzinfo.get('discription'):
+            version = 0
+        elif hmzinfo.get('description'):
+            version = 1
+        else:
+            version = -1
+
+        self.version = version
+        self.result = self.parse()
+        if save is not False:
+            self.result.save_at(save)
+
+    def parse(self):
+        if self.version == 0:
+            return HmzedBook(numname=self.hmzinfo['numname'], name=self.hmzinfo['name'], writer=self.hmzinfo['writer'],
+                             allname=self.hmzinfo['allname'], allnet=self.hmzinfo['allnet'],
+                             description=self.hmzinfo['discription'])
+        if self.version == 1:
+            return HmzedBook(numname=self.hmzinfo['numname'], name=self.hmzinfo['name'], writer=self.hmzinfo['writer'],
+                             allname=self.hmzinfo['allname'], allnet=self.hmzinfo['allnet'],
+                             description=self.hmzinfo['description'])
+        return 0
+
+
+class BANK_parser:
+    def __init__(self, bank: list, save: bool = False):
+        self.bank = bank
+
+        if not bank:
+            self.result = []
+            if save:
+                save_as_bank([])
+            return
+
+        book1 = self.bank[0]
+        version = -1
+        if isinstance(book1, list):
+            version = 0
+        if isinstance(book1, dict):
+            version = 1
+            if not book1.get('lux'):
+                version = -1
+
+        self.version = version
+        self.result = self.parse()
+        if save:
+            save_as_bank(self.result)
+
+    def parse(self):
+        if not self.bank:
+            return []
+        if self.version == 0:
+            banked_list = []
+            for i in self.bank:
+                if len(i) < 6:
+                    new_lux = BookLuxury()
+                else:
+                    new_lux = i[5]
+                    new_lux['lck'] = getTimeStampFromString(new_lux['lck']) if new_lux['lck'] else None
+                    new_lux = BookLuxury(**new_lux)
+
+                new_book = BankedBook(numname=i[0], name=i[1], writer=i[2], genre=i[3], bunko=i[4], lux=new_lux,
+                                      addtime=getCreateTime(f'{BANK_PATH}/{confirm_name(i[1])}/{i[0]}.hmz'),
+                                      directory=f"{BANK_PATH}")
+                banked_list.append(new_book)
+            return banked_list
+
+        if self.version == 1:
+            banked_list = []
+            for i in self.bank:
+                rtg = i['lux']['rtg']
+                if not rtg:
+                    continue
+                value1 = list(rtg.values())[0]
+                if isinstance(value1, list):
+                    self.version = 2
+                    break
+            for i in self.bank:
+                if self.version == 2:
+                    break
+                rtg = i['lux']['rtg']
+                i['lux']['rtg'] = {i: [rtg[i], 1] for i in rtg.keys()}
+                banked_list.append(BankedBook(**i))
+            return banked_list
+
+        return []
 
 
 def update():
-    update_to_date()
-    post_process()
-    refresh_hmz()
+    if BANK_UPDATE:
+        BANK_parser(read_json('bank.json'), save=True)
+        CONFIG['BANK_UPDATE'] = False
+        modify_global_settings(CONFIG)
+    if HMZ_UPDATE:
+        refresh_hmz()
+        CONFIG['HMZ_UPDATE'] = False
+        modify_global_settings(CONFIG)
 
 
+update()
 HMZFILES = get_global_hmzfiles()
 
 
@@ -456,4 +528,5 @@ def compare_banks(old_bank: list[BankedBook], new_bank_data: list[BankedBook]) -
 
 
 if __name__ == '__main__':
-    pass
+    if CONFIG['HMZ_UPDATE']:
+        refresh_hmz()
