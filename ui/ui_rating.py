@@ -1,6 +1,8 @@
+import sys
+
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QWidget, QLabel, QDialog
+from PySide6.QtGui import QPixmap, QFont, QDoubleValidator
+from PySide6.QtWidgets import QWidget, QLabel, QDialog, QSlider, QApplication, QLineEdit, QPushButton
 
 
 class StarRatingWidget(QWidget):
@@ -32,6 +34,45 @@ class StarRatingWidget(QWidget):
 
         if not click:
             self.hoverMovement.connect(lambda pos: self.hover_widget.move(pos[0] + 200, pos[1] + 60))
+            return
+
+        self.weight_count = QDialog(self)
+        self.weight_count.setFixedSize(320, 120)
+
+        self.h_slider = QSlider(Qt.Orientation.Horizontal, parent=self.weight_count,
+                                tickPosition=QSlider.TickPosition.TicksBelow, tickInterval=10)
+        self.h_slider.move(0, 60)
+        self.h_slider.setFixedSize(320, 60)
+        self.h_slider.setRange(0, 100)
+        self.h_slider.setValue(50)
+
+        self.h_lineedit = QLineEdit(parent=self.weight_count, text='1')
+        self.h_lineedit.setGeometry(20, 15, 90, 35)
+        self.h_lineedit.setFont(QFont('Times New Roman', 14))
+        self.h_lineedit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dv = QDoubleValidator(decimals=2)
+        dv.setRange(0.50, 1.50)
+        self.h_lineedit.setValidator(dv)
+        print(dv.top(), dv.bottom())
+
+        self.h_button = QPushButton('Comfirm', parent=self.weight_count)
+        self.h_button.setGeometry(210, 15, 90, 35)
+
+        self.h_slider.valueChanged.connect(lambda val: self.setHText(val))
+        self.h_lineedit.textChanged.connect(lambda val: self.setHValue(val))
+
+    def setHText(self, value: int):
+        self.h_lineedit.blockSignals(True)
+        self.h_lineedit.setText(str(round(1 + (value - 50) / 100, 2)))
+        self.h_lineedit.blockSignals(False)
+
+    def setHValue(self, value):
+        if not value:
+            return
+        value = float(value)
+        self.h_slider.blockSignals(True)
+        self.h_slider.setValue(int((value - 1) * 100 + 50))
+        self.h_slider.blockSignals(False)
 
     def setHoverWidget(self, hover_widget):
         self.hover_widget = hover_widget
@@ -63,9 +104,7 @@ class StarRatingWidget(QWidget):
             pos = event.position().toPoint()
             self._handle_click(pos)
         if event.button() == Qt.MouseButton.RightButton:
-            weight_count = QDialog(self)
-            weight_count.setFixedSize(320, 120)
-            weight_count.show()
+            self.weight_count.show()
 
     def enterEvent(self, event, /):
         if self.hover_widget is None:
@@ -126,4 +165,26 @@ class FavouriteWidget(QWidget):
 
 
 if __name__ == "__main__":
-    pass
+    app = QApplication(sys.argv)
+
+    window = QDialog()
+    window.setFixedSize(320, 120)
+
+    h_slider = QSlider(Qt.Orientation.Horizontal, parent=window, tickPosition=QSlider.TickPosition.TicksBelow, tickInterval=10)
+    h_slider.move(0, 60)
+    h_slider.setFixedSize(320, 60)
+    h_slider.setRange(0, 100)
+    h_slider.setValue(50)
+
+    h_lineedit = QLineEdit(parent=window, text='50')
+    h_lineedit.setGeometry(20, 15, 90, 35)
+    h_lineedit.setFont(QFont('Times New Roman', 14))
+    h_lineedit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    h_button = QPushButton('Comfirm', parent=window)
+    h_button.setGeometry(210, 15, 90, 35)
+
+    h_slider.valueChanged.connect(lambda val: h_lineedit.setText(str(val)))
+
+    window.show()
+    app.exec()

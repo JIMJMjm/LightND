@@ -404,8 +404,8 @@ class DetailedWindow(QDialog):
             for i in self.scroll_area:
                 i.handle_save_bt()
                 if i.rating != 0:
-                    rtg[i.label.text()] = i.rating
-            self.emission = [rtg, 1]
+                    rtg[i.label.text()] = [i.rating, 1]
+            self.emission = rtg
         if self.renderChapters:
             self.emission = [i.handle_save_bt() for i in self.scroll_area if i.handle_save_bt() is not None]
         self.Close_as_dia.emit()

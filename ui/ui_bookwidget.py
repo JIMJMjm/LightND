@@ -58,7 +58,9 @@ class BookWidget(QWidget):
         add_to_bank(self.bankinfo, force_cover=True)
         if not lck:
             self.favrt.setFaved(self.lux_info.fav)
-            self.rating.set_rating(round(sum(self.lux_info.rtg.values()) / max(len(self.lux_info.rtg), 1), 2))
+            rrtg = self.lux_info.rtg
+            avg_weight = sum([i[1] for i in self.lux_info.rtg.values()])
+            self.rating.set_rating(round(sum([i[0] * i[1] / avg_weight * len(rrtg) for i in rrtg.values()])/len(rrtg), 2))
             self.progs.setValue(self.get_percentage_prg())
 
     def handle_fav_clicked(self):
