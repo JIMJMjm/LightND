@@ -60,7 +60,10 @@ class BookWidget(QWidget):
             self.favrt.setFaved(self.lux_info.fav)
             rrtg = self.lux_info.rtg
             avg_weight = sum([i[1] for i in self.lux_info.rtg.values()])
-            self.rating.set_rating(round(sum([i[0] * i[1] / avg_weight * len(rrtg) for i in rrtg.values()])/len(rrtg), 2))
+            self.rating.set_rating(round(
+                sum([i[0] * i[1] / avg_weight * len(rrtg) for i in rrtg.values()])/max(len(rrtg), 1),
+                2
+            ))
             self.progs.setValue(self.get_percentage_prg())
 
     def handle_fav_clicked(self):

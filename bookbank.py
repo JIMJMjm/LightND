@@ -243,7 +243,7 @@ def order_bw(constraint: tuple | None, bw_list: list) -> list:
         if not rtg:
             return 0.0
         avg_w = sum(i[1] for i in rtg.values()) / len(rtg)
-        return sum(i[0] * i[1] / avg_w for i in rtg) / len(rtg)
+        return sum(i[0] * i[1] / avg_w for i in rtg.values()) / len(rtg)
 
     order = constraint[0]
     sgn = not constraint[1]

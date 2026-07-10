@@ -281,7 +281,7 @@ class VolumeWidget(QWidget):
 
 
 class VolumeWidget_R(QWidget):
-    def __init__(self, text: str, parent=None, ratings: int = 0):
+    def __init__(self, text: str, parent=None, ratings: int = 0, weight: float = 1.0):
         super().__init__(parent)
 
         self.setGeometry(0, 0, 500, 40)
@@ -295,12 +295,12 @@ class VolumeWidget_R(QWidget):
         self.volume.setGeometry(0, 0, 481, 41)
 
         self.label = QLabel(parent=self.volume)
-        self.label.setGeometry(18, 0, 310, 40)
+        self.label.setGeometry(18, 0, 270, 40)
         self.label.setFont(font)
         self.label.setWordWrap(True)
         self.label.setText(text)
 
-        self.rt = Rtw(parent=self.volume, rating_=ratings)
+        self.rt = Rtw(parent=self.volume, rating_=ratings, weight=weight)
         self.rt.move(365, 10)
         self.rt.rating_changed.connect(self.handle_rating_change)
 
@@ -404,7 +404,7 @@ class DetailedWindow(QDialog):
             for i in self.scroll_area:
                 i.handle_save_bt()
                 if i.rating != 0:
-                    rtg[i.label.text()] = [i.rating, 1]
+                    rtg[i.label.text()] = [i.rating, i.rt.weight]
             self.emission = rtg
         if self.renderChapters:
             self.emission = [i.handle_save_bt() for i in self.scroll_area if i.handle_save_bt() is not None]
@@ -413,8 +413,8 @@ class DetailedWindow(QDialog):
     def generate_Rwidget(self):
         rts = self.bankinfo.lux.rtg
         for i in self.volumes:
-            rti = 0 if rts == 0 else rts.get(i, 0)[0]
-            self.scroll_area.addWidget(VolumeWidget_R(i, parent=None, ratings=rti))
+            rti, wei = rts.get(i, (0, 1))
+            self.scroll_area.addWidget(VolumeWidget_R(i, parent=None, ratings=rti, weight=wei))
 
     def generate_widget(self):
         for i in self.volumes:

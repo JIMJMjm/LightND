@@ -1,4 +1,5 @@
 import sys
+from typing import overload, Literal
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap, QFont, QDoubleValidator
@@ -9,13 +10,22 @@ class StarRatingWidget(QWidget):
     rating_changed = Signal()
     hoverMovement = Signal(tuple)
 
-    def __init__(self, parent=None, rating_: float = 0.0, click=True):
+    @overload
+    def __init__(self, parent=None, click=Literal[False]):
+        ...
+
+    @overload
+    def __init__(self, parent=None, rating_: float = 0.0, weight: float = 1.0, click=Literal[True]):
+        ...
+
+    def __init__(self, parent=None, rating_: float = 0.0, weight: float = 1.0, click=True):
         super().__init__(parent)
         self.setMouseTracking(True)
         self.r_rating = rating_
         self.rating = int(round(rating_, 0))
         self.star_zize = 20
         self.clickable = click
+        self.weight = weight
         self.setFixedSize(5*self.star_zize+10, self.star_zize)
 
         self._sstate = (QPixmap("images/star_e_t.png").scaled(self.star_zize, self.star_zize),
@@ -44,22 +54,27 @@ class StarRatingWidget(QWidget):
         self.h_slider.move(0, 60)
         self.h_slider.setFixedSize(320, 60)
         self.h_slider.setRange(0, 100)
-        self.h_slider.setValue(50)
+        self.h_slider.setValue(int((self.weight - 1) * 100 + 50))
 
-        self.h_lineedit = QLineEdit(parent=self.weight_count, text='1')
+        self.h_lineedit = QLineEdit(parent=self.weight_count, text=str(self.weight))
         self.h_lineedit.setGeometry(20, 15, 90, 35)
         self.h_lineedit.setFont(QFont('Times New Roman', 14))
         self.h_lineedit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         dv = QDoubleValidator(decimals=2)
         dv.setRange(0.50, 1.50)
         self.h_lineedit.setValidator(dv)
-        print(dv.top(), dv.bottom())
 
         self.h_button = QPushButton('Comfirm', parent=self.weight_count)
         self.h_button.setGeometry(210, 15, 90, 35)
 
         self.h_slider.valueChanged.connect(lambda val: self.setHText(val))
         self.h_lineedit.textChanged.connect(lambda val: self.setHValue(val))
+        self.h_button.clicked.connect(self.closeWeight)
+
+    def closeWeight(self):
+        val = self.h_slider.value()
+        self.weight = round(1 + (val - 50) / 100, 2)
+        self.weight_count.close()
 
     def setHText(self, value: int):
         self.h_lineedit.blockSignals(True)
@@ -73,6 +88,11 @@ class StarRatingWidget(QWidget):
         self.h_slider.blockSignals(True)
         self.h_slider.setValue(int((value - 1) * 100 + 50))
         self.h_slider.blockSignals(False)
+
+    def setWeight(self, weight: float):
+        self.weight = weight
+        self.setHValue(weight)
+        self.setHText(self.h_slider.value())
 
     def setHoverWidget(self, hover_widget):
         self.hover_widget = hover_widget
