@@ -11,7 +11,7 @@ class ConfigInterval:
 
 CONFIGINTERVAL = ConfigInterval()
 DEFAULT_SETTING = {
-    'VERSION': [0, 8, 7, 1],
+    'VERSION': [1, 8, 8, 0],
     'BANK_UPDATE': False,
     'HMZ_UPDATE': False,
     "General": CONFIGINTERVAL,

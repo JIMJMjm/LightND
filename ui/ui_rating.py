@@ -54,7 +54,7 @@ class StarRatingWidget(QWidget):
         self.h_slider.move(0, 60)
         self.h_slider.setFixedSize(320, 60)
         self.h_slider.setRange(0, 100)
-        self.h_slider.setValue(int((self.weight - 1) * 100 + 50))
+        self.h_slider.setValue(self.getSliderValuefrom(self.weight))
 
         self.h_lineedit = QLineEdit(parent=self.weight_count, text=str(self.weight))
         self.h_lineedit.setGeometry(20, 15, 90, 35)
@@ -71,14 +71,21 @@ class StarRatingWidget(QWidget):
         self.h_lineedit.textChanged.connect(lambda val: self.setHValue(val))
         self.h_button.clicked.connect(self.closeWeight)
 
+    @staticmethod
+    def getSliderValuefrom(trueWeight: float) -> int:
+        return int((trueWeight - 1) * 100 + 50 + 0.5)
+
+    @staticmethod
+    def getTrueWeightfrom(sliderValue: int) -> float:
+        return round(1 + (sliderValue - 50) / 100, 2)
+
     def closeWeight(self):
-        val = self.h_slider.value()
-        self.weight = round(1 + (val - 50) / 100, 2)
+        self.weight = self.getTrueWeightfrom(self.h_slider.value())
         self.weight_count.close()
 
     def setHText(self, value: int):
         self.h_lineedit.blockSignals(True)
-        self.h_lineedit.setText(str(round(1 + (value - 50) / 100, 2)))
+        self.h_lineedit.setText(str(self.getTrueWeightfrom(value)))
         self.h_lineedit.blockSignals(False)
 
     def setHValue(self, value):
@@ -86,7 +93,7 @@ class StarRatingWidget(QWidget):
             return
         value = float(value)
         self.h_slider.blockSignals(True)
-        self.h_slider.setValue(int((value - 1) * 100 + 50))
+        self.h_slider.setValue(self.getSliderValuefrom(value))
         self.h_slider.blockSignals(False)
 
     def setWeight(self, weight: float):
