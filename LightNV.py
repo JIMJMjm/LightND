@@ -250,6 +250,8 @@ class ISFer:
 
     def isf_hmzvol_selectr(self):
         isftarget = self.target_hf
+        if not hasattr(isftarget, 'name'):
+            return
         vol = [isftarget.name, f'images/thumbnails/{isftarget.numname}.jpg'] + [i[0] for i in isftarget.allname]
         isfchild = DetailedWindow(volume_details=vol, bankinfo=None, isf=True)
         isfchild.SelectAll.setHidden(True)
@@ -729,9 +731,8 @@ class MainWindow(QMainWindow):
 
         if ENABLE_ISF:
             ui.sr_start.clicked.connect(
-                lambda: self.start_task(searchimg, int(ui.sr_hm_input.text()),
-                                        ui.sr_numname_input.text(),
-                                        self.isfer.goal))
+                lambda: self.start_task(searchimg, ui.sr_numname_input.text(), goal_folder=self.isfer.goal,
+                                        html_num=int(ui.sr_hm_input.text())))
             ui.get_goal.clicked.connect(self.auto_fill_isfer)
             ui.get_dir.clicked.connect(lambda: self.auto_fill_isfer(True))
             ui.sr_select_book.clicked.connect(self.isf_book_select)

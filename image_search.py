@@ -218,13 +218,13 @@ def generate_sequence(depth: int):
 
 
 @save_history_on_exception
-def search_for(numname: str, gaol_folder='images/dt', html_num: int = 0, results=0):
+def search_for(numname: str, goal_folder='images/dt', html_num: int = 0, results=0):
     global DONE, history, BREAKPOINT
     trial = GetRq(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/{html_num}.htm').run('r')
     if not isinstance(trial, int):
-        makedir(gaol_folder)
+        makedir(goal_folder)
         for y, i in enumerate(trial):
-            with open(f'{gaol_folder}/{y+1}.jpg', 'wb') as f:
+            with open(f'{goal_folder}/{y + 1}.jpg', 'wb') as f:
                 f.write(i)
         return True
 
@@ -240,15 +240,15 @@ def search_for(numname: str, gaol_folder='images/dt', html_num: int = 0, results
         print(1)
         return 'Failed'
 
-    makedir(gaol_folder)
+    makedir(goal_folder)
     print('\nFirst Image Found!', result)
-    download_t(result, numname, html_num=html_num, adr=f'{gaol_folder}/{result}.jpg')
+    download_t(result, numname, html_num=html_num, adr=f'{goal_folder}/{result}.jpg')
     imglist = [result]
 
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        if not download_t(cur-1, numname, html_num=html_num, adr=f'{gaol_folder}/{cur - 1}.jpg'):
+        if not download_t(cur-1, numname, html_num=html_num, adr=f'{goal_folder}/{cur - 1}.jpg'):
             tolerance -= 1
             cur -= 1
             continue
@@ -260,7 +260,7 @@ def search_for(numname: str, gaol_folder='images/dt', html_num: int = 0, results
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        if not download_t(cur + 1, numname, html_num=html_num, adr=f'{gaol_folder}/{cur + 1}.jpg'):
+        if not download_t(cur + 1, numname, html_num=html_num, adr=f'{goal_folder}/{cur + 1}.jpg'):
             tolerance -= 1
             cur += 1
             continue
