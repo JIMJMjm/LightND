@@ -122,7 +122,7 @@ def save_history_on_exception(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:  # NOQA
-            save_history(kwargs['html_num'])
+            save_history(kwargs.get('html_num', args[2]))
     return wrapper
 
 
@@ -218,7 +218,7 @@ def generate_sequence(depth: int):
 
 
 @save_history_on_exception
-def search_for(html_num: int, numname: str, gaol_folder='images/dt', results=0):
+def search_for(numname: str, gaol_folder='images/dt', html_num: int = 0, results=0):
     global DONE, history, BREAKPOINT
     trial = GetRq(f'https://www.wenku8.cc/novel/{int(numname)//1000}/{numname}/{html_num}.htm').run('r')
     if not isinstance(trial, int):
@@ -242,13 +242,13 @@ def search_for(html_num: int, numname: str, gaol_folder='images/dt', results=0):
 
     makedir(gaol_folder)
     print('\nFirst Image Found!', result)
-    download_t(result, numname, html_num, f'{gaol_folder}/{result}.jpg')
+    download_t(result, numname, html_num=html_num, adr=f'{gaol_folder}/{result}.jpg')
     imglist = [result]
 
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        if not download_t(cur-1, numname, html_num, f'{gaol_folder}/{cur - 1}.jpg'):
+        if not download_t(cur-1, numname, html_num=html_num, adr=f'{gaol_folder}/{cur - 1}.jpg'):
             tolerance -= 1
             cur -= 1
             continue
@@ -260,7 +260,7 @@ def search_for(html_num: int, numname: str, gaol_folder='images/dt', results=0):
     cur = result
     tolerance = BORDER_TOLERANCE
     while tolerance > 0:
-        if not download_t(cur + 1, numname, html_num, f'{gaol_folder}/{cur + 1}.jpg'):
+        if not download_t(cur + 1, numname, html_num=html_num, adr=f'{gaol_folder}/{cur + 1}.jpg'):
             tolerance -= 1
             cur += 1
             continue
